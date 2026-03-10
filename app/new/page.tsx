@@ -24,7 +24,10 @@ const NewSearchPage = () => {
 
                     {/* Greeting Header */}
                     <div className="flex flex-col items-center gap-3 mb-8">
-                        <img src="/sakshya_logo.svg" alt="Sakshya" className="w-8 h-8 dark:invert dark:brightness-0 opacity-80" />
+                        <div className="bg-[#D4F46A] rounded-lg p-1.5">
+                
+              <img src="/sakshya_logo.svg" alt="Sakshya Logo" className="w-6 h-6 brightness-0 shrink-0" />
+                </div>
                         <h1 className="text-3xl sm:text-4xl font-serif text-[#333] dark:text-[#ececec] tracking-tight">
                             Good Morning, Kritarth. You have 3 documents expiring this month.
                         </h1>
@@ -45,10 +48,10 @@ const NewSearchPage = () => {
 
                             <div className="flex items-center gap-3">
                                 <button className="flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-gray-500 hover:text-black dark:hover:text-white transition-colors">
-                                    Sonnet 4.6
-                                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="opacity-70">
+                                    Sakshya AI
+                                    {/* <svg width="12" height="12" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" className="opacity-70">
                                         <path d="M6 9L12 15L18 9" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                    </svg>
+                                    </svg> */}
                                 </button>
 
                                 {/* Voice / Send Button Toggle */}
@@ -57,9 +60,7 @@ const NewSearchPage = () => {
                                         className={`absolute inset-0 flex items-center justify-center text-gray-400 hover:text-black dark:hover:text-white transition-all duration-300 rounded-lg hover:bg-gray-200 dark:hover:bg-white/10 ${isTyping ? 'opacity-0 scale-50 rotate-[-90deg] pointer-events-none' : 'opacity-100 scale-100 rotate-0'
                                             }`}
                                     >
-                                        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                            <path d="M5 20V4M12 20V10M19 20V14" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" />
-                                        </svg>
+                                        <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-audio-waveform-icon lucide-audio-waveform"><path d="M2 13a2 2 0 0 0 2-2V7a2 2 0 0 1 4 0v13a2 2 0 0 0 4 0V4a2 2 0 0 1 4 0v13a2 2 0 0 0 4 0v-4a2 2 0 0 1 2-2" /></svg>
                                     </button>
                                     <button
                                         className={`absolute inset-0 flex items-center justify-center bg-black dark:bg-white text-white dark:text-black transition-all duration-300 rounded-lg shadow-sm hover:bg-gray-800 dark:hover:bg-gray-200 ${isTyping ? 'opacity-100 scale-100 rotate-0' : 'opacity-0 scale-50 rotate-90 pointer-events-none'

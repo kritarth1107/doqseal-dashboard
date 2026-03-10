@@ -18,6 +18,7 @@ export const metadata: Metadata = {
 };
 
 import { Sidebar } from "@/components/Sidebar";
+import { ThemeProvider } from "@/components/theme-provider";
 
 export default function RootLayout({
   children,
@@ -25,16 +26,23 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html lang="en">
+    <html lang="en" suppressHydrationWarning>
       <body
         className={`${geistSans.variable} ${geistMono.variable} antialiased`}
       >
-        <div className="flex h-screen bg-white dark:bg-[#212121] overflow-hidden sm:flex-row flex-col">
-          <Sidebar />
-          <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
-            {children}
-          </main>
-        </div>
+        <ThemeProvider
+          attribute="class"
+          defaultTheme="system"
+          enableSystem
+          disableTransitionOnChange
+        >
+          <div className="flex h-screen bg-white dark:bg-[#212121] overflow-hidden sm:flex-row flex-col">
+            <Sidebar />
+            <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden">
+              {children}
+            </main>
+          </div>
+        </ThemeProvider>
       </body>
     </html>
   );

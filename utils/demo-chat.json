@@ -1,0 +1,246 @@
+{
+  "conversation_id": "conv_8f3k2m9x",
+  "user_id": "usr_kritarth_01",
+  "messages": [
+
+    {
+      "message_id": "msg_001",
+      "role": "user",
+      "timestamp": "2026-03-10T11:42:03Z",
+      "content": {
+        "type": "text",
+        "text": "Fetch all documents where my address is of Gurgaon"
+      }
+    },
+
+    {
+      "message_id": "msg_002",
+      "role": "assistant",
+      "timestamp": "2026-03-10T11:42:05Z",
+      "content": {
+        "type": "composite",
+        "blocks": [
+          {
+            "block_id": "blk_001",
+            "type": "text",
+            "text": "Found **9 documents** with a Gurgaon address across identity, tax, and financial categories. I also noticed **1 document** still has your old Delhi address — you may want to update that."
+          },
+          {
+            "block_id": "blk_002",
+            "type": "document_table",
+            "columns": ["index", "document", "type", "issued_by", "address", "status", "expiry", "action"],
+            "rows": [
+              {
+                "index": 1,
+                "document_id": "doc_aadhaar_01",
+                "document": "Aadhaar Card",
+                "type": "Identity",
+                "type_icon": "🪪",
+                "issued_by": "UIDAI",
+                "address": "Sector 14, Gurgaon, Haryana 122001",
+                "status": { "label": "Active", "variant": "success" },
+                "expiry": "Lifetime",
+                "action": { "label": "View →", "type": "view", "document_id": "doc_aadhaar_01" }
+              },
+              {
+                "index": 2,
+                "document_id": "doc_pan_01",
+                "document": "PAN Card",
+                "type": "Identity",
+                "type_icon": "🪪",
+                "issued_by": "Income Tax Dept.",
+                "address": "Sector 14, Gurgaon, Haryana 122001",
+                "status": { "label": "Active", "variant": "success" },
+                "expiry": "Lifetime",
+                "action": { "label": "View →", "type": "view", "document_id": "doc_pan_01" }
+              },
+              {
+                "index": 3,
+                "document_id": "doc_passport_01",
+                "document": "Passport",
+                "type": "Identity",
+                "type_icon": "🛂",
+                "issued_by": "MEA, Govt. of India",
+                "address": "Sector 14, Gurgaon, Haryana 122001",
+                "status": { "label": "Active", "variant": "success" },
+                "expiry": "2029-03-14",
+                "action": { "label": "View →", "type": "view", "document_id": "doc_passport_01" }
+              },
+              {
+                "index": 4,
+                "document_id": "doc_dl_01",
+                "document": "Driving Licence",
+                "type": "Identity",
+                "type_icon": "🚗",
+                "issued_by": "RTO Gurgaon",
+                "address": "Sector 14, Gurgaon, Haryana 122001",
+                "status": { "label": "Active", "variant": "success" },
+                "expiry": "2033-08-22",
+                "action": { "label": "View →", "type": "view", "document_id": "doc_dl_01" }
+              },
+              {
+                "index": 5,
+                "document_id": "doc_itr_2425",
+                "document": "ITR FY 2024–25",
+                "type": "Tax",
+                "type_icon": "📄",
+                "issued_by": "Income Tax Dept.",
+                "address": "Sector 14, Gurgaon, Haryana 122001",
+                "status": { "label": "Filed", "variant": "success" },
+                "expiry": null,
+                "action": { "label": "View →", "type": "view", "document_id": "doc_itr_2425" }
+              },
+              {
+                "index": 6,
+                "document_id": "doc_itr_2324",
+                "document": "ITR FY 2023–24",
+                "type": "Tax",
+                "type_icon": "📄",
+                "issued_by": "Income Tax Dept.",
+                "address": "Vasant Vihar, New Delhi 110057",
+                "status": { "label": "Old Address", "variant": "warning" },
+                "expiry": null,
+                "action": { "label": "View →", "type": "view", "document_id": "doc_itr_2324" }
+              },
+              {
+                "index": 7,
+                "document_id": "doc_form16_2425",
+                "document": "Form 16 FY 2024–25",
+                "type": "Tax",
+                "type_icon": "📋",
+                "issued_by": "Infosys Ltd.",
+                "address": "Sector 14, Gurgaon, Haryana 122001",
+                "status": { "label": "Active", "variant": "success" },
+                "expiry": null,
+                "action": { "label": "View →", "type": "view", "document_id": "doc_form16_2425" }
+              },
+              {
+                "index": 8,
+                "document_id": "doc_hdfc_stmt",
+                "document": "HDFC Bank Statement",
+                "type": "Financial",
+                "type_icon": "🏦",
+                "issued_by": "HDFC Bank",
+                "address": "Sector 14, Gurgaon, Haryana 122001",
+                "status": { "label": "Active", "variant": "success" },
+                "expiry": "2025-12-31",
+                "action": { "label": "View →", "type": "view", "document_id": "doc_hdfc_stmt" }
+              },
+              {
+                "index": 9,
+                "document_id": "doc_property_01",
+                "document": "Property Registry",
+                "type": "Property",
+                "type_icon": "🏠",
+                "issued_by": "Sub-Registrar, Gurgaon",
+                "address": "Plot 47, Sector 14, Gurgaon 122001",
+                "status": { "label": "Registered", "variant": "success" },
+                "expiry": null,
+                "action": { "label": "View →", "type": "view", "document_id": "doc_property_01" }
+              }
+            ],
+            "summary": {
+              "total_found": 9,
+              "by_type": {
+                "Identity": 4,
+                "Tax": 3,
+                "Financial": 1,
+                "Property": 1
+              },
+              "warnings": [
+                {
+                  "type": "old_address",
+                  "message": "ITR FY 2023–24 still has your Delhi address.",
+                  "document_id": "doc_itr_2324"
+                }
+              ]
+            }
+          }
+        ]
+      }
+    },
+
+    {
+      "message_id": "msg_003",
+      "role": "user",
+      "timestamp": "2026-03-10T11:43:18Z",
+      "content": {
+        "type": "text",
+        "text": "Tell me the exact address on these documents"
+      }
+    },
+
+    {
+      "message_id": "msg_004",
+      "role": "assistant",
+      "timestamp": "2026-03-10T11:43:19Z",
+      "content": {
+        "type": "composite",
+        "blocks": [
+          {
+            "block_id": "blk_003",
+            "type": "text",
+            "text": "Sure! Here's what's printed on each document:\n\nMost of your documents — Aadhaar, PAN, Passport, Driving Licence, ITR 2024–25, Form 16, and your HDFC Bank Statement — all carry the same address:\n\n**47, Sector 14, Gurgaon, Haryana – 122001**\n\nYour Property Registry is slightly different, it reads:\n\n**Plot No. 47, Sector 14, Gurugram, Haryana – 122001**\n\nSame location, just the older \"Gurugram\" spelling used by the Sub-Registrar office.\n\nThe one outlier is your **ITR FY 2023–24** which still has your old address:\n\n**B-12, Vasant Vihar, New Delhi – 110057**\n\nIf you're using documents for address proof anywhere — a new SIM, bank KYC, or a rental agreement — I'd recommend using your **Aadhaar or Passport** as they have the cleanest, most accepted format of your current Gurgaon address."
+          }
+        ]
+      }
+    },
+
+    {
+      "message_id": "msg_005",
+      "role": "user",
+      "timestamp": "2026-03-10T11:44:52Z",
+      "content": {
+        "type": "text",
+        "text": "Give me a shareable link for my Aadhaar"
+      }
+    },
+
+    {
+      "message_id": "msg_006",
+      "role": "assistant",
+      "timestamp": "2026-03-10T11:44:53Z",
+      "content": {
+        "type": "composite",
+        "blocks": [
+          {
+            "block_id": "blk_004",
+            "type": "text",
+            "text": "Here's a secure shareable link for your Aadhaar Card. It expires in **24 hours** and can only be opened once. You can change these settings below before sharing."
+          },
+          {
+            "block_id": "blk_005",
+            "type": "shareable_link",
+            "document_id": "doc_aadhaar_01",
+            "document_name": "Aadhaar Card",
+            "link": "https://share.sakshya.io/d/ax9k2-mq74r-zzp01",
+            "short_link": "sakshya.io/d/ax9k2",
+            "created_at": "2026-03-10T11:44:53Z",
+            "settings": {
+              "expires_in": "24h",
+              "expires_at": "2026-03-11T11:44:53Z",
+              "max_views": 1,
+              "views_used": 0,
+              "password_protected": false,
+              "allow_download": false,
+              "watermark": true,
+              "watermark_text": "Shared by Kritarth Agrawal via Sakshya"
+            },
+            "actions": [
+              { "label": "Copy Link", "type": "copy_link", "value": "https://share.sakshya.io/d/ax9k2-mq74r-zzp01" },
+              { "label": "Share via WhatsApp", "type": "share_whatsapp" },
+              { "label": "Share via Email", "type": "share_email" },
+              { "label": "Edit Settings", "type": "edit_link_settings", "document_id": "doc_aadhaar_01" },
+              { "label": "Revoke Link", "type": "revoke_link", "document_id": "doc_aadhaar_01" }
+            ],
+            "warning": {
+              "type": "sensitive_document",
+              "message": "Aadhaar is a sensitive identity document. Only share with trusted parties. Sakshya applies a watermark automatically."
+            }
+          }
+        ]
+      }
+    }
+
+  ]
+}
