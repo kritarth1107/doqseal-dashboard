@@ -1,0 +1,169 @@
+{
+  "greetings": [
+    {
+      "id": "g_001",
+      "text": "Good Morning, Kritarth. You have 3 documents expiring this month.",
+      "alert": true,
+      "variant": "warning",
+      "highlights": [
+        { "word": "3 documents expiring this month", "type": "pill", "variant": "warning", "icon": "⏰" }
+      ]
+    },
+    {
+      "id": "g_002",
+      "text": "Welcome back, Kritarth. Your ITR folder is ready for filing.",
+      "alert": true,
+      "variant": "success",
+      "highlights": [
+        { "word": "ITR folder", "type": "pill", "variant": "green", "icon": "📄" },
+        { "word": "ready for filing", "type": "bold", "variant": "success" }
+      ]
+    },
+    {
+      "id": "g_003",
+      "text": "Good Evening, Kritarth. Your Passport expires in 90 days.",
+      "alert": true,
+      "variant": "warning",
+      "highlights": [
+        { "word": "Passport", "type": "pill", "variant": "orange", "icon": "🛂" },
+        { "word": "90 days", "type": "bold", "variant": "warning" }
+      ]
+    },
+    {
+      "id": "g_004",
+      "text": "Hey Kritarth. 2 employees haven't submitted their documents yet.",
+      "alert": true,
+      "variant": "error",
+      "highlights": [
+        { "word": "2 employees", "type": "pill", "variant": "red", "icon": "👥" },
+        { "word": "haven't submitted", "type": "bold", "variant": "error" }
+      ]
+    },
+    {
+      "id": "g_005",
+      "text": "Good Afternoon, Kritarth. Everything looks up to date.",
+      "alert": false,
+      "variant": "success",
+      "highlights": [
+        { "word": "up to date", "type": "pill", "variant": "green", "icon": "✅" }
+      ]
+    },
+    {
+      "id": "g_006",
+      "text": "Morning, Kritarth. Tax season is here — want me to prepare your ITR folder?",
+      "alert": false,
+      "variant": "info",
+      "highlights": [
+        { "word": "Tax season", "type": "pill", "variant": "orange", "icon": "📅" },
+        { "word": "ITR folder", "type": "pill", "variant": "green", "icon": "📄" }
+      ]
+    },
+    {
+      "id": "g_007",
+      "text": "Welcome back, Kritarth. Your health insurance renews in 12 days.",
+      "alert": true,
+      "variant": "warning",
+      "highlights": [
+        { "word": "health insurance", "type": "pill", "variant": "blue", "icon": "🏥" },
+        { "word": "12 days", "type": "bold", "variant": "warning" }
+      ]
+    },
+    {
+      "id": "g_008",
+      "text": "Good Morning, Kritarth. 1 new document was added by your HR team.",
+      "alert": true,
+      "variant": "info",
+      "highlights": [
+        { "word": "1 new document", "type": "pill", "variant": "blue", "icon": "📁" },
+        { "word": "HR team", "type": "bold", "variant": "info" }
+      ]
+    },
+    {
+      "id": "g_009",
+      "text": "Hey Kritarth. Your HDFC bank statement for March is now available.",
+      "alert": false,
+      "variant": "info",
+      "highlights": [
+        { "word": "HDFC bank statement", "type": "pill", "variant": "blue", "icon": "🏦" },
+        { "word": "March", "type": "bold", "variant": "info" }
+      ]
+    },
+    {
+      "id": "g_010",
+      "text": "Good Evening, Kritarth. You have 5 documents with your old Delhi address.",
+      "alert": true,
+      "variant": "warning",
+      "highlights": [
+        { "word": "5 documents", "type": "pill", "variant": "warning", "icon": "📄" },
+        { "word": "old Delhi address", "type": "pill", "variant": "orange", "icon": "📍" }
+      ]
+    },
+    {
+      "id": "g_011",
+      "text": "Morning, Kritarth. Pratham has sent a document request — 3 files needed.",
+      "alert": true,
+      "variant": "error",
+      "highlights": [
+        { "word": "Pratham", "type": "pill", "variant": "purple", "icon": "🏛️" },
+        { "word": "3 files needed", "type": "pill", "variant": "red", "icon": "📎" }
+      ]
+    },
+    {
+      "id": "g_012",
+      "text": "Welcome back, Kritarth. Your shared Aadhaar link was viewed 2 hours ago.",
+      "alert": true,
+      "variant": "info",
+      "highlights": [
+        { "word": "Aadhaar link", "type": "pill", "variant": "orange", "icon": "🔗" },
+        { "word": "viewed 2 hours ago", "type": "bold", "variant": "info" }
+      ]
+    },
+    {
+      "id": "g_013",
+      "text": "Good Afternoon, Kritarth. No pending actions. You're all caught up.",
+      "alert": false,
+      "variant": "success",
+      "highlights": [
+        { "word": "No pending actions", "type": "pill", "variant": "green", "icon": "✅" },
+        { "word": "all caught up", "type": "bold", "variant": "success" }
+      ]
+    },
+    {
+      "id": "g_014",
+      "text": "Hey Kritarth. Your Form 16 for FY 2024–25 hasn't been uploaded yet.",
+      "alert": true,
+      "variant": "warning",
+      "highlights": [
+        { "word": "Form 16", "type": "pill", "variant": "green", "icon": "📋" },
+        { "word": "FY 2024–25", "type": "bold", "variant": "info" },
+        { "word": "hasn't been uploaded", "type": "pill", "variant": "warning", "icon": "⚠️" }
+      ]
+    },
+    {
+      "id": "g_015",
+      "text": "Good Morning, Kritarth. 3 vendor contracts are up for renewal this quarter.",
+      "alert": true,
+      "variant": "error",
+      "highlights": [
+        { "word": "3 vendor contracts", "type": "pill", "variant": "red", "icon": "📝" },
+        { "word": "renewal this quarter", "type": "bold", "variant": "warning" }
+      ]
+    }
+  ],
+
+  "highlight_types": {
+    "pill":  "render as a small rounded badge with icon + bg colour",
+    "bold":  "render as inline bold coloured text, no background"
+  },
+
+  "pill_variants": {
+    "warning":  { "bg": "#FEF3C7", "text": "#92400E", "border": "#FDE68A" },
+    "blue":     { "bg": "#EFF6FF", "text": "#1D4ED8", "border": "#BFDBFE" },
+    "green":    { "bg": "#F0FDF4", "text": "#065F46", "border": "#BBF7D0" },
+    "purple":   { "bg": "#F5F3FF", "text": "#5B21B6", "border": "#DDD6FE" },
+    "orange":   { "bg": "#FFF7ED", "text": "#9A3412", "border": "#FED7AA" },
+    "red":      { "bg": "#FEF2F2", "text": "#991B1B", "border": "#FECACA" },
+    "info":     { "bg": "#F0F9FF", "text": "#0369A1", "border": "#BAE6FD" },
+    "success":  { "bg": "#F0FDF4", "text": "#065F46", "border": "#BBF7D0" }
+  }
+}

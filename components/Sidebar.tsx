@@ -92,9 +92,9 @@ export function Sidebar() {
             <FileText className="w-4 h-4 shrink-0" />
             {!isCollapsed && <span className="flex-1 text-left truncate">Documents</span>}
           </Link>
-          <Link href="/document-link" className={`flex items-center gap-2 rounded-lg hover:bg-gray-200/50 dark:hover:bg-white/5 py-2 text-sm font-medium transition-colors ${isCollapsed ? 'justify-center w-10 h-10 px-0' : 'w-full px-2.5'}`} title="Document Link">
+          <Link href="/request-document" className={`flex items-center gap-2 rounded-lg hover:bg-gray-200/50 dark:hover:bg-white/5 py-2 text-sm font-medium transition-colors ${isCollapsed ? 'justify-center w-10 h-10 px-0' : 'w-full px-2.5'}`} title="Document Link">
             <LinkIcon className="w-4 h-4 shrink-0" />
-            {!isCollapsed && <span className="flex-1 text-left truncate">Document Link</span>}
+            {!isCollapsed && <span className="flex-1 text-left truncate">Request Document</span>}
           </Link>
         </div>
 
