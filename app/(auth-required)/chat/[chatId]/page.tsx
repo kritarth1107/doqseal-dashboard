@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import { Monitor, ArrowUp, Copy, ThumbsUp, ThumbsDown, RotateCcw, Link as LinkIcon, Plus, FileText, Share2, ShieldAlert, Settings, Trash2 } from 'lucide-react';
 import Link from 'next/link';
-import demoChatData from '../../../utils/demo-chat.json';
+import demoChatData from '@/utils/demo-chat.json';
 
 // Helper for formatting markdown-like bold text
 const FormattedText = ({ text }: { text: string }) => {
