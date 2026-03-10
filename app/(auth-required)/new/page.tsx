@@ -4,6 +4,7 @@ import { Search, Folder, Clock, Upload, Monitor, ArrowUp } from 'lucide-react';
 import Link from 'next/link';
 
 import chatTitlesData from '@/utils/new_chat_titles.json';
+import { UploadModal } from '@/components/UploadModal';
 
 type Highlight = {
     word: string;
@@ -75,6 +76,7 @@ const NewSearchPage = () => {
     const [query, setQuery] = useState("");
     const [isMounted, setIsMounted] = useState(false);
     const [greeting, setGreeting] = useState<Greeting | null>(null);
+    const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
 
     const isTyping = query.trim().length > 0;
 
@@ -120,7 +122,7 @@ const NewSearchPage = () => {
                         />
                         <div className="flex items-center justify-between px-4 py-3 bg-gray-50/50 dark:bg-black/10 border-t border-gray-100 dark:border-white/5">
                             <button className="p-1.5 text-gray-400 hover:text-black dark:hover:text-white transition-colors rounded-lg hover:bg-gray-200 dark:hover:bg-white/10">
-                                <Monitor className="w-5 h-5" />
+                                <Upload className="w-5 h-5" />
                             </button>
 
                             <div className="flex items-center gap-3">
@@ -152,35 +154,61 @@ const NewSearchPage = () => {
                         className={`flex flex-wrap items-center justify-center gap-2 mt-6 transition-opacity duration-300 ease-in-out ${isTyping ? 'opacity-0 pointer-events-none' : 'opacity-100'
                             }`}
                     >
-                        <button className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-[#2c2c2c] border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors shadow-sm cursor-pointer">
+                        <button
+                            onClick={() => setQuery("Find a document related to... ")}
+                            className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-[#2c2c2c] border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors shadow-sm cursor-pointer"
+                        >
                             <Search className="w-4 h-4" />
                             Find a Document
                         </button>
-                        <button className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-[#2c2c2c] border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors shadow-sm cursor-pointer">
+                        <button
+                            onClick={() => setQuery("Prepare my ITR folder using all tax-related documents for this year...")}
+                            className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-[#2c2c2c] border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors shadow-sm cursor-pointer"
+                        >
                             <Folder className="w-4 h-4 text-yellow-500" />
                             Prepare ITR folder
                         </button>
-                        <button className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-[#2c2c2c] border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors shadow-sm cursor-pointer">
+                        <button
+                            onClick={() => setQuery("Find documents expiring soon")}
+                            className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-[#2c2c2c] border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors shadow-sm cursor-pointer"
+                        >
                             <Clock className="w-4 h-4 text-red-500" />
                             Expiring Soon
                         </button>
-                        <button className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-[#2c2c2c] border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors shadow-sm cursor-pointer">
+                        <button
+                            onClick={() => setIsUploadModalOpen(true)}
+                            className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-[#2c2c2c] border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors shadow-sm cursor-pointer"
+                        >
                             <Upload className="w-4 h-4" />
                             Upload
                         </button>
-                        <button className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-[#2c2c2c] border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors shadow-sm cursor-pointer">
-                            <svg className="w-4 h-4 drop-shadow-sm" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-                                <path d="M15.3 10L11.5 16.5L12.5 18H20.5L21.5 16.5L15.3 10Z" fill="#FFC107" />
-                                <path d="M8.7 10L2.5 20.5L4 23H11.5L15.3 16.5L8.7 10Z" fill="#4CAF50" />
-                                <path d="M15.3 10L8.7 10L11.5 5L15.3 10Z" fill="#2196F3" />
-                            </svg>
-                            From Drive
-                        </button>
+
+                        <div className="relative group">
+                            <button
+                                disabled
+                                className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-[#2c2c2c]/50 border border-gray-200 dark:border-white/10 rounded-lg cursor-not-allowed"
+                            >
+                                <svg className="w-4 h-4 drop-shadow-sm grayscale opacity-50" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+                                    <path d="M15.3 10L11.5 16.5L12.5 18H20.5L21.5 16.5L15.3 10Z" fill="#FFC107" />
+                                    <path d="M8.7 10L2.5 20.5L4 23H11.5L15.3 16.5L8.7 10Z" fill="#4CAF50" />
+                                    <path d="M15.3 10L8.7 10L11.5 5L15.3 10Z" fill="#2196F3" />
+                                </svg>
+                                From Drive
+                            </button>
+                            <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-[10px] font-medium text-white bg-black dark:bg-[#444] rounded whitespace-nowrap pointer-events-none z-50">
+                                Under Development
+                            </div>
+                        </div>
                     </div>
 
                 </div>
             </div>
 
+            <UploadModal
+                isOpen={isUploadModalOpen}
+                onClose={() => setIsUploadModalOpen(false)}
+                onUpload={(files) => console.log('Files to upload:', files)}
+            />
         </div>
     )
 }

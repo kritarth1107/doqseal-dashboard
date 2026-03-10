@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from 'react';
 import { Search, Filter, Eye, Maximize2, FileText, Image as ImageIcon, MoreVertical, Plus, Download, Trash2, ChevronLeft, ChevronRight } from 'lucide-react';
+import { UploadModal } from '@/components/UploadModal';
 
 const dummyDocuments = [
     { id: "d1", title: "Aadhaar Card", fileName: "aadhaar_front_back.pdf", type: "PDF", category: "Identity", size: "2.4 MB", date: "Oct 12, 2024" },
@@ -15,6 +16,12 @@ const dummyDocuments = [
 
 export default function DocumentsPage() {
     const [expandedDoc, setExpandedDoc] = useState<string | null>(null);
+    const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
+
+    const handleUpload = (files: File[]) => {
+        console.log("Uploading files:", files);
+        // Here you would typically integrate with your backend upload logic
+    };
 
     return (
         <div className="flex-1 flex flex-col h-full bg-[#f9f9f9] dark:bg-[#1a1a1a] relative overflow-hidden text-[#333] dark:text-[#ececec]">
@@ -35,7 +42,10 @@ export default function DocumentsPage() {
                                 <Filter className="w-4 h-4" />
                                 Filter
                             </button>
-                            <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-black hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 transition-colors rounded-xl shadow-sm">
+                            <button
+                                onClick={() => setIsUploadModalOpen(true)}
+                                className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-black hover:bg-gray-800 dark:bg-white dark:text-black dark:hover:bg-gray-200 transition-colors rounded-xl shadow-sm"
+                            >
                                 <Plus className="w-4 h-4" />
                                 Upload
                             </button>
@@ -191,6 +201,12 @@ export default function DocumentsPage() {
 
                 </div>
             </div>
+
+            <UploadModal
+                isOpen={isUploadModalOpen}
+                onClose={() => setIsUploadModalOpen(false)}
+                onUpload={handleUpload}
+            />
         </div>
     );
 }
