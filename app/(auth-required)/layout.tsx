@@ -1,7 +1,7 @@
 
-
 import { Sidebar } from "@/components/Sidebar";
 import { TopHeader } from "@/components/TopHeader";
+import { AuthProvider } from "@/components/AuthProvider";
 
 export default function RootLayout({
   children,
@@ -9,13 +9,14 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-   
-          <div className="flex h-screen bg-white dark:bg-[#212121] overflow-hidden sm:flex-row flex-col">
-            <Sidebar />
-            <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden relative">
-              <TopHeader />
-              {children}
-            </main>
-          </div>
+    <AuthProvider>
+      <div className="flex h-screen bg-white dark:bg-[#212121] overflow-hidden sm:flex-row flex-col">
+        <Sidebar />
+        <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden relative">
+          <TopHeader />
+          {children}
+        </main>
+      </div>
+    </AuthProvider>
   );
 }

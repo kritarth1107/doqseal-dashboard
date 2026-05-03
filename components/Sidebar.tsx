@@ -20,6 +20,7 @@ import {
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
+import { useAuth } from "@/components/AuthProvider";
 
 export function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -27,6 +28,20 @@ export function Sidebar() {
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const pathname = usePathname();
+  const { userData } = useAuth();
+
+  const handleLogout = async () => {
+    try {
+      const response = await fetch('/api/auth/logout', {
+        method: 'POST',
+      });
+      if (response.ok) {
+        window.location.href = '/auth';
+      }
+    } catch (error) {
+      console.error('Logout failed:', error);
+    }
+  };
 
   const navGroups = [
     {
@@ -153,7 +168,7 @@ export function Sidebar() {
             />
             <div className="absolute bottom-[72px] left-2 w-64 bg-white dark:bg-[#2c2c2c] border border-gray-200 dark:border-white/10 rounded-xl shadow-lg z-50 overflow-hidden text-sm text-gray-700 dark:text-gray-300 transform origin-bottom-left transition-all">
               <div className="px-4 py-3 border-b border-gray-100 dark:border-white/10">
-                <div className="truncate text-black dark:text-white font-medium">singhalkritarth@gmail.com</div>
+                <div className="truncate text-black dark:text-white font-medium">{userData?.email || 'Loading...'}</div>
               </div>
               <div className="p-1.5">
                 <Link href="/settings" onClick={() => setShowProfileMenu(false)} className="flex w-full items-center justify-between gap-2 px-2.5 py-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors text-left">
@@ -187,7 +202,10 @@ export function Sidebar() {
 
                 <div className="h-px bg-gray-100 dark:bg-white/10 my-1 mx-2" />
 
-                <button className="flex w-full items-center gap-2 px-2.5 py-2 mt-1 hover:bg-red-500/10 rounded-lg transition-colors text-left text-red-500 font-medium">
+                <button 
+                  onClick={handleLogout}
+                  className="flex w-full items-center gap-2 px-2.5 py-2 mt-1 hover:bg-red-500/10 rounded-lg transition-colors text-left text-red-500 font-medium"
+                >
                   <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><path d="M9 21H5a2 2 0 0 1-2-2V5a2 2 0 0 1 2-2h4"></path><polyline points="16 17 21 12 16 7"></polyline><line x1="21" y1="12" x2="9" y2="12"></line></svg>
                   Log out
                 </button>
@@ -202,13 +220,17 @@ export function Sidebar() {
           className={`p-3 mx-2 my-2 rounded-xl hover:bg-gray-200/50 dark:hover:bg-white/5 transition-colors cursor-pointer flex items-center group ${isCollapsed ? 'justify-center p-1.5' : 'justify-between'}`}
         >
           <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3 overflow-hidden'}`}>
-            <div className="w-8 h-8 rounded-full bg-[#e3d5c8] text-[#5c4a3d] flex items-center justify-center font-semibold text-sm shrink-0">
-              KA
+            <div className="w-8 h-8 rounded-full bg-[#e3d5c8] text-[#5c4a3d] flex items-center justify-center font-semibold text-sm shrink-0 uppercase">
+              {userData?.name?.split(' ').map(n => n[0]).join('').slice(0, 2) || '??'}
             </div>
             {!isCollapsed && (
               <div className="flex flex-col truncate">
-                <span className="text-sm font-medium text-black dark:text-white leading-tight truncate">Kritarth Agrawal</span>
-                <span className="text-xs text-gray-500">Business Plan</span>
+                <span className="text-sm font-medium text-black dark:text-white leading-tight truncate">
+                  {userData?.name || 'Loading...'}
+                </span>
+                <span className="text-xs text-gray-500 truncate">
+                  {userData?.memberships?.[0]?.organisation?.name || 'No Organisation'}
+                </span>
               </div>
             )}
           </div>
