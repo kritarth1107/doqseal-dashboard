@@ -5,19 +5,40 @@ import { Mail, ArrowRight, Loader2, Command } from 'lucide-react'
 
 export default function AuthPage() {
     const [email, setEmail] = useState('')
+    const [name, setName] = useState('')
     const [otp, setOtp] = useState(['', '', '', '', '', ''])
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [showOTP, setShowOTP] = useState(false)
+    const [userExists, setUserExists] = useState(true)
+    const [token, setToken] = useState('')
 
-    const handleEmailSubmit = (e: React.FormEvent) => {
+    const handleEmailSubmit = async (e: React.FormEvent) => {
         e.preventDefault()
         if (!email) return
         setIsSubmitting(true)
-        // Simulate API call for sending OTP
-        setTimeout(() => {
+        
+        try {
+            const response = await fetch('/api/auth/login-with-email', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ email }),
+            })
+
+            const data = await response.json()
+
+            if (response.ok) {
+                setUserExists(data.data.userExists)
+                setToken(data.data.token)
+                setShowOTP(true)
+            } else {
+                alert(data.error || "Failed to send OTP. Please try again.")
+            }
+        } catch (error) {
+            console.error("Auth error:", error)
+            alert("An error occurred. Please try again.")
+        } finally {
             setIsSubmitting(false)
-            setShowOTP(true)
-        }, 1200)
+        }
     }
 
     const handleOtpChange = (index: number, value: string) => {
@@ -85,12 +106,16 @@ export default function AuthPage() {
                         <img src="/sakshya_logo.svg" alt="Sakshya Logo" className="w-6 h-6 brightness-0 shrink-0" />
                     </div>
                     <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50 mb-2 tracking-tight">
-                        {showOTP ? "Verify it's you" : "Welcome back"}
+                        {showOTP ? (userExists ? "Verify it's you" : "Create your account") : "Welcome back"}
                     </h1>
                     {showOTP ? (
                         <div className="flex flex-col items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400 text-center px-2">
                             <p>
-                                We've sent a 6-digit verification code to <span className="font-semibold text-zinc-900 dark:text-zinc-50">{email}</span>.
+                                {userExists 
+                                    ? `We've sent a 6-digit verification code to ` 
+                                    : `Enter the 6-digit code sent to `}
+                                <span className="font-semibold text-zinc-900 dark:text-zinc-50">{email}</span>
+                                {!userExists && " to finish setting up your account."}
                             </p>
                             <p className="text-xs opacity-80">
                                 Can't find it? Please check your <span className="text-zinc-900 dark:text-zinc-50 font-medium">spam</span> or junk folder.
@@ -161,22 +186,46 @@ export default function AuthPage() {
                     </>
                 ) : (
                     <form onSubmit={handleVerifyOtp} className="space-y-6 mb-8">
-                        <div className="flex justify-between gap-2">
-                            {otp.map((digit, idx) => (
-                                <input
-                                    key={idx}
-                                    id={`otp-${idx}`}
-                                    type="text"
-                                    inputMode="numeric"
-                                    autoComplete="one-time-code"
-                                    maxLength={1}
-                                    value={digit}
-                                    onChange={(e) => handleOtpChange(idx, e.target.value)}
-                                    onKeyDown={(e) => handleKeyDown(idx, e)}
-                                    onPaste={handlePaste}
-                                    className="w-12 h-14 text-center text-lg font-semibold bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl focus:border-[#D4F46A] focus:ring-1 focus:ring-[#D4F46A] outline-none transition-all text-zinc-900 dark:text-zinc-50"
-                                />
-                            ))}
+                        {!userExists && (
+                            <div className="space-y-2 animate-in fade-in slide-in-from-top-4 duration-500">
+                                <label className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest px-1">
+                                    Full Name
+                                </label>
+                                <div className="relative overflow-hidden rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 focus-within:border-zinc-900 dark:focus-within:border-zinc-100 transition-colors">
+                                    <input
+                                        type="text"
+                                        value={name}
+                                        onChange={(e) => setName(e.target.value)}
+                                        placeholder="John Doe"
+                                        required
+                                        className="block w-full px-4 py-3 bg-transparent text-sm text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none transition-all"
+                                    />
+                                </div>
+                            </div>
+                        )}
+                        <div className="space-y-2">
+                            {!userExists && (
+                                <label className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest px-1">
+                                    Verification Code
+                                </label>
+                            )}
+                            <div className="flex justify-between gap-2">
+                                {otp.map((digit, idx) => (
+                                    <input
+                                        key={idx}
+                                        id={`otp-${idx}`}
+                                        type="text"
+                                        inputMode="numeric"
+                                        autoComplete="one-time-code"
+                                        maxLength={1}
+                                        value={digit}
+                                        onChange={(e) => handleOtpChange(idx, e.target.value)}
+                                        onKeyDown={(e) => handleKeyDown(idx, e)}
+                                        onPaste={handlePaste}
+                                        className="w-12 h-14 text-center text-lg font-semibold bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl focus:border-[#D4F46A] focus:ring-1 focus:ring-[#D4F46A] outline-none transition-all text-zinc-900 dark:text-zinc-50"
+                                    />
+                                ))}
+                            </div>
                         </div>
                         
                         <div className="flex flex-col items-center gap-6">
