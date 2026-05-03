@@ -1,7 +1,7 @@
 "use client";
 import React, { useState, useEffect } from 'react';
 import { Search, Folder, Clock, Upload, Monitor, ArrowUp } from 'lucide-react';
-import Link from 'next/link';
+
 
 import chatTitlesData from '@/utils/new_chat_titles.json';
 import { UploadModal } from '@/components/UploadModal';
@@ -90,14 +90,6 @@ const NewSearchPage = () => {
     return (
         <div className="flex-1 flex flex-col h-full bg-[#f9f9f9] dark:bg-[#1f1f1f] relative">
 
-            {/* Top Right Header - Plan & Upgrade */}
-            <div className="absolute top-4 right-6 flex items-center justify-end w-full z-10">
-                <div className="flex items-center text-xs font-medium text-gray-500 bg-white dark:bg-[#2c2c2c] border border-gray-200 dark:border-white/10 rounded-full px-3 py-1.5 shadow-sm">
-                    <span className="text-gray-400">Free plan</span>
-                    <span className="mx-2 text-gray-300 dark:text-gray-600">•</span>
-                    <Link href="#" className="text-gray-700 dark:text-gray-200 hover:text-black dark:hover:text-white transition-colors">Upgrade</Link>
-                </div>
-            </div>
 
             <div className="flex-1 overflow-y-auto w-full flex flex-col items-center justify-center p-4 sm:p-6 pb-32">
                 <div className="max-w-3xl w-full flex flex-col items-center justify-center -mt-16 text-center">

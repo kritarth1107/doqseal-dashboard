@@ -5,12 +5,71 @@ import { Mail, ArrowRight, Loader2, Command } from 'lucide-react'
 
 export default function AuthPage() {
     const [email, setEmail] = useState('')
+    const [otp, setOtp] = useState(['', '', '', '', '', ''])
     const [isSubmitting, setIsSubmitting] = useState(false)
+    const [showOTP, setShowOTP] = useState(false)
 
     const handleEmailSubmit = (e: React.FormEvent) => {
         e.preventDefault()
+        if (!email) return
         setIsSubmitting(true)
-        // Simulate API call for OTP/Magic Link
+        // Simulate API call for sending OTP
+        setTimeout(() => {
+            setIsSubmitting(false)
+            setShowOTP(true)
+        }, 1200)
+    }
+
+    const handleOtpChange = (index: number, value: string) => {
+        if (value.length > 1) {
+            // Handle cases where multiple characters are entered (like paste or fast typing)
+            if (value.length === 6 && /^\d{6}$/.test(value)) {
+                setOtp(value.split(''))
+                return
+            }
+            value = value.slice(-1)
+        }
+        if (!/^\d*$/.test(value)) return
+
+        const newOtp = [...otp]
+        newOtp[index] = value
+        setOtp(newOtp)
+
+        // Auto focus next input
+        if (value && index < 5) {
+            const nextInput = document.getElementById(`otp-${index + 1}`)
+            nextInput?.focus()
+        }
+    }
+
+    const handlePaste = (e: React.ClipboardEvent) => {
+        e.preventDefault()
+        const pastedData = e.clipboardData.getData('text').slice(0, 6)
+        if (!/^\d+$/.test(pastedData)) return
+
+        const newOtp = [...otp]
+        pastedData.split('').forEach((char, i) => {
+            if (i < 6) newOtp[i] = char
+        })
+        setOtp(newOtp)
+        
+        // Focus the last input or the next empty one
+        const nextIndex = Math.min(pastedData.length, 5)
+        document.getElementById(`otp-${nextIndex}`)?.focus()
+    }
+
+
+    const handleKeyDown = (index: number, e: React.KeyboardEvent) => {
+        if (e.key === 'Backspace' && !otp[index] && index > 0) {
+            const prevInput = document.getElementById(`otp-${index - 1}`)
+            prevInput?.focus()
+        }
+    }
+
+    const handleVerifyOtp = (e: React.FormEvent) => {
+        e.preventDefault()
+        setIsSubmitting(true)
+        // Simulate OTP verification
         setTimeout(() => setIsSubmitting(false), 2000)
     }
 
@@ -20,70 +79,126 @@ export default function AuthPage() {
             <div className="absolute inset-0 bg-[linear-gradient(to_right,#D4F46A_1px,transparent_1px),linear-gradient(to_bottom,#D4F46A_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_110%)] opacity-20 pointer-events-none" />
             <div className="absolute top-[10%] left-[50%] translate-x-[-50%] w-[40%] h-[40%] rounded-full bg-[#D4F46A]/20 dark:bg-[#D4F46A]/10 blur-[120px] pointer-events-none" />
 
-            <div className="w-full max-w-[26rem] bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl border border-zinc-200/50 dark:border-zinc-800/50 rounded-[2rem] shadow-sm  p-8 relative z-10 transition-all duration-300">
+            <div className="w-full max-w-[26rem] bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl border border-zinc-200/50 dark:border-zinc-800/50 rounded-[2rem] shadow-sm p-8 relative z-10 transition-all duration-500">
                 <div className="flex flex-col items-center mb-8">
                     <div className="w-12 h-12 bg-[#D4F46A] text-white dark:text-zinc-900 rounded-[14px] flex items-center justify-center mb-6 shadow-none rotate-3 hover:rotate-0 transition-transform duration-300">
-
                         <img src="/sakshya_logo.svg" alt="Sakshya Logo" className="w-6 h-6 brightness-0 shrink-0" />
                     </div>
                     <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50 mb-2 tracking-tight">
-                        Welcome back
+                        {showOTP ? "Verify it's you" : "Welcome back"}
                     </h1>
-                    <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center">
-                        Enter your details to sign in to your account
-                    </p>
-                </div>
-
-                {/* Email OTP Login */}
-                <form onSubmit={handleEmailSubmit} className="space-y-4 mb-8 group">
-                    <div className="relative overflow-hidden rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 focus-within:border-zinc-900 dark:focus-within:border-zinc-100 transition-colors">
-                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-400 dark:text-zinc-500">
-                            <Mail className="h-5 w-5" />
+                    {showOTP ? (
+                        <div className="flex flex-col items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400 text-center px-2">
+                            <p>
+                                We've sent a 6-digit verification code to <span className="font-semibold text-zinc-900 dark:text-zinc-50">{email}</span>.
+                            </p>
+                            <p className="text-xs opacity-80">
+                                Can't find it? Please check your <span className="text-zinc-900 dark:text-zinc-50 font-medium">spam</span> or junk folder.
+                            </p>
+                            <button 
+                                onClick={() => setShowOTP(false)}
+                                className="text-[#D4F46A] hover:underline font-medium text-xs mt-1"
+                            >
+                                Change email address
+                            </button>
                         </div>
-                        <input
-                            type="email"
-                            value={email}
-                            onChange={(e) => setEmail(e.target.value)}
-                            placeholder="name@example.com"
-                            required
-                            className="block w-full pl-11 pr-4 py-3.5 bg-transparent text-sm text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none transition-all"
-                        />
-                    </div>
-                    <button
-                        type="submit"
-                        disabled={isSubmitting || !email}
-                        className="w-full flex items-center justify-center gap-2 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 py-3.5 rounded-xl text-sm font-medium hover:bg-zinc-800 dark:hover:bg-zinc-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-zinc-900 dark:focus:ring-white transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md dark:ring-offset-zinc-950"
-                    >
-                        {isSubmitting ? (
-                            <Loader2 className="w-4 h-4 animate-spin" />
-                        ) : (
-                            <>
-                                Continue with Email <ArrowRight className="w-4 h-4 ml-1 group-focus-within:translate-x-1 transition-transform" />
-                            </>
-                        )}
-                    </button>
-                </form>
-
-                <div className="relative mb-8">
-                    <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                        <div className="w-full border-t border-zinc-200 dark:border-zinc-800" />
-                    </div>
-                    <div className="relative flex justify-center">
-                        <span className="px-3 bg-white/0 backdrop-blur-md text-[11px] font-medium text-zinc-500 uppercase tracking-widest">
-                            Or continue with
-                        </span>
-                    </div>
+                    ) : (
+                        <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center">
+                            Enter your details to sign in to your account
+                        </p>
+                    )}
                 </div>
 
-                {/* Social Logins */}
-                <div className="grid grid-cols-2 gap-3 mb-8">
-                    <SocialButton name="Google" icon={<GoogleIcon />} />
-                    <SocialButton name="Apple" icon={<AppleIcon />} />
-                    <SocialButton name="GitHub" icon={<GithubIcon />} />
-                    <SocialButton name="LinkedIn" icon={<LinkedInIcon />} />
-                    <SocialButton name="Facebook" icon={<FacebookIcon />} />
-                    <SocialButton name="X" icon={<XIcon />} />
-                </div>
+                {!showOTP ? (
+                    <>
+                        <form onSubmit={handleEmailSubmit} className="space-y-4 mb-8 group">
+                            <div className="relative overflow-hidden rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 focus-within:border-zinc-900 dark:focus-within:border-zinc-100 transition-colors">
+                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-400 dark:text-zinc-500">
+                                    <Mail className="h-5 w-5" />
+                                </div>
+                                <input
+                                    type="email"
+                                    value={email}
+                                    onChange={(e) => setEmail(e.target.value)}
+                                    placeholder="name@example.com"
+                                    required
+                                    className="block w-full pl-11 pr-4 py-3.5 bg-transparent text-sm text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none transition-all"
+                                />
+                            </div>
+                            <button
+                                type="submit"
+                                disabled={isSubmitting || !email}
+                                className="w-full flex items-center justify-center gap-2 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 py-3.5 rounded-xl text-sm font-medium hover:bg-zinc-800 dark:hover:bg-zinc-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-zinc-900 dark:focus:ring-white transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md dark:ring-offset-zinc-950"
+                            >
+                                {isSubmitting ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                    <>
+                                        Continue with Email <ArrowRight className="w-4 h-4 ml-1 group-focus-within:translate-x-1 transition-transform" />
+                                    </>
+                                )}
+                            </button>
+                        </form>
+
+                        <div className="relative mb-8">
+                            <div className="absolute inset-0 flex items-center" aria-hidden="true">
+                                <div className="w-full border-t border-zinc-200 dark:border-zinc-800" />
+                            </div>
+                            <div className="relative flex justify-center">
+                                <span className="px-3 bg-white/0 backdrop-blur-md text-[11px] font-medium text-zinc-500 uppercase tracking-widest">
+                                    Or continue with
+                                </span>
+                            </div>
+                        </div>
+
+                        {/* Social Logins */}
+                        <div className="flex items-center justify-center gap-4 mb-8">
+                            <SocialButton icon={<GoogleIcon />} />
+                            <SocialButton icon={<GithubIcon />} />
+                            <SocialButton icon={<LinkedInIcon />} />
+                            <SocialButton icon={<XIcon />} />
+                        </div>
+                    </>
+                ) : (
+                    <form onSubmit={handleVerifyOtp} className="space-y-6 mb-8">
+                        <div className="flex justify-between gap-2">
+                            {otp.map((digit, idx) => (
+                                <input
+                                    key={idx}
+                                    id={`otp-${idx}`}
+                                    type="text"
+                                    inputMode="numeric"
+                                    autoComplete="one-time-code"
+                                    maxLength={1}
+                                    value={digit}
+                                    onChange={(e) => handleOtpChange(idx, e.target.value)}
+                                    onKeyDown={(e) => handleKeyDown(idx, e)}
+                                    onPaste={handlePaste}
+                                    className="w-12 h-14 text-center text-lg font-semibold bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl focus:border-[#D4F46A] focus:ring-1 focus:ring-[#D4F46A] outline-none transition-all text-zinc-900 dark:text-zinc-50"
+                                />
+                            ))}
+                        </div>
+                        
+                        <div className="flex flex-col items-center gap-6">
+                            <button
+                                type="submit"
+                                disabled={isSubmitting || otp.some(d => !d)}
+                                className="w-full flex items-center justify-center gap-2 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 py-3.5 rounded-xl text-sm font-medium hover:bg-zinc-800 dark:hover:bg-zinc-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-zinc-900 dark:focus:ring-white transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md dark:ring-offset-zinc-950"
+                            >
+                                {isSubmitting ? (
+                                    <Loader2 className="w-4 h-4 animate-spin" />
+                                ) : (
+                                    "Verify OTP"
+                                )}
+                            </button>
+                        </div>
+                        <div className="text-center">
+                            <button type="button" className="text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-50 transition-colors">
+                                Resend code in 0:59
+                            </button>
+                        </div>
+                    </form>
+                )}
 
                 <p className="text-center text-[13px] text-zinc-500 dark:text-zinc-400 leading-relaxed px-2">
                     By clicking continue, you agree to our{' '}
@@ -96,14 +211,13 @@ export default function AuthPage() {
     )
 }
 
-function SocialButton({ name, icon }: { name: string; icon: React.ReactNode }) {
+function SocialButton({ icon }: { icon: React.ReactNode }) {
     return (
         <button
             type="button"
-            className="flex items-center justify-center gap-2.5 w-full px-4 py-2.5 bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-xl hover:bg-zinc-50 dark:hover:bg-zinc-800 text-sm font-medium text-zinc-700 dark:text-zinc-300 transition-all focus:outline-none focus:ring-2 focus:ring-zinc-200 dark:focus:ring-zinc-700 group shadow-sm hover:shadow active:scale-[0.98]"
+            className="flex items-center justify-center w-12 h-12 bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-full hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all focus:outline-none focus:ring-2 focus:ring-zinc-200 dark:focus:ring-zinc-700 group shadow-sm hover:shadow active:scale-[0.98]"
         >
             <span className="w-5 h-5 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">{icon}</span>
-            <span>{name}</span>
         </button>
     )
 }
@@ -121,14 +235,6 @@ function GoogleIcon() {
     )
 }
 
-function AppleIcon() {
-    return (
-        <svg viewBox="0 0 24 24" className="w-full h-full text-black dark:text-white" fill="currentColor" aria-hidden="true">
-            <path d="M16.365 7.063c-.022 2.655 2.212 3.52 2.247 3.535-.018.06-3.483 11.942-8.358 11.942-2.185 0-3.3-1.353-5.594-1.353-2.296 0-3.58 1.32-5.542 1.353-1.996.033-4.47-2.636-6.195-5.183-3.483-5.148-4.228-11.455-1.168-14.156 1.487-1.31 3.238-1.545 4.542-1.545 2.305 0 3.407 1.196 5.61 1.196 2.012 0 3.45-1.258 5.757-1.23 1.83.02 3.864.764 4.86 2.046-3.9 1.944-3.864 5.346-3.834 5.39z" />
-            <path d="M14.777 4.535c.804-.986 1.34-2.338 1.19-3.71-1.157.047-2.583.784-3.415 1.785-.664.793-1.298 2.18-1.116 3.515 1.28.1 2.535-.615 3.34-1.59z" />
-        </svg>
-    )
-}
 
 function GithubIcon() {
     return (
@@ -146,13 +252,6 @@ function LinkedInIcon() {
     )
 }
 
-function FacebookIcon() {
-    return (
-        <svg viewBox="0 0 24 24" className="w-full h-full text-[#1877F2]" fill="currentColor" aria-hidden="true">
-            <path d="M24 12.073c0-6.627-5.373-12-12-12s-12 5.373-12 12c0 5.99 4.388 10.954 10.125 11.854v-8.385H7.078v-3.469h3.047V9.43c0-3.007 1.792-4.669 4.533-4.669 1.312 0 2.686.235 2.686.235v2.953H15.83c-1.491 0-1.956.925-1.956 1.874v2.25h3.328l-.532 3.469h-2.796v8.385C19.612 23.027 24 18.062 24 12.073z" />
-        </svg>
-    )
-}
 
 function XIcon() {
     return (
