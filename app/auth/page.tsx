@@ -87,11 +87,39 @@ export default function AuthPage() {
         }
     }
 
-    const handleVerifyOtp = (e: React.FormEvent) => {
+    const handleVerifyOtp = async (e: React.FormEvent) => {
         e.preventDefault()
+        const otpValue = otp.join('')
+        if (otpValue.length !== 6) return
+        
         setIsSubmitting(true)
-        // Simulate OTP verification
-        setTimeout(() => setIsSubmitting(false), 2000)
+        
+        try {
+            const response = await fetch('/api/auth/login-with-email/verify-otp', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({ 
+                    otp: otpValue, 
+                    token, 
+                    email, 
+                    name: userExists ? undefined : name 
+                }),
+            })
+
+            const data = await response.json()
+
+            if (response.ok) {
+                // On success, redirect to dashboard
+                window.location.href = '/dashboard'
+            } else {
+                alert(data.error || "Verification failed. Please check your code.")
+            }
+        } catch (error) {
+            console.error("Verification error:", error)
+            alert("An error occurred during verification. Please try again.")
+        } finally {
+            setIsSubmitting(false)
+        }
     }
 
     return (
@@ -197,7 +225,6 @@ export default function AuthPage() {
                                         value={name}
                                         onChange={(e) => setName(e.target.value)}
                                         placeholder="John Doe"
-                                        required
                                         className="block w-full px-4 py-3 bg-transparent text-sm text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none transition-all"
                                     />
                                 </div>
