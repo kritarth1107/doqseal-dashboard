@@ -20,12 +20,18 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const response = await fetch(`${apiUrl}auth/verify-otp`, {
+    const { getHeadersFromRequest } = await import("@/lib/header-utils");
+    const headers = getHeadersFromRequest(request);
+
+    const response = await fetch(`${apiUrl}kingdom/login-request/verify-otp`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({ otp, token, name: name || undefined, email }),
+      headers,
+      body: JSON.stringify({ 
+        otp, 
+        token, 
+        name: name || undefined, 
+        email
+      }),
     });
 
     const data = await response.json();

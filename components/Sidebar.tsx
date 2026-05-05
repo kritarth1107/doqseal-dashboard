@@ -21,6 +21,7 @@ import {
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
+import { signOut } from "next-auth/react";
 
 export function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -32,9 +33,14 @@ export function Sidebar() {
 
   const handleLogout = async () => {
     try {
+      // 1. Sign out from NextAuth
+      await signOut({ redirect: false });
+
+      // 2. Clear the session_token cookie via our custom logout endpoint
       const response = await fetch('/api/auth/logout', {
         method: 'POST',
       });
+      
       if (response.ok) {
         window.location.href = '/auth';
       }
@@ -220,8 +226,12 @@ export function Sidebar() {
           className={`p-3 mx-2 my-2 rounded-xl hover:bg-gray-200/50 dark:hover:bg-white/5 transition-colors cursor-pointer flex items-center group ${isCollapsed ? 'justify-center p-1.5' : 'justify-between'}`}
         >
           <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3 overflow-hidden'}`}>
-            <div className="w-8 h-8 rounded-full bg-[#e3d5c8] text-[#5c4a3d] flex items-center justify-center font-semibold text-sm shrink-0 uppercase">
-              {userData?.name?.split(' ').map(n => n[0]).join('').slice(0, 2) || '??'}
+            <div className="w-8 h-8 rounded-full bg-[#e3d5c8] text-[#5c4a3d] flex items-center justify-center font-semibold text-sm shrink-0">
+              {userData?.avatar ? (
+                <img src={userData.avatar} alt={userData.name} className="w-full h-full rounded-full object-cover" />
+              ) : (
+                userData?.name?.split(' ').map(n => n[0]).join('').slice(0, 2) || '??'
+              )}
             </div>
             {!isCollapsed && (
               <div className="flex flex-col truncate">
@@ -229,7 +239,7 @@ export function Sidebar() {
                   {userData?.name || 'Loading...'}
                 </span>
                 <span className="text-xs text-gray-500 truncate">
-                  {userData?.memberships?.[0]?.organisation?.name || 'No Organisation'}
+                  {userData?.organisationName || 'No Organisation'}
                 </span>
               </div>
             )}

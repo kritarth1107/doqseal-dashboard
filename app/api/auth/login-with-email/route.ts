@@ -19,11 +19,12 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const response = await fetch(`${apiUrl}auth/request-otp`, {
+    const { getHeadersFromRequest } = await import("@/lib/header-utils");
+    const headers = getHeadersFromRequest(request);
+
+    const response = await fetch(`${apiUrl}kingdom/login-request`, {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
+      headers,
       body: JSON.stringify({ email }),
     });
 

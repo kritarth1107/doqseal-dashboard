@@ -2,6 +2,8 @@
 
 import { useState } from 'react'
 import { Mail, ArrowRight, Loader2, Command } from 'lucide-react'
+import { signIn } from 'next-auth/react'
+import { toast } from 'sonner'
 
 export default function AuthPage() {
     const [email, setEmail] = useState('')
@@ -27,15 +29,16 @@ export default function AuthPage() {
             const data = await response.json()
 
             if (response.ok) {
-                setUserExists(data.data.userExists)
-                setToken(data.data.token)
+                setUserExists(data.data.isExistingUser)
+                setToken(data.data.otpToken)
                 setShowOTP(true)
+                toast.success("OTP sent successfully")
             } else {
-                alert(data.error || "Failed to send OTP. Please try again.")
+                toast.error(data.error || "Failed to send OTP. Please try again.")
             }
         } catch (error) {
             console.error("Auth error:", error)
-            alert("An error occurred. Please try again.")
+            toast.error("An error occurred. Please try again.")
         } finally {
             setIsSubmitting(false)
         }
@@ -109,14 +112,14 @@ export default function AuthPage() {
             const data = await response.json()
 
             if (response.ok) {
-                // On success, redirect to dashboard
+                toast.success("Authentication successful!")
                 window.location.href = '/dashboard'
             } else {
-                alert(data.error || "Verification failed. Please check your code.")
+                toast.error(data.error || "Verification failed. Please check your code.")
             }
         } catch (error) {
             console.error("Verification error:", error)
-            alert("An error occurred during verification. Please try again.")
+            toast.error("An error occurred during verification. Please try again.")
         } finally {
             setIsSubmitting(false)
         }
@@ -206,10 +209,10 @@ export default function AuthPage() {
 
                         {/* Social Logins */}
                         <div className="flex items-center justify-center gap-4 mb-8">
-                            <SocialButton icon={<GoogleIcon />} />
-                            <SocialButton icon={<GithubIcon />} />
-                            <SocialButton icon={<LinkedInIcon />} />
-                            <SocialButton icon={<XIcon />} />
+                            <SocialButton icon={<GoogleIcon />} onClick={() => signIn('google', { callbackUrl: '/dashboard' })} />
+                            <SocialButton icon={<GithubIcon />} onClick={() => signIn('github', { callbackUrl: '/dashboard' })} />
+                            <SocialButton icon={<LinkedInIcon />} onClick={() => signIn('linkedin', { callbackUrl: '/dashboard' })} />
+                            <SocialButton icon={<XIcon />} onClick={() => signIn('twitter', { callbackUrl: '/dashboard' })} />
                         </div>
                     </>
                 ) : (
@@ -287,10 +290,11 @@ export default function AuthPage() {
     )
 }
 
-function SocialButton({ icon }: { icon: React.ReactNode }) {
+function SocialButton({ icon, onClick }: { icon: React.ReactNode, onClick?: () => void }) {
     return (
         <button
             type="button"
+            onClick={onClick}
             className="flex items-center justify-center w-12 h-12 bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-full hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all focus:outline-none focus:ring-2 focus:ring-zinc-200 dark:focus:ring-zinc-700 group shadow-sm hover:shadow active:scale-[0.98]"
         >
             <span className="w-5 h-5 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">{icon}</span>

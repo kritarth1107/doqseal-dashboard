@@ -4,6 +4,7 @@ import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
 import { Settings as SettingsIcon, Monitor, Sun, Moon } from 'lucide-react';
 import { useTheme } from 'next-themes';
+import { useAuth } from '@/components/AuthProvider';
 
 const SETTINGS_TABS = [
     { id: 'general', label: 'General', path: '/settings' },
@@ -24,6 +25,8 @@ export default function SettingsPage() {
     const [responseCompletions, setResponseCompletions] = useState(true);
     const { theme, setTheme } = useTheme();
     const [mounted, setMounted] = useState(false);
+
+    const { userData } = useAuth();
 
     // Wait for mount to avoid hydration mismatch
     React.useEffect(() => {
@@ -73,22 +76,27 @@ export default function SettingsPage() {
                                         <div className="flex flex-col gap-2">
                                             <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Full name</label>
                                             <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-full bg-[#e3d5c8] text-[#5c4a3d] flex items-center justify-center font-semibold shrink-0">
-                                                    KA
+                                                <div className="w-10 h-10 rounded-full bg-[#e3d5c8] text-[#5c4a3d] flex items-center justify-center font-semibold shrink-0 overflow-hidden">
+                                                    {userData?.avatar ? (
+                                                        <img src={userData.avatar} alt={userData.name} className="w-full h-full object-cover" />
+                                                    ) : (
+                                                        userData?.name?.split(' ').map(n => n[0]).join('').slice(0, 2) || '??'
+                                                    )}
                                                 </div>
                                                 <input
                                                     type="text"
-                                                    defaultValue="Kritarth Agrawal"
+                                                    defaultValue={userData?.name}
                                                     className="flex-1 bg-white dark:bg-[#2c2c2c] border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-gray-500 transition-shadow"
                                                 />
                                             </div>
                                         </div>
 
                                         <div className="flex flex-col gap-2">
-                                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">What should Sakshya call you?</label>
+                                            <label className="text-sm font-medium text-gray-700 dark:text-gray-300">Email address</label>
                                             <input
                                                 type="text"
-                                                defaultValue="Kritarth"
+                                                disabled
+                                                defaultValue={userData?.email}
                                                 className="w-full bg-white dark:bg-[#2c2c2c] border border-gray-200 dark:border-white/10 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 dark:focus:ring-gray-500 transition-shadow"
                                             />
                                         </div>

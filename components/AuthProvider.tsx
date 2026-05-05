@@ -2,40 +2,12 @@
 
 import React, { createContext, useContext, useEffect, useState } from "react";
 
-interface Organisation {
-  id: number;
-  public_id: string;
-  name: string;
-  slug: string;
-  plan_details: any;
-  member_count: number;
-  logo_url: string;
-  website: string;
-  is_active: boolean;
-  created_at: string;
-  updated_at: string;
-}
-
-interface Membership {
-  id: number;
-  user_id: string;
-  organisation_id: number;
-  organisation: Organisation;
-  role: string;
-  created_at: string;
-  updated_at: string;
-}
-
 interface UserData {
-  id: number;
-  user_id: string;
+  userId: string;
   name: string;
   email: string;
   avatar: string;
-  memberships: Membership[];
-  last_login_at: string;
-  created_at: string;
-  updated_at: string;
+  organisationName: string;
 }
 
 interface AuthContextType {
@@ -54,11 +26,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     try {
       const response = await fetch("/api/auth/me");
       const data = await response.json();
-      if (data.success) {
+      if (data.success && data.data) {
         setUserData(data.data);
+      } else {
+        setUserData(null);
       }
     } catch (error) {
       console.error("Failed to fetch user:", error);
+      setUserData(null);
     } finally {
       setLoading(false);
     }
