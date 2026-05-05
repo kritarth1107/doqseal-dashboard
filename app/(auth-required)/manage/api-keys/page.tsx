@@ -11,8 +11,29 @@ import {
     Eye,
     EyeOff,
     ExternalLink,
-    BookOpen
+    BookOpen,
+    X,
+    ShieldCheck,
+    Calendar,
+    Infinity
 } from 'lucide-react';
+import { useAuth } from '@/components/AuthProvider';
+import { toast } from 'sonner';
+import { useEffect, useCallback } from 'react';
+
+interface ApiKeyData {
+    _id: string;
+    name: string;
+    key: string; // This is the hint
+    expiresAt?: string;
+    createdAt: string;
+    createdBy: {
+        id: string;
+        name: string;
+        avatar?: string;
+        email: string;
+    };
+}
 
 const tabs = [
     { id: 'quickstart', label: 'Quickstart', icon: Terminal },
@@ -22,20 +43,99 @@ const tabs = [
 ];
 
 export default function ApiManagementPage() {
+    const { activeOrgId } = useAuth();
     const [activeTab, setActiveTab] = useState('quickstart');
     const [showKey, setShowKey] = useState(false);
-    const [copied, setCopied] = useState(false);
+    const [copiedId, setCopiedId] = useState<string | null>(null);
+    
+    // API Data state
+    const [apiKeys, setApiKeys] = useState<ApiKeyData[]>([]);
+    const [isLoadingKeys, setIsLoadingKeys] = useState(true);
 
-    // Mock data
-    const apiKey = "sk_sakshya_live_7x9f...8a2b";
-    const fullApiKey = "sk_sakshya_live_7x9f4m2n8q1p5r3t6v9w8a2b";
+    // Modal states
+    const [showCreateModal, setShowCreateModal] = useState(false);
+    const [isCreating, setIsCreating] = useState(false);
+    const [newKeyName, setNewKeyName] = useState('');
+    const [newKeyExpiry, setNewKeyExpiry] = useState<string>(''); // empty string for null/never
+    const [generatedKey, setGeneratedKey] = useState<string | null>(null);
+
+    // Mock data for credits (since we haven't implemented this yet)
     const creditsRemaining = 48500;
     const totalCredits = 50000;
 
-    const handleCopy = () => {
-        navigator.clipboard.writeText(fullApiKey);
-        setCopied(true);
-        setTimeout(() => setCopied(false), 2000);
+    const fetchApiKeys = useCallback(async () => {
+        if (!activeOrgId) return;
+        
+        setIsLoadingKeys(true);
+        try {
+            const response = await fetch(`/api/manage/api-keys/get?organisationId=${activeOrgId}`);
+            const data = await response.json();
+            
+            if (response.ok) {
+                setApiKeys(data.data || []);
+            } else {
+                toast.error(data.error || "Failed to load API keys");
+            }
+        } catch (error) {
+            console.error("Fetch keys error:", error);
+            toast.error("Error connecting to server");
+        } finally {
+            setIsLoadingKeys(false);
+        }
+    }, [activeOrgId]);
+
+    useEffect(() => {
+        fetchApiKeys();
+    }, [fetchApiKeys]);
+
+    const handleCopy = (text: string, id: string = 'default') => {
+        navigator.clipboard.writeText(text);
+        setCopiedId(id);
+        setTimeout(() => setCopiedId(null), 2000);
+    };
+
+    const handleCreateKey = async (e: React.FormEvent) => {
+        e.preventDefault();
+        if (!activeOrgId) {
+            toast.error("No active organisation selected");
+            return;
+        }
+        
+        setIsCreating(true);
+        
+        try {
+            const response = await fetch('/api/manage/api-keys/create', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    name: newKeyName,
+                    organisationId: activeOrgId,
+                    expiresInDays: newKeyExpiry || undefined
+                }),
+            });
+
+            const data = await response.json();
+
+            if (response.ok) {
+                setGeneratedKey(data.data.key || data.data.token || data.data); 
+                toast.success("API key created successfully");
+                fetchApiKeys(); // Refresh the list
+            } else {
+                toast.error(data.error || "Failed to create API key");
+            }
+        } catch (error) {
+            console.error("Create API key error:", error);
+            toast.error("An unexpected error occurred");
+        } finally {
+            setIsCreating(false);
+        }
+    };
+
+    const resetModal = () => {
+        setShowCreateModal(false);
+        setGeneratedKey(null);
+        setNewKeyName('');
+        setNewKeyExpiry('');
     };
 
     const renderQuickstart = () => (
@@ -88,7 +188,10 @@ export default function ApiManagementPage() {
                         <h3 className="text-lg font-medium text-[#333] dark:text-[#ececec]">API Keys</h3>
                         <p className="text-sm text-gray-500 dark:text-gray-400">Manage your secret keys to authenticate requests.</p>
                     </div>
-                    <button className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-black bg-[#D4F46A] hover:bg-[#cbf046] transition-colors rounded-xl shadow-sm">
+                    <button 
+                        onClick={() => setShowCreateModal(true)}
+                        className="flex items-center gap-2 px-4 py-2 text-sm font-medium text-black bg-[#D4F46A] hover:bg-[#cbf046] transition-colors rounded-xl shadow-sm"
+                    >
                         <Plus className="w-4 h-4" />
                         Create new secret key
                     </button>
@@ -105,72 +208,70 @@ export default function ApiManagementPage() {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-gray-100 dark:divide-white/5">
-                            <tr className="group hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
-                                <td className="px-6 py-4 font-medium text-[#333] dark:text-[#ececec]">Default Project Key</td>
-                                <td className="px-6 py-4">
-                                    <div className="flex items-center gap-3">
-                                        <code className="bg-gray-100 dark:bg-black/30 px-2 py-1 rounded text-gray-700 dark:text-gray-300 font-mono text-xs">
-                                            {showKey ? fullApiKey : apiKey}
-                                        </code>
-                                        <button onClick={() => setShowKey(!showKey)} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
-                                            {showKey ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
-                                        </button>
-                                        <button onClick={handleCopy} className="text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors">
-                                            {copied ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
-                                        </button>
-                                    </div>
-                                </td>
-                                <td className="px-6 py-4 text-gray-500">Oct 24, 2024</td>
-                                <td className="px-6 py-4 text-right">
-                                    <button className="text-red-500 hover:text-red-600 text-xs font-medium opacity-0 group-hover:opacity-100 transition-opacity">
-                                        Revoke
-                                    </button>
-                                </td>
-                            </tr>
+                            {isLoadingKeys ? (
+                                <tr>
+                                    <td colSpan={4} className="px-6 py-12 text-center">
+                                        <div className="flex flex-col items-center gap-3">
+                                            <div className="w-8 h-8 border-2 border-[#D4F46A] border-t-transparent rounded-full animate-spin" />
+                                            <span className="text-xs text-gray-500 font-medium">Loading your keys...</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ) : apiKeys.length === 0 ? (
+                                <tr>
+                                    <td colSpan={4} className="px-6 py-12 text-center">
+                                        <div className="flex flex-col items-center gap-2">
+                                            <div className="p-3 bg-gray-50 dark:bg-white/5 rounded-full">
+                                                <Key className="w-5 h-5 text-gray-400" />
+                                            </div>
+                                            <span className="text-xs text-gray-500 font-medium">No API keys found for this organisation</span>
+                                        </div>
+                                    </td>
+                                </tr>
+                            ) : (
+                                apiKeys.map((key) => (
+                                    <tr key={key._id} className="group hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+                                        <td className="px-6 py-4">
+                                            <div className="flex flex-col">
+                                                <span className="font-medium text-[#333] dark:text-[#ececec]">{key.name}</span>
+                                                <span className="text-[10px] text-gray-400 font-normal">Created by {key.createdBy.name}</span>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex items-center gap-3">
+                                                <code className="bg-gray-100 dark:bg-black/30 px-2.5 py-1.5 rounded-lg text-gray-700 dark:text-gray-300 font-mono text-[11px] border border-gray-200 dark:border-white/5 shadow-inner">
+                                                    {key.key}
+                                                </code>
+                                                <button 
+                                                    onClick={() => handleCopy(key.key, key._id)} 
+                                                    className="p-1.5 text-gray-400 hover:text-gray-600 dark:hover:text-gray-200 transition-colors hover:bg-white dark:hover:bg-white/5 rounded-md"
+                                                >
+                                                    {copiedId === key._id ? <Check className="w-3.5 h-3.5 text-green-500" /> : <Copy className="w-3.5 h-3.5" />}
+                                                </button>
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4">
+                                            <div className="flex flex-col">
+                                                <span className="text-xs text-gray-500">{new Date(key.createdAt).toLocaleDateString()}</span>
+                                                {key.expiresAt ? (
+                                                    <span className="text-[10px] text-red-400 font-medium">Expires {new Date(key.expiresAt).toLocaleDateString()}</span>
+                                                ) : (
+                                                    <span className="text-[10px] text-green-400 font-medium flex items-center gap-1">
+                                                        <Infinity className="w-2.5 h-2.5" /> Never expires
+                                                    </span>
+                                                )}
+                                            </div>
+                                        </td>
+                                        <td className="px-6 py-4 text-right">
+                                            <button className="text-red-500 hover:text-red-600 text-xs font-semibold px-3 py-1.5 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-all opacity-0 group-hover:opacity-100">
+                                                Revoke
+                                            </button>
+                                        </td>
+                                    </tr>
+                                ))
+                            )}
                         </tbody>
                     </table>
-                </div>
-            </div>
-
-            <div className="h-px w-full bg-gray-200 dark:bg-white/10" />
-
-            {/* Credits Section */}
-            <div className="space-y-4">
-                <div>
-                    <h3 className="text-lg font-medium text-[#333] dark:text-[#ececec]">Credits & Billing</h3>
-                    <p className="text-sm text-gray-500 dark:text-gray-400">Monitor your API usage credits for the current billing cycle.</p>
-                </div>
-
-                <div className="bg-white dark:bg-[#2c2c2c] rounded-xl border border-gray-200 dark:border-white/10 p-6 flex flex-col md:flex-row gap-8 items-center shadow-sm">
-                    <div className="flex-1 w-full">
-                        <div className="flex justify-between items-end mb-2">
-                            <div>
-                                <span className="text-3xl font-semibold text-[#333] dark:text-[#ececec]">{creditsRemaining.toLocaleString()}</span>
-                                <span className="text-gray-500 dark:text-gray-400 ml-2">/ {totalCredits.toLocaleString()} credits</span>
-                            </div>
-                            <span className="text-sm font-medium text-green-500 bg-green-50 dark:bg-green-500/10 px-2.5 py-1 rounded-full">Active</span>
-                        </div>
-                        {/* Progress Bar */}
-                        <div className="w-full h-3 bg-gray-100 dark:bg-black/30 rounded-full overflow-hidden mt-4">
-                            <div
-                                className="h-full bg-[#D4F46A] rounded-full transition-all duration-1000 ease-out"
-                                style={{ width: `${((totalCredits - creditsRemaining) / totalCredits) * 100}%` }}
-                            />
-                        </div>
-                        <div className="flex justify-between mt-2 text-xs text-gray-500">
-                            <span>{totalCredits - creditsRemaining} used</span>
-                            <span>Resets in 12 days</span>
-                        </div>
-                    </div>
-
-                    <div className="w-full md:w-auto flex flex-col gap-3">
-                        <button className="w-full px-6 py-2.5 text-sm font-medium text-[#333] dark:text-[#ececec] bg-white dark:bg-[#333] border border-gray-200 dark:border-white/10 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors rounded-xl shadow-sm whitespace-nowrap">
-                            Buy more credits
-                        </button>
-                        <button className="w-full px-6 py-2.5 text-sm font-medium text-gray-500 bg-transparent hover:bg-gray-50 dark:hover:bg-white/5 transition-colors rounded-xl whitespace-nowrap">
-                            Billing settings
-                        </button>
-                    </div>
                 </div>
             </div>
         </div>
@@ -298,6 +399,115 @@ export default function ApiManagementPage() {
                 </div>
 
             </div>
+
+            {/* Create API Key Modal */}
+            {showCreateModal && (
+                <div className="fixed inset-0 z-50 flex items-center justify-center p-4 sm:p-6 animate-in fade-in duration-300">
+                    <div className="absolute inset-0 bg-black/40 backdrop-blur-sm" onClick={resetModal} />
+                    
+                    <div className="relative w-full max-w-md bg-white dark:bg-[#1a1a1a] rounded-[2rem] shadow-2xl border border-gray-200 dark:border-white/10 overflow-hidden animate-in zoom-in-95 duration-300">
+                        <div className="p-6">
+                            <div className="flex items-center justify-between mb-6">
+                                <h3 className="text-xl font-bold text-[#333] dark:text-[#ececec]">
+                                    {generatedKey ? 'Key Created' : 'Create secret key'}
+                                </h3>
+                                <button onClick={resetModal} className="p-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-full transition-colors">
+                                    <X className="w-5 h-5 text-gray-400" />
+                                </button>
+                            </div>
+
+                            {generatedKey ? (
+                                <div className="space-y-6 animate-in slide-in-from-bottom-4 duration-500">
+                                    <div className="p-4 bg-green-50 dark:bg-green-500/10 rounded-2xl flex items-start gap-3 border border-green-100 dark:border-green-500/20">
+                                        <ShieldCheck className="w-5 h-5 text-green-500 shrink-0 mt-0.5" />
+                                        <p className="text-xs text-green-700 dark:text-green-400 leading-relaxed">
+                                            Please save this secret key somewhere safe. For security reasons, <strong>you won't be able to view it again</strong> through your dashboard.
+                                        </p>
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1">
+                                            Secret Key
+                                        </label>
+                                        <div className="relative flex items-center bg-gray-50 dark:bg-black/30 border border-gray-200 dark:border-white/10 rounded-xl p-3 font-mono text-sm">
+                                            <span className="flex-1 truncate pr-10 text-gray-700 dark:text-gray-300">
+                                                {generatedKey}
+                                            </span>
+                                            <button 
+                                                onClick={() => handleCopy(generatedKey, 'modal')}
+                                                className="absolute right-2 p-2 hover:bg-white dark:hover:bg-white/10 rounded-lg transition-colors text-gray-500"
+                                            >
+                                                {copiedId === 'modal' ? <Check className="w-4 h-4 text-green-500" /> : <Copy className="w-4 h-4" />}
+                                            </button>
+                                        </div>
+                                    </div>
+
+                                    <button 
+                                        onClick={resetModal}
+                                        className="w-full py-3.5 bg-black dark:bg-white text-white dark:text-black rounded-xl font-bold text-sm"
+                                    >
+                                        Done
+                                    </button>
+                                </div>
+                            ) : (
+                                <form onSubmit={handleCreateKey} className="space-y-5">
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1">
+                                            Name
+                                        </label>
+                                        <input
+                                            required
+                                            type="text"
+                                            value={newKeyName}
+                                            onChange={(e) => setNewKeyName(e.target.value)}
+                                            placeholder="e.g. Production Environment"
+                                            className="w-full px-4 py-3 bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:border-[#D4F46A] outline-none transition-all"
+                                        />
+                                    </div>
+
+                                    <div className="space-y-2">
+                                        <label className="text-[10px] font-bold text-gray-400 uppercase tracking-widest px-1">
+                                            Expiry (Days)
+                                        </label>
+                                        <div className="relative">
+                                            <input
+                                                type="number"
+                                                value={newKeyExpiry}
+                                                onChange={(e) => setNewKeyExpiry(e.target.value)}
+                                                placeholder="Leave empty for Never"
+                                                className="w-full px-11 py-3 bg-gray-50 dark:bg-black/20 border border-gray-200 dark:border-white/10 rounded-xl text-sm focus:border-[#D4F46A] outline-none transition-all"
+                                            />
+                                            <div className="absolute left-4 top-1/2 -translate-y-1/2">
+                                                {newKeyExpiry ? <Calendar className="w-4 h-4 text-gray-400" /> : <Infinity className="w-4 h-4 text-[#D4F46A]" />}
+                                            </div>
+                                        </div>
+                                        <p className="text-[10px] text-gray-500 px-1">
+                                            {newKeyExpiry ? `Key will expire in ${newKeyExpiry} days.` : 'Key will never expire.'}
+                                        </p>
+                                    </div>
+
+                                    <div className="flex gap-3 pt-2">
+                                        <button 
+                                            type="button"
+                                            onClick={resetModal}
+                                            className="flex-1 py-3.5 border border-gray-200 dark:border-white/10 rounded-xl font-bold text-sm text-gray-500 dark:text-gray-400 hover:bg-gray-50 dark:hover:bg-white/5 transition-colors"
+                                        >
+                                            Cancel
+                                        </button>
+                                        <button 
+                                            disabled={isCreating || !newKeyName}
+                                            type="submit"
+                                            className="flex-1 py-3.5 bg-black dark:bg-white text-white dark:text-black rounded-xl font-bold text-sm flex items-center justify-center gap-2 disabled:opacity-50"
+                                        >
+                                            {isCreating ? 'Creating...' : 'Create Key'}
+                                        </button>
+                                    </div>
+                                </form>
+                            )}
+                        </div>
+                    </div>
+                </div>
+            )}
         </div>
     );
 }
