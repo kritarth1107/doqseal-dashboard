@@ -16,7 +16,11 @@ import {
   Menu,
   Download,
   ChevronRight,
-  ChevronDown
+  ChevronDown,
+  ChevronsUpDown,
+  Check,
+  Plus,
+  Database
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
@@ -26,10 +30,11 @@ import { signOut } from "next-auth/react";
 export function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
+  const [showOrgSwitcher, setShowOrgSwitcher] = useState(false);
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
   const pathname = usePathname();
-  const { userData } = useAuth();
+  const { userData, activeOrg, activeOrgId, setActiveOrgId } = useAuth();
 
   const handleLogout = async () => {
     try {
@@ -78,11 +83,6 @@ export function Sidebar() {
         { name: "API Keys", icon: Key, href: "/manage/api-keys" },
         { name: "Limits", icon: Activity, href: "/manage/limits" },
         { name: "Members", icon: Users, href: "/manage/members" },
-        { name: "Security and Compliance", icon: ShieldCheck, href: "/manage/security" },
-      ]
-    },
-    {
-      items: [
         { name: "Settings", icon: Settings, href: "/settings" },
       ]
     }
@@ -147,6 +147,81 @@ export function Sidebar() {
               </svg>
             )}
           </button>
+        </div>
+
+        {/* Organisation Switcher (Top) */}
+        <div className={`px-3 mb-4 relative ${isCollapsed ? 'flex justify-center' : ''}`}>
+          <button
+            onClick={() => setShowOrgSwitcher(!showOrgSwitcher)}
+            className={`flex items-center gap-2 rounded-lg hover:bg-gray-200/50 dark:hover:bg-white/5 transition-all text-left group ${
+              isCollapsed ? "w-10 h-10 justify-center p-0" : "w-full p-2 px-2.5 border border-gray-200/50 dark:border-white/5 shadow-xs"
+            }`}
+          >
+            <div className="w-6 h-6 rounded bg-[#D4F46A] text-black flex items-center justify-center font-bold text-[10px] shrink-0 uppercase">
+              {activeOrg?.name?.[0] || 'O'}
+            </div>
+            {!isCollapsed && (
+              <>
+                <div className="flex flex-col flex-1 min-w-0">
+                  <span className="text-xs font-semibold text-black dark:text-white truncate leading-tight">
+                    {activeOrg?.name || userData?.organisationName || 'Loading...'}
+                  </span>
+                  <span className="text-[10px] text-gray-500 uppercase tracking-tighter">
+                    {activeOrg?.role || 'Member'}
+                  </span>
+                </div>
+                <ChevronsUpDown className="w-3.5 h-3.5 text-gray-400 group-hover:text-black dark:group-hover:text-white transition-colors" />
+              </>
+            )}
+          </button>
+
+          {/* Organisation Switcher Popover (Top-aligned) */}
+          {showOrgSwitcher && (
+            <>
+              <div
+                className="fixed inset-0 z-40"
+                onClick={() => setShowOrgSwitcher(false)}
+              />
+              <div className={`absolute ${isCollapsed ? 'left-14' : 'left-3 right-3'} top-full mt-2 bg-white dark:bg-[#2c2c2c] border border-gray-200 dark:border-white/10 rounded-xl shadow-lg z-50 overflow-hidden text-sm text-gray-700 dark:text-gray-300 transform origin-top transition-all min-w-[200px]`}>
+                <div className="px-3 py-2 border-b border-gray-100 dark:border-white/10">
+                  <span className="text-[10px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-widest">
+                    Switch Organisation
+                  </span>
+                </div>
+                <div className="p-1.5 max-h-[300px] overflow-y-auto">
+                  {userData?.organisations.map((org) => (
+                    <button
+                      key={org.organisationId}
+                      onClick={() => {
+                        setActiveOrgId(org.organisationId);
+                        setShowOrgSwitcher(false);
+                      }}
+                      className={`flex w-full items-center justify-between gap-2 px-2.5 py-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors text-left ${activeOrgId === org.organisationId ? 'bg-gray-100 dark:bg-white/5' : ''}`}
+                    >
+                      <div className="flex flex-col truncate">
+                        <span className={`text-sm font-medium truncate ${activeOrgId === org.organisationId ? 'text-black dark:text-white' : 'text-gray-600 dark:text-gray-400'}`}>
+                          {org.name}
+                        </span>
+                        <span className="text-[10px] text-gray-400 uppercase tracking-tighter">
+                          {org.role}
+                        </span>
+                      </div>
+                      {activeOrgId === org.organisationId && (
+                        <Check className="w-4 h-4 text-[#D4F46A]" />
+                      )}
+                    </button>
+                  ))}
+                  
+                  <div className="h-px bg-gray-100 dark:bg-white/10 my-1.5" />
+                  
+                  <button className="flex w-full items-center gap-2 px-2.5 py-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors text-left text-gray-600 dark:text-gray-400">
+                    <Plus className="w-4 h-4" />
+                    <span className="text-sm">Create New</span>
+                  </button>
+                </div>
+              </div>
+            </>
+          )}
         </div>
 
         {/* Navigation Content */}
@@ -225,7 +300,7 @@ export function Sidebar() {
           onClick={() => setShowProfileMenu(true)}
           className={`p-3 mx-2 my-2 rounded-xl hover:bg-gray-200/50 dark:hover:bg-white/5 transition-colors cursor-pointer flex items-center group ${isCollapsed ? 'justify-center p-1.5' : 'justify-between'}`}
         >
-          <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3 overflow-hidden'}`}>
+          <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3 overflow-hidden flex-1'}`}>
             <div className="w-8 h-8 rounded-full bg-[#e3d5c8] text-[#5c4a3d] flex items-center justify-center font-semibold text-sm shrink-0">
               {userData?.avatar ? (
                 <img src={userData.avatar} alt={userData.name} className="w-full h-full rounded-full object-cover" />
@@ -238,8 +313,8 @@ export function Sidebar() {
                 <span className="text-sm font-medium text-black dark:text-white leading-tight truncate">
                   {userData?.name || 'Loading...'}
                 </span>
-                <span className="text-xs text-gray-500 truncate">
-                  {userData?.organisationName || 'No Organisation'}
+                <span className="text-[10px] text-gray-500 truncate">
+                  {userData?.email}
                 </span>
               </div>
             )}

@@ -20,6 +20,7 @@ export const metadata: Metadata = {
 import { Sidebar } from "@/components/Sidebar";
 import { ThemeProvider } from "@/components/theme-provider";
 import { FingerprintInitializer } from "@/components/providers/FingerprintInitializer";
+import { SessionManager } from "@/components/providers/SessionManager";
 import { Toaster } from "sonner";
 
 export default function RootLayout({
@@ -39,6 +40,7 @@ export default function RootLayout({
           disableTransitionOnChange
         >
           <FingerprintInitializer />
+          <SessionManager />
           <Toaster position="top-center" richColors />
           {children}
         </ThemeProvider>

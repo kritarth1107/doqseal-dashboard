@@ -4,8 +4,25 @@ import { useState } from 'react'
 import { Mail, ArrowRight, Loader2, Command } from 'lucide-react'
 import { signIn } from 'next-auth/react'
 import { toast } from 'sonner'
+import { useSearchParams } from 'next/navigation'
+import { Suspense } from 'react'
 
 export default function AuthPage() {
+    return (
+        <Suspense fallback={
+            <div className="min-h-screen w-full flex items-center justify-center bg-zinc-50 dark:bg-zinc-950">
+                <Loader2 className="w-8 h-8 animate-spin text-[#D4F46A]" />
+            </div>
+        }>
+            <AuthContent />
+        </Suspense>
+    )
+}
+
+function AuthContent() {
+    const searchParams = useSearchParams()
+    const redirectURL = searchParams.get('redirectURL') || '/dashboard'
+
     const [email, setEmail] = useState('')
     const [name, setName] = useState('')
     const [otp, setOtp] = useState(['', '', '', '', '', ''])
@@ -113,7 +130,7 @@ export default function AuthPage() {
 
             if (response.ok) {
                 toast.success("Authentication successful!")
-                window.location.href = '/dashboard'
+                window.location.href = redirectURL
             } else {
                 toast.error(data.error || "Verification failed. Please check your code.")
             }
@@ -209,10 +226,10 @@ export default function AuthPage() {
 
                         {/* Social Logins */}
                         <div className="flex items-center justify-center gap-4 mb-8">
-                            <SocialButton icon={<GoogleIcon />} onClick={() => signIn('google', { callbackUrl: '/dashboard' })} />
-                            <SocialButton icon={<GithubIcon />} onClick={() => signIn('github', { callbackUrl: '/dashboard' })} />
-                            <SocialButton icon={<LinkedInIcon />} onClick={() => signIn('linkedin', { callbackUrl: '/dashboard' })} />
-                            <SocialButton icon={<XIcon />} onClick={() => signIn('twitter', { callbackUrl: '/dashboard' })} />
+                            <SocialButton icon={<GoogleIcon />} onClick={() => signIn('google', { callbackUrl: redirectURL })} />
+                            <SocialButton icon={<GithubIcon />} onClick={() => signIn('github', { callbackUrl: redirectURL })} />
+                            <SocialButton icon={<LinkedInIcon />} onClick={() => signIn('linkedin', { callbackUrl: redirectURL })} />
+                            <SocialButton icon={<XIcon />} onClick={() => signIn('twitter', { callbackUrl: redirectURL })} />
                         </div>
                     </>
                 ) : (

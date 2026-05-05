@@ -1,11 +1,26 @@
 import { NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { getHeadersFromRequest } from "@/lib/header-utils";
 
-export async function POST() {
+export async function POST(request: Request) {
   try {
+    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+    const headers = getHeadersFromRequest(request);
+
+    // 1. Notify backend to revoke the session
+    try {
+      await fetch(`${apiUrl}kingdom/logout`, {
+        method: "POST",
+        headers,
+        body: JSON.stringify({ type: "current" }),
+      });
+    } catch (backendError) {
+      console.error("Backend logout notification failed:", backendError);
+    }
+
     const cookieStore = await cookies();
     
-    // Clear the session_token cookie
+    // 2. Clear the session_token cookie
     cookieStore.set("session_token", "", {
       httpOnly: true,
       secure: process.env.NODE_ENV === "production",
