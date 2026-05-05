@@ -195,6 +195,7 @@ export function Sidebar() {
                       onClick={() => {
                         setActiveOrgId(org.organisationId);
                         setShowOrgSwitcher(false);
+                        window.location.reload();
                       }}
                       className={`flex w-full items-center justify-between gap-2 px-2.5 py-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors text-left ${activeOrgId === org.organisationId ? 'bg-gray-100 dark:bg-white/5' : ''}`}
                     >
@@ -214,10 +215,14 @@ export function Sidebar() {
                   
                   <div className="h-px bg-gray-100 dark:bg-white/10 my-1.5" />
                   
-                  <button className="flex w-full items-center gap-2 px-2.5 py-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors text-left text-gray-600 dark:text-gray-400">
+                  <Link 
+                    href="/manage/create-organisation"
+                    onClick={() => setShowOrgSwitcher(false)}
+                    className="flex w-full items-center gap-2 px-2.5 py-2 hover:bg-gray-100 dark:hover:bg-white/5 rounded-lg transition-colors text-left text-gray-600 dark:text-gray-400"
+                  >
                     <Plus className="w-4 h-4" />
                     <span className="text-sm">Create New</span>
-                  </button>
+                  </Link>
                 </div>
               </div>
             </>
