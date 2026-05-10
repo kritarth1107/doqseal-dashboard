@@ -42,20 +42,20 @@ export default function Dashboard() {
   ];
 
   return (
-    <div className="flex-1 overflow-y-auto bg-[#f9f9f9] dark:bg-[#1f1f1f] p-4 sm:p-8 pt-20">
+    <div className="flex-1 overflow-y-auto bg-[#f9f9f9] p-4 sm:p-8 pt-20">
       <div className="max-w-7xl mx-auto space-y-8">
         
         {/* Welcome Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900 dark:text-white">Good morning, Kritarth</h1>
-            <p className="text-sm text-gray-500 dark:text-gray-400">Here's what's happening with your document intelligence today.</p>
+            <h1 className="text-2xl font-semibold text-gray-900">Good morning, Kritarth</h1>
+            <p className="text-sm text-gray-500">Here's what's happening with your document intelligence today.</p>
           </div>
           <div className="flex items-center gap-3">
-            <button className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-gray-200 bg-white dark:bg-[#2c2c2c] border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors">
+            <button className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
               Export Report
             </button>
-            <Link href="/new" className="px-4 py-2 text-sm font-medium text-black bg-[#D4F46A] rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2 shadow-sm">
+            <Link href="/new" className="px-4 py-2 text-sm font-medium text-black bg-[#2563eb] rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2 shadow-sm">
               <Zap className="w-4 h-4" />
               New Extraction
             </Link>
@@ -65,10 +65,10 @@ export default function Dashboard() {
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           {stats.map((stat, idx) => (
-            <div key={idx} className="bg-white dark:bg-[#2c2c2c] p-6 rounded-2xl border border-gray-100 dark:border-white/5 shadow-sm hover:shadow-md transition-shadow group">
+            <div key={idx} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow group">
               <div className="flex items-start justify-between mb-4">
                 <div className={`p-2 rounded-xl ${
-                  stat.color === 'lime' ? 'bg-[#D4F46A]/20 text-[#D4F46A]' :
+                  stat.color === 'lime' ? 'bg-[#2563eb]/20 text-[#2563eb]' :
                   stat.color === 'blue' ? 'bg-blue-500/10 text-blue-500' :
                   stat.color === 'green' ? 'bg-emerald-500/10 text-emerald-500' :
                   'bg-purple-500/10 text-purple-500'
@@ -83,8 +83,8 @@ export default function Dashboard() {
                 </div>
               </div>
               <div className="space-y-1">
-                <p className="text-[13px] font-medium text-gray-500 dark:text-gray-400">{stat.label}</p>
-                <p className="text-2xl font-bold text-gray-900 dark:text-white tracking-tight">{stat.value}</p>
+                <p className="text-[13px] font-medium text-gray-500">{stat.label}</p>
+                <p className="text-2xl font-bold text-gray-900 tracking-tight">{stat.value}</p>
               </div>
             </div>
           ))}
@@ -94,15 +94,15 @@ export default function Dashboard() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           
           {/* Charts Section */}
-          <div className="lg:col-span-2 bg-white dark:bg-[#2c2c2c] rounded-2xl border border-gray-100 dark:border-white/5 shadow-sm overflow-hidden flex flex-col">
-            <div className="px-6 py-5 border-b border-gray-50 dark:border-white/5 flex items-center justify-between">
+          <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden flex flex-col">
+            <div className="px-6 py-5 border-b border-gray-50 flex items-center justify-between">
               <div>
-                <h3 className="text-base font-semibold text-gray-900 dark:text-white">Extraction Performance</h3>
+                <h3 className="text-base font-semibold text-gray-900">Extraction Performance</h3>
                 <p className="text-xs text-gray-500">Documents processed per day this week</p>
               </div>
               <div className="flex items-center gap-2">
-                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-gray-50 dark:bg-white/5 rounded-lg text-xs font-medium text-gray-600 dark:text-gray-400">
-                  <span className="w-2 h-2 rounded-full bg-[#D4F46A]"></span>
+                <div className="flex items-center gap-1.5 px-2.5 py-1 bg-gray-50 rounded-lg text-xs font-medium text-gray-600">
+                  <span className="w-2 h-2 rounded-full bg-[#2563eb]"></span>
                   AI Processed
                 </div>
               </div>
@@ -111,10 +111,10 @@ export default function Dashboard() {
               {trends.map((t, idx) => (
                 <div key={idx} className="flex-1 flex flex-col items-center gap-3 group">
                   <div 
-                    className="w-full bg-[#D4F46A]/20 dark:bg-[#D4F46A]/10 rounded-t-lg relative overflow-hidden group-hover:bg-[#D4F46A]/30 dark:group-hover:bg-[#D4F46A]/20 transition-all cursor-pointer"
+                    className="w-full bg-[#2563eb]/20 rounded-t-lg relative overflow-hidden group-hover:bg-[#2563eb]/30 transition-all cursor-pointer"
                     style={{ height: `${(t.count / 70) * 100}%` }}
                   >
-                    <div className="absolute inset-0 bg-gradient-to-t from-transparent to-white/10 dark:to-white/5"></div>
+                    <div className="absolute inset-0 bg-gradient-to-t from-transparent to-white/10"></div>
                     <div className="absolute top-2 left-1/2 -translate-x-1/2 opacity-0 group-hover:opacity-100 transition-opacity bg-black text-white text-[10px] px-1.5 py-0.5 rounded pointer-events-none">
                       {t.count}
                     </div>
@@ -130,9 +130,9 @@ export default function Dashboard() {
             <div className="relative z-10">
               <div className="flex items-center justify-between mb-8">
                 <div className="p-2.5 bg-white/10 rounded-xl backdrop-blur-sm">
-                  <ShieldCheck className="w-6 h-6 text-[#D4F46A]" />
+                  <ShieldCheck className="w-6 h-6 text-[#2563eb]" />
                 </div>
-                <div className="text-[10px] font-bold uppercase tracking-widest text-[#D4F46A]">DPDP Compliance</div>
+                <div className="text-[10px] font-bold uppercase tracking-widest text-[#2563eb]">DPDP Compliance</div>
               </div>
               <div className="space-y-2">
                 <h3 className="text-3xl font-bold tracking-tight">Active Engine</h3>
@@ -142,29 +142,29 @@ export default function Dashboard() {
             
             <div className="mt-8 space-y-4 relative z-10">
               <div className="w-full bg-white/5 rounded-full h-2 overflow-hidden">
-                <div className="bg-[#D4F46A] h-full w-[98%]" />
+                <div className="bg-[#2563eb] h-full w-[98%]" />
               </div>
               <div className="flex items-center justify-between text-xs font-medium">
                 <span className="text-gray-400">System Health</span>
-                <span className="text-[#D4F46A]">Optimized</span>
+                <span className="text-[#2563eb]">Optimized</span>
               </div>
             </div>
 
             {/* Decorative background element */}
-            <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-[#D4F46A]/10 rounded-full blur-3xl group-hover:bg-[#D4F46A]/20 transition-all duration-500"></div>
+            <div className="absolute -bottom-10 -right-10 w-40 h-40 bg-[#2563eb]/10 rounded-full blur-3xl group-hover:bg-[#2563eb]/20 transition-all duration-500"></div>
           </div>
         </div>
 
         {/* Recent Documents Table */}
-        <div className="bg-white dark:bg-[#2c2c2c] rounded-2xl border border-gray-100 dark:border-white/5 shadow-sm overflow-hidden">
-          <div className="px-6 py-5 border-b border-gray-50 dark:border-white/5 flex items-center justify-between">
-            <h3 className="text-base font-semibold text-gray-900 dark:text-white">Recent Extractions</h3>
-            <Link href="/documents" className="text-xs font-medium text-gray-500 hover:text-[#D4F46A] transition-colors">View all</Link>
+        <div className="bg-white rounded-2xl border border-gray-100 shadow-sm overflow-hidden">
+          <div className="px-6 py-5 border-b border-gray-50 flex items-center justify-between">
+            <h3 className="text-base font-semibold text-gray-900">Recent Extractions</h3>
+            <Link href="/documents" className="text-xs font-medium text-gray-500 hover:text-[#2563eb] transition-colors">View all</Link>
           </div>
           <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse">
               <thead>
-                <tr className="text-[11px] font-bold text-gray-400 dark:text-gray-500 uppercase tracking-wider">
+                <tr className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
                   <th className="px-6 py-4">Document Name</th>
                   <th className="px-6 py-4">Category</th>
                   <th className="px-6 py-4">Status</th>
@@ -173,19 +173,19 @@ export default function Dashboard() {
                   <th className="px-6 py-4"></th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-gray-50 dark:divide-white/5">
+              <tbody className="divide-y divide-gray-50">
                 {recentDocuments.map((doc) => (
-                  <tr key={doc.id} className="group hover:bg-gray-50 dark:hover:bg-white/[0.02] transition-colors cursor-pointer">
+                  <tr key={doc.id} className="group hover:bg-gray-50 transition-colors cursor-pointer">
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-3">
-                        <div className="w-8 h-8 rounded-lg bg-gray-100 dark:bg-white/5 flex items-center justify-center">
+                        <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center">
                           <FileText className="w-4 h-4 text-gray-500" />
                         </div>
-                        <span className="text-sm font-medium text-gray-700 dark:text-gray-300 group-hover:text-black dark:group-hover:text-white">{doc.name}</span>
+                        <span className="text-sm font-medium text-gray-700 group-hover:text-black">{doc.name}</span>
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-xs font-medium text-gray-500 dark:text-gray-400 px-2 py-1 bg-gray-100 dark:bg-white/5 rounded-md">{doc.type}</span>
+                      <span className="text-xs font-medium text-gray-500 px-2 py-1 bg-gray-100 rounded-md">{doc.type}</span>
                     </td>
                     <td className="px-6 py-4">
                       <div className="flex items-center gap-1.5">
@@ -207,7 +207,7 @@ export default function Dashboard() {
                         <div className="flex items-center justify-between text-[10px] font-bold">
                           <span className="text-gray-400">{doc.confidence}</span>
                         </div>
-                        <div className="w-full bg-gray-100 dark:bg-white/10 rounded-full h-1">
+                        <div className="w-full bg-gray-100 rounded-full h-1">
                           <div 
                             className={`h-full rounded-full ${
                               parseFloat(doc.confidence) > 90 ? 'bg-emerald-500' : 
@@ -219,10 +219,10 @@ export default function Dashboard() {
                       </div>
                     </td>
                     <td className="px-6 py-4">
-                      <span className="text-xs text-gray-500 dark:text-gray-400">{doc.date}</span>
+                      <span className="text-xs text-gray-500">{doc.date}</span>
                     </td>
                     <td className="px-6 py-4 text-right">
-                      <button className="p-1 text-gray-400 hover:text-black dark:hover:text-white transition-colors">
+                      <button className="p-1 text-gray-400 hover:text-black transition-colors">
                         <MoreVertical className="w-4 h-4" />
                       </button>
                     </td>

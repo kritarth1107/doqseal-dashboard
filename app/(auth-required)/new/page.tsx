@@ -88,7 +88,7 @@ const NewSearchPage = () => {
     }, []);
 
     return (
-        <div className="flex-1 flex flex-col h-full bg-[#f9f9f9] dark:bg-[#1f1f1f] relative">
+        <div className="flex-1 flex flex-col h-full bg-[#f9f9f9] relative">
 
 
             <div className="flex-1 overflow-y-auto w-full flex flex-col items-center justify-center p-4 sm:p-6 pb-32">
@@ -96,42 +96,42 @@ const NewSearchPage = () => {
 
                     {/* Greeting Header */}
                     <div className="flex flex-col items-center gap-4 mb-10 min-h-[140px]">
-                        <div className="bg-[#D4F46A] rounded-xl p-2 shadow-sm transform transition-transform duration-500 hover:rotate-6">
-                            <img src="/sakshya_logo.svg" alt="Sakshya Logo" className="w-8 h-8 brightness-0 shrink-0" />
+                        <div className="bg-[#2563eb] rounded-xl p-2 shadow-sm transform transition-transform duration-500 hover:rotate-6">
+                            <img src="/doqseal_logo.svg" alt="DoqSeal Logo" className="w-8 h-8 brightness-0 shrink-0" />
                         </div>
-                        <h1 className={`text-3xl sm:text-[2.5rem] font-serif text-[#333] dark:text-[#ececec] tracking-tight leading-snug sm:leading-[1.4] max-w-[90%] transition-all duration-700 ${isMounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
+                        <h1 className={`text-3xl sm:text-[2.5rem] font-serif text-[#333] tracking-tight leading-snug sm:leading-[1.4] max-w-[90%] transition-all duration-700 ${isMounted ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4'}`}>
                             {greeting && renderGreetingText(greeting)}
                         </h1>
                     </div>
 
                     {/* Main Input Area */}
-                    <div className="w-full max-w-2xl bg-white dark:bg-[#2c2c2c] rounded-2xl border border-gray-200 dark:border-white/10 shadow-sm overflow-hidden flex flex-col focus-within:ring-1 focus-within:ring-gray-300 dark:focus-within:ring-gray-500 transition-all">
+                    <div className="w-full max-w-2xl bg-white rounded-2xl border border-gray-200 shadow-sm overflow-hidden flex flex-col focus-within:ring-1 focus-within:ring-gray-300 transition-all">
                         <textarea
                             value={query}
                             onChange={(e) => setQuery(e.target.value)}
-                            className="w-full bg-transparent border-none focus:ring-0 text-[#333] dark:text-[#ececec] px-4 py-4 outline-none text-[15px] placeholder-gray-400 dark:placeholder-gray-500 resize-none min-h-[100px]"
+                            className="w-full bg-transparent border-none focus:ring-0 text-[#333] px-4 py-4 outline-none text-[15px] placeholder-gray-400 resize-none min-h-[100px]"
                             placeholder="What would you like to find or do?"
                         />
-                        <div className="flex items-center justify-between px-4 py-3 bg-gray-50/50 dark:bg-black/10 border-t border-gray-100 dark:border-white/5">
-                            <button className="p-1.5 text-gray-400 hover:text-black dark:hover:text-white transition-colors rounded-lg hover:bg-gray-200 dark:hover:bg-white/10">
+                        <div className="flex items-center justify-between px-4 py-3 bg-gray-50/50 border-t border-gray-100">
+                            <button className="p-1.5 text-gray-400 hover:text-black transition-colors rounded-lg hover:bg-gray-200">
                                 <Upload className="w-5 h-5" />
                             </button>
 
                             <div className="flex items-center gap-3">
-                                <button className="flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-gray-500 hover:text-black dark:hover:text-white transition-colors">
-                                    Sakshya AI
+                                <button className="flex items-center gap-1.5 px-2 py-1 text-xs font-medium text-gray-500 hover:text-black transition-colors">
+                                    DoqSeal AI
                                 </button>
 
                                 {/* Voice / Send Button Toggle */}
                                 <div className="relative w-[32px] h-[32px]">
                                     <button
-                                        className={`absolute inset-0 flex items-center justify-center text-gray-400 hover:text-black dark:hover:text-white transition-all duration-300 rounded-lg hover:bg-gray-200 dark:hover:bg-white/10 ${isTyping ? 'opacity-0 scale-50 rotate-[-90deg] pointer-events-none' : 'opacity-100 scale-100 rotate-0'
+                                        className={`absolute inset-0 flex items-center justify-center text-gray-400 hover:text-black transition-all duration-300 rounded-lg hover:bg-gray-200 ${isTyping ? 'opacity-0 scale-50 rotate-[-90deg] pointer-events-none' : 'opacity-100 scale-100 rotate-0'
                                             }`}
                                     >
                                         <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="lucide lucide-audio-waveform-icon lucide-audio-waveform"><path d="M2 13a2 2 0 0 0 2-2V7a2 2 0 0 1 4 0v13a2 2 0 0 0 4 0V4a2 2 0 0 1 4 0v13a2 2 0 0 0 4 0v-4a2 2 0 0 1 2-2" /></svg>
                                     </button>
                                     <button
-                                        className={`absolute inset-0 flex items-center justify-center bg-black dark:bg-white text-white dark:text-black transition-all duration-300 rounded-lg shadow-sm hover:bg-gray-800 dark:hover:bg-gray-200 ${isTyping ? 'opacity-100 scale-100 rotate-0' : 'opacity-0 scale-50 rotate-90 pointer-events-none'
+                                        className={`absolute inset-0 flex items-center justify-center bg-[#2563eb] text-white transition-all duration-300 rounded-lg shadow-sm hover:bg-[#1d4ed8] ${isTyping ? 'opacity-100 scale-100 rotate-0' : 'opacity-0 scale-50 rotate-90 pointer-events-none'
                                             }`}
                                     >
                                         <ArrowUp className="w-4 h-4" />
@@ -148,28 +148,28 @@ const NewSearchPage = () => {
                     >
                         <button
                             onClick={() => setQuery("Find a document related to... ")}
-                            className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-[#2c2c2c] border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors shadow-sm cursor-pointer"
+                            className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors shadow-sm cursor-pointer"
                         >
                             <Search className="w-4 h-4" />
                             Find a Document
                         </button>
                         <button
                             onClick={() => setQuery("Prepare my ITR folder using all tax-related documents for this year...")}
-                            className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-[#2c2c2c] border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors shadow-sm cursor-pointer"
+                            className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors shadow-sm cursor-pointer"
                         >
                             <Folder className="w-4 h-4 text-yellow-500" />
                             Prepare ITR folder
                         </button>
                         <button
                             onClick={() => setQuery("Find documents expiring soon")}
-                            className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-[#2c2c2c] border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors shadow-sm cursor-pointer"
+                            className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors shadow-sm cursor-pointer"
                         >
                             <Clock className="w-4 h-4 text-red-500" />
                             Expiring Soon
                         </button>
                         <button
                             onClick={() => setIsUploadModalOpen(true)}
-                            className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-gray-300 bg-white dark:bg-[#2c2c2c] border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors shadow-sm cursor-pointer"
+                            className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors shadow-sm cursor-pointer"
                         >
                             <Upload className="w-4 h-4" />
                             Upload
@@ -178,7 +178,7 @@ const NewSearchPage = () => {
                         <div className="relative group">
                             <button
                                 disabled
-                                className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-400 dark:text-gray-500 bg-gray-50 dark:bg-[#2c2c2c]/50 border border-gray-200 dark:border-white/10 rounded-lg cursor-not-allowed"
+                                className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-400 bg-gray-50 border border-gray-200 rounded-lg cursor-not-allowed"
                             >
                                 <svg className="w-4 h-4 drop-shadow-sm grayscale opacity-50" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
                                     <path d="M15.3 10L11.5 16.5L12.5 18H20.5L21.5 16.5L15.3 10Z" fill="#FFC107" />
@@ -187,7 +187,7 @@ const NewSearchPage = () => {
                                 </svg>
                                 From Drive
                             </button>
-                            <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-[10px] font-medium text-white bg-black dark:bg-[#444] rounded whitespace-nowrap pointer-events-none z-50">
+                            <div className="absolute opacity-0 group-hover:opacity-100 transition-opacity bottom-full left-1/2 -translate-x-1/2 mb-2 px-2 py-1 text-[10px] font-medium text-white bg-black rounded whitespace-nowrap pointer-events-none z-50">
                                 Under Development
                             </div>
                         </div>

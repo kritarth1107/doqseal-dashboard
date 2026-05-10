@@ -14,10 +14,10 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: {
-    default: "Sakshya | AI-Powered Document Intelligence",
-    template: "%s | Sakshya"
+    default: "DoqSeal | AI-Powered Document Intelligence",
+    template: "%s | DoqSeal"
   },
-  description: "Experience the next generation of document intelligence with Sakshya. Securely manage, analyze, and integrate AI into your workflow.",
+  description: "Experience the next generation of document intelligence with DoqSeal. Securely manage, analyze, and integrate AI into your workflow.",
   keywords: ["AI", "Document Intelligence", "API Management", "Workflow Automation"],
 };
 
@@ -39,8 +39,8 @@ export default function RootLayout({
       >
         <ThemeProvider
           attribute="class"
-          defaultTheme="system"
-          enableSystem
+          defaultTheme="light"
+          forcedTheme="light"
           disableTransitionOnChange
         >
           <FingerprintInitializer />

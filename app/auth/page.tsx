@@ -10,8 +10,8 @@ import { Suspense } from 'react'
 export default function AuthPage() {
     return (
         <Suspense fallback={
-            <div className="min-h-screen w-full flex items-center justify-center bg-zinc-50 dark:bg-zinc-950">
-                <Loader2 className="w-8 h-8 animate-spin text-[#D4F46A]" />
+            <div className="min-h-screen w-full flex items-center justify-center bg-zinc-50">
+                <Loader2 className="w-8 h-8 animate-spin text-[#2563eb]" />
             </div>
         }>
             <AuthContent />
@@ -35,7 +35,7 @@ function AuthContent() {
         e.preventDefault()
         if (!email) return
         setIsSubmitting(true)
-        
+
         try {
             const response = await fetch('/api/auth/login-with-email', {
                 method: 'POST',
@@ -93,7 +93,7 @@ function AuthContent() {
             if (i < 6) newOtp[i] = char
         })
         setOtp(newOtp)
-        
+
         // Focus the last input or the next empty one
         const nextIndex = Math.min(pastedData.length, 5)
         document.getElementById(`otp-${nextIndex}`)?.focus()
@@ -111,18 +111,18 @@ function AuthContent() {
         e.preventDefault()
         const otpValue = otp.join('')
         if (otpValue.length !== 6) return
-        
+
         setIsSubmitting(true)
-        
+
         try {
             const response = await fetch('/api/auth/login-with-email/verify-otp', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ 
-                    otp: otpValue, 
-                    token, 
-                    email, 
-                    name: userExists ? undefined : name 
+                body: JSON.stringify({
+                    otp: otpValue,
+                    token,
+                    email,
+                    name: userExists ? undefined : name
                 }),
             })
 
@@ -143,40 +143,38 @@ function AuthContent() {
     }
 
     return (
-        <div className="min-h-screen w-full flex items-center justify-center bg-zinc-50 dark:bg-zinc-950 p-4 relative overflow-hidden font-sans">
+        <div className="min-h-screen w-full flex items-center justify-center bg-zinc-50 p-4 relative overflow-hidden font-sans">
             {/* Background decoration elements for premium feel */}
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,#D4F46A_1px,transparent_1px),linear-gradient(to_bottom,#D4F46A_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_110%)] opacity-20 pointer-events-none" />
-            <div className="absolute top-[10%] left-[50%] translate-x-[-50%] w-[40%] h-[40%] rounded-full bg-[#D4F46A]/20 dark:bg-[#D4F46A]/10 blur-[120px] pointer-events-none" />
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#2563eb_1px,transparent_1px),linear-gradient(to_bottom,#2563eb_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_110%)] opacity-20 pointer-events-none" />
+            <div className="absolute top-[10%] left-[50%] translate-x-[-50%] w-[40%] h-[40%] rounded-full bg-[#2563eb]/20 blur-[120px] pointer-events-none" />
 
-            <div className="w-full max-w-[26rem] bg-white/70 dark:bg-zinc-900/70 backdrop-blur-xl border border-zinc-200/50 dark:border-zinc-800/50 rounded-[2rem] shadow-sm p-8 relative z-10 transition-all duration-500">
+            <div className="w-full max-w-[26rem] bg-white/70 backdrop-blur-xl border border-zinc-200/50 rounded-[2rem] shadow-sm p-8 relative z-10 transition-all duration-500">
                 <div className="flex flex-col items-center mb-8">
-                    <div className="w-12 h-12 bg-[#D4F46A] text-white dark:text-zinc-900 rounded-[14px] flex items-center justify-center mb-6 shadow-none rotate-3 hover:rotate-0 transition-transform duration-300">
-                        <img src="/sakshya_logo.svg" alt="Sakshya Logo" className="w-6 h-6 brightness-0 shrink-0" />
-                    </div>
-                    <h1 className="text-2xl font-semibold text-zinc-900 dark:text-zinc-50 mb-2 tracking-tight">
+                    <img src="/doqseal_logo.svg" alt="DoqSeal Logo" className="w-48 h-10 shrink-0 mb-8" />
+                    <h1 className="text-2xl font-semibold text-zinc-900 mb-2 tracking-tight">
                         {showOTP ? (userExists ? "Verify it's you" : "Create your account") : "Welcome back"}
                     </h1>
                     {showOTP ? (
-                        <div className="flex flex-col items-center gap-2 text-sm text-zinc-500 dark:text-zinc-400 text-center px-2">
+                        <div className="flex flex-col items-center gap-2 text-sm text-zinc-500 text-center px-2">
                             <p>
-                                {userExists 
-                                    ? `We've sent a 6-digit verification code to ` 
+                                {userExists
+                                    ? `We've sent a 6-digit verification code to `
                                     : `Enter the 6-digit code sent to `}
-                                <span className="font-semibold text-zinc-900 dark:text-zinc-50">{email}</span>
+                                <span className="font-semibold text-zinc-900">{email}</span>
                                 {!userExists && " to finish setting up your account."}
                             </p>
                             <p className="text-xs opacity-80">
-                                Can't find it? Please check your <span className="text-zinc-900 dark:text-zinc-50 font-medium">spam</span> or junk folder.
+                                Can't find it? Please check your <span className="text-zinc-900 font-medium">spam</span> or junk folder.
                             </p>
-                            <button 
+                            <button
                                 onClick={() => setShowOTP(false)}
-                                className="text-[#D4F46A] hover:underline font-medium text-xs mt-1"
+                                className="text-[#2563eb] hover:underline font-medium text-xs mt-1"
                             >
                                 Change email address
                             </button>
                         </div>
                     ) : (
-                        <p className="text-sm text-zinc-500 dark:text-zinc-400 text-center">
+                        <p className="text-sm text-zinc-500 text-center">
                             Enter your details to sign in to your account
                         </p>
                     )}
@@ -185,8 +183,8 @@ function AuthContent() {
                 {!showOTP ? (
                     <>
                         <form onSubmit={handleEmailSubmit} className="space-y-4 mb-8 group">
-                            <div className="relative overflow-hidden rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 focus-within:border-zinc-900 dark:focus-within:border-zinc-100 transition-colors">
-                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-400 dark:text-zinc-500">
+                            <div className="relative overflow-hidden rounded-xl bg-zinc-50 border border-zinc-200 focus-within:border-zinc-900 transition-colors">
+                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-400">
                                     <Mail className="h-5 w-5" />
                                 </div>
                                 <input
@@ -195,13 +193,13 @@ function AuthContent() {
                                     onChange={(e) => setEmail(e.target.value)}
                                     placeholder="name@example.com"
                                     required
-                                    className="block w-full pl-11 pr-4 py-3.5 bg-transparent text-sm text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none transition-all"
+                                    className="block w-full pl-11 pr-4 py-3.5 bg-transparent text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none transition-all"
                                 />
                             </div>
                             <button
                                 type="submit"
                                 disabled={isSubmitting || !email}
-                                className="w-full flex items-center justify-center gap-2 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 py-3.5 rounded-xl text-sm font-medium hover:bg-zinc-800 dark:hover:bg-zinc-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-zinc-900 dark:focus:ring-white transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md dark:ring-offset-zinc-950"
+                                className="w-full flex items-center justify-center gap-2 bg-zinc-900 text-white py-3.5 rounded-xl text-sm font-medium hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-zinc-900 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md"
                             >
                                 {isSubmitting ? (
                                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -215,7 +213,7 @@ function AuthContent() {
 
                         <div className="relative mb-8">
                             <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                                <div className="w-full border-t border-zinc-200 dark:border-zinc-800" />
+                                <div className="w-full border-t border-zinc-200" />
                             </div>
                             <div className="relative flex justify-center">
                                 <span className="px-3 bg-white/0 backdrop-blur-md text-[11px] font-medium text-zinc-500 uppercase tracking-widest">
@@ -236,23 +234,23 @@ function AuthContent() {
                     <form onSubmit={handleVerifyOtp} className="space-y-6 mb-8">
                         {!userExists && (
                             <div className="space-y-2 animate-in fade-in slide-in-from-top-4 duration-500">
-                                <label className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest px-1">
+                                <label className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest px-1">
                                     Full Name
                                 </label>
-                                <div className="relative overflow-hidden rounded-xl bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 focus-within:border-zinc-900 dark:focus-within:border-zinc-100 transition-colors">
+                                <div className="relative overflow-hidden rounded-xl bg-zinc-50 border border-zinc-200 focus-within:border-zinc-900 transition-colors">
                                     <input
                                         type="text"
                                         value={name}
                                         onChange={(e) => setName(e.target.value)}
                                         placeholder="John Doe"
-                                        className="block w-full px-4 py-3 bg-transparent text-sm text-zinc-900 dark:text-zinc-50 placeholder-zinc-400 dark:placeholder-zinc-600 focus:outline-none transition-all"
+                                        className="block w-full px-4 py-3 bg-transparent text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none transition-all"
                                     />
                                 </div>
                             </div>
                         )}
                         <div className="space-y-2">
                             {!userExists && (
-                                <label className="text-[11px] font-bold text-zinc-400 dark:text-zinc-500 uppercase tracking-widest px-1">
+                                <label className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest px-1">
                                     Verification Code
                                 </label>
                             )}
@@ -269,17 +267,17 @@ function AuthContent() {
                                         onChange={(e) => handleOtpChange(idx, e.target.value)}
                                         onKeyDown={(e) => handleKeyDown(idx, e)}
                                         onPaste={handlePaste}
-                                        className="w-12 h-14 text-center text-lg font-semibold bg-zinc-50 dark:bg-zinc-950 border border-zinc-200 dark:border-zinc-800 rounded-xl focus:border-[#D4F46A] focus:ring-1 focus:ring-[#D4F46A] outline-none transition-all text-zinc-900 dark:text-zinc-50"
+                                        className="w-12 h-14 text-center text-lg font-semibold bg-zinc-50 border border-zinc-200 rounded-xl focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb] outline-none transition-all text-zinc-900"
                                     />
                                 ))}
                             </div>
                         </div>
-                        
+
                         <div className="flex flex-col items-center gap-6">
                             <button
                                 type="submit"
                                 disabled={isSubmitting || otp.some(d => !d)}
-                                className="w-full flex items-center justify-center gap-2 bg-zinc-900 dark:bg-white text-white dark:text-zinc-900 py-3.5 rounded-xl text-sm font-medium hover:bg-zinc-800 dark:hover:bg-zinc-100 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-zinc-900 dark:focus:ring-white transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md dark:ring-offset-zinc-950"
+                                className="w-full flex items-center justify-center gap-2 bg-zinc-900 text-white py-3.5 rounded-xl text-sm font-medium hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-zinc-900 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md"
                             >
                                 {isSubmitting ? (
                                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -289,18 +287,18 @@ function AuthContent() {
                             </button>
                         </div>
                         <div className="text-center">
-                            <button type="button" className="text-xs text-zinc-500 hover:text-zinc-900 dark:hover:text-zinc-50 transition-colors">
+                            <button type="button" className="text-xs text-zinc-500 hover:text-zinc-900 transition-colors">
                                 Resend code in 0:59
                             </button>
                         </div>
                     </form>
                 )}
 
-                <p className="text-center text-[13px] text-zinc-500 dark:text-zinc-400 leading-relaxed px-2">
+                <p className="text-center text-[13px] text-zinc-500 leading-relaxed px-2">
                     By clicking continue, you agree to our{' '}
-                    <a href="#" className="underline decoration-zinc-300 dark:decoration-zinc-700 hover:text-zinc-900 dark:hover:text-zinc-50 transition-colors">Terms of Service</a>
+                    <a href="#" className="underline decoration-zinc-300 hover:text-zinc-900 transition-colors">Terms of Service</a>
                     {' '}and{' '}
-                    <a href="#" className="underline decoration-zinc-300 dark:decoration-zinc-700 hover:text-zinc-900 dark:hover:text-zinc-50 transition-colors">Privacy Policy</a>.
+                    <a href="#" className="underline decoration-zinc-300 hover:text-zinc-900 transition-colors">Privacy Policy</a>.
                 </p>
             </div>
         </div>
@@ -312,7 +310,7 @@ function SocialButton({ icon, onClick }: { icon: React.ReactNode, onClick?: () =
         <button
             type="button"
             onClick={onClick}
-            className="flex items-center justify-center w-12 h-12 bg-white dark:bg-zinc-900/50 border border-zinc-200 dark:border-zinc-800 rounded-full hover:bg-zinc-50 dark:hover:bg-zinc-800 transition-all focus:outline-none focus:ring-2 focus:ring-zinc-200 dark:focus:ring-zinc-700 group shadow-sm hover:shadow active:scale-[0.98]"
+            className="flex items-center justify-center w-12 h-12 bg-white border border-zinc-200 rounded-full hover:bg-zinc-50 transition-all focus:outline-none focus:ring-2 focus:ring-zinc-200 group shadow-sm hover:shadow active:scale-[0.98]"
         >
             <span className="w-5 h-5 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">{icon}</span>
         </button>
@@ -335,7 +333,7 @@ function GoogleIcon() {
 
 function GithubIcon() {
     return (
-        <svg viewBox="0 0 24 24" className="w-full h-full text-[#181717] dark:text-white" fill="currentColor" aria-hidden="true">
+        <svg viewBox="0 0 24 24" className="w-full h-full text-[#181717]" fill="currentColor" aria-hidden="true">
             <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
         </svg>
     )
@@ -343,7 +341,7 @@ function GithubIcon() {
 
 function LinkedInIcon() {
     return (
-        <svg viewBox="0 0 24 24" className="w-[85%] h-[85%] text-[#0A66C2] dark:text-[#388bd1]" fill="currentColor" aria-hidden="true">
+        <svg viewBox="0 0 24 24" className="w-[85%] h-[85%] text-[#0A66C2]" fill="currentColor" aria-hidden="true">
             <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
         </svg>
     )
@@ -352,7 +350,7 @@ function LinkedInIcon() {
 
 function XIcon() {
     return (
-        <svg viewBox="0 0 24 24" className="w-[85%] h-[85%] text-black dark:text-white" fill="currentColor" aria-hidden="true">
+        <svg viewBox="0 0 24 24" className="w-[85%] h-[85%] text-black" fill="currentColor" aria-hidden="true">
             <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z" />
         </svg>
     )

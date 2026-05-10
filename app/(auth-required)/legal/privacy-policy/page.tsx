@@ -12,22 +12,22 @@ export default function PrivacyPolicyPage() {
   };
 
   return (
-    <div className="flex-1 overflow-y-auto bg-zinc-50 dark:bg-zinc-950 p-4 sm:p-12 pt-24 custom-scrollbar print:bg-white print:p-0">
-      <div className="max-w-4xl mx-auto bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-sm rounded-xl overflow-hidden print:border-none print:shadow-none print:rounded-none">
+    <div className="flex-1 overflow-y-auto bg-zinc-50 p-4 sm:p-12 pt-24 custom-scrollbar print:bg-white print:p-0">
+      <div className="max-w-4xl mx-auto bg-white border border-zinc-200 shadow-sm rounded-xl overflow-hidden print:border-none print:shadow-none print:rounded-none">
         
         {/* Document Header */}
-        <div className="p-8 sm:p-12 border-b border-zinc-100 dark:border-zinc-800 bg-zinc-50/50 dark:bg-zinc-900/50">
+        <div className="p-8 sm:p-12 border-b border-zinc-100 bg-zinc-50/50">
           <div className="flex justify-between items-start mb-8 print:hidden">
             <Link 
               href="/dashboard" 
-              className="flex items-center gap-1.5 text-xs font-semibold text-zinc-500 hover:text-black dark:hover:text-white transition-colors"
+              className="flex items-center gap-1.5 text-xs font-semibold text-zinc-500 hover:text-black transition-colors"
             >
               <ChevronLeft className="w-4 h-4" />
               RETURN TO DASHBOARD
             </Link>
             <button 
               onClick={handlePrint}
-              className="flex items-center gap-2 text-xs font-semibold text-zinc-500 hover:text-black dark:hover:text-white transition-colors border border-zinc-200 dark:border-zinc-800 px-3 py-1.5 rounded-lg"
+              className="flex items-center gap-2 text-xs font-semibold text-zinc-500 hover:text-black transition-colors border border-zinc-200 px-3 py-1.5 rounded-lg"
             >
               <Printer className="w-3.5 h-3.5" />
               PRINT DOCUMENT
@@ -35,39 +35,39 @@ export default function PrivacyPolicyPage() {
           </div>
 
           <div className="space-y-2 text-center sm:text-left">
-            <h1 className="text-3xl font-bold text-black dark:text-white tracking-tight uppercase">
+            <h1 className="text-3xl font-bold text-black tracking-tight uppercase">
               Privacy Policy
             </h1>
             <div className="flex flex-col sm:flex-row sm:items-center gap-2 sm:gap-4 text-sm text-zinc-500 font-mono uppercase tracking-wider">
               <span>Quadkubes Technology Studio Private Limited</span>
               <span className="hidden sm:inline">•</span>
-              <span>Sakshya Platform</span>
+              <span>DoqSeal Platform</span>
             </div>
             <div className="pt-4 flex flex-wrap gap-x-6 gap-y-2 text-[12px] font-bold text-zinc-400">
-              <div className="flex gap-2">EFFECTIVE DATE: <span className="text-zinc-900 dark:text-zinc-100">{lastUpdated}</span></div>
-              <div className="flex gap-2">VERSION: <span className="text-zinc-900 dark:text-zinc-100">{version}</span></div>
-              <div className="flex gap-2">STATUS: <span className="text-emerald-600 dark:text-emerald-500">OFFICIAL</span></div>
+              <div className="flex gap-2">EFFECTIVE DATE: <span className="text-zinc-900">{lastUpdated}</span></div>
+              <div className="flex gap-2">VERSION: <span className="text-zinc-900">{version}</span></div>
+              <div className="flex gap-2">STATUS: <span className="text-emerald-600">OFFICIAL</span></div>
             </div>
           </div>
         </div>
 
         {/* Document Content */}
-        <div className="p-8 sm:p-12 space-y-12 text-zinc-800 dark:text-zinc-300 leading-[1.6] text-[15px] font-serif_disable">
+        <div className="p-8 sm:p-12 space-y-12 text-zinc-800 leading-[1.6] text-[15px] font-serif_disable">
           
-          <div className="bg-zinc-50 dark:bg-zinc-800/50 border-l-4 border-zinc-900 dark:border-zinc-100 p-6 space-y-3 italic">
-            <p className="font-bold not-italic text-black dark:text-white text-sm uppercase tracking-widest">Important Summary:</p>
+          <div className="bg-zinc-50 border-l-4 border-zinc-900 p-6 space-y-3 italic">
+            <p className="font-bold not-italic text-black text-sm uppercase tracking-widest">Important Summary:</p>
             <p>
-              Sakshya is built on a zero-knowledge architecture. Documents you mark as sensitive are analysed entirely on your device and never uploaded to our servers. For documents processed on our servers, raw content is handled in ephemeral sandboxes that are destroyed immediately after processing. We do not sell, rent, or share your personal data with any third party for commercial purposes. All data is stored on servers in India on MeitY-empanelled cloud infrastructure.
+              DoqSeal is built on a zero-knowledge architecture. Documents you mark as sensitive are analysed entirely on your device and never uploaded to our servers. For documents processed on our servers, raw content is handled in ephemeral sandboxes that are destroyed immediately after processing. We do not sell, rent, or share your personal data with any third party for commercial purposes. All data is stored on servers in India on MeitY-empanelled cloud infrastructure.
             </p>
           </div>
 
           <section className="space-y-4">
-            <h2 className="text-lg font-bold text-black dark:text-white border-b border-zinc-100 dark:border-zinc-800 pb-2 uppercase tracking-wide">
+            <h2 className="text-lg font-bold text-black border-b border-zinc-100 pb-2 uppercase tracking-wide">
               1. About This Policy
             </h2>
             <div className="space-y-4 text-justify">
               <p>
-                1.1 This Privacy Policy ("Policy") governs the collection, use, storage, processing, and disclosure of personal data by Quadkubes Technology Studio Private Limited, a company incorporated under the Companies Act, 2013 (CIN: U74999CT2022PTC013202), having its registered office at Plot No. 143, H.No. 143, Raheja Green Pirda, Pirda-2, Raipur, Chattisgarh, India - 492012 ("Sakshya", "we", "our", or "us"), in connection with the Sakshya platform, website (sakshya.io), mobile application, and all related services (collectively, the "Platform").
+                1.1 This Privacy Policy ("Policy") governs the collection, use, storage, processing, and disclosure of personal data by Quadkubes Technology Studio Private Limited, a company incorporated under the Companies Act, 2013 (CIN: U74999CT2022PTC013202), having its registered office at Plot No. 143, H.No. 143, Raheja Green Pirda, Pirda-2, Raipur, Chattisgarh, India - 492012 ("DoqSeal", "we", "our", or "us"), in connection with the DoqSeal platform, website (doqseal.io), mobile application, and all related services (collectively, the "Platform").
               </p>
               <p>
                 1.2 This Policy is issued in accordance with the Digital Personal Data Protection Act, 2023 ("DPDPA"), the DPDP Rules 2025, the Information Technology Act, 2000, the Information Technology (Reasonable Security Practices and Procedures and Sensitive Personal Data or Information) Rules, 2011, and all other applicable Indian laws.
@@ -79,7 +79,7 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section className="space-y-6">
-            <h2 className="text-lg font-bold text-black dark:text-white border-b border-zinc-100 dark:border-zinc-800 pb-2 uppercase tracking-wide">
+            <h2 className="text-lg font-bold text-black border-b border-zinc-100 pb-2 uppercase tracking-wide">
               2. Definitions
             </h2>
             <div className="space-y-4">
@@ -87,23 +87,23 @@ export default function PrivacyPolicyPage() {
               <div className="space-y-3 pl-4">
                 <p><strong>(a) "Personal Data"</strong> means any data about an individual who is identifiable by or in relation to such data, as defined under Section 2(t) of the DPDPA.</p>
                 <p><strong>(b) "Sensitive Personal Data"</strong> includes financial data, health and medical data, biometric data, Aadhaar number, PAN, passwords, sexual orientation, and any other data specified under applicable law.</p>
-                <p><strong>(c) "Data Fiduciary"</strong> means Sakshya (Quadkubes Technology Studio Private Limited) which determines the purpose and means of processing of personal data.</p>
+                <p><strong>(c) "Data Fiduciary"</strong> means DoqSeal (Quadkubes Technology Studio Private Limited) which determines the purpose and means of processing of personal data.</p>
                 <p><strong>(d) "Data Principal"</strong> means the individual to whom personal data relates — the User of the Platform.</p>
                 <p><strong>(e) "Data Processor"</strong> means any entity that processes personal data on behalf of a Data Fiduciary.</p>
                 <p><strong>(f) "Processing"</strong> means any operation or set of operations performed on personal data, including collection, storage, use, sharing, transfer, or deletion.</p>
-                <p><strong>(g) "Privacy Mode"</strong> means the on-device processing feature of Sakshya where sensitive documents are analysed locally without any upload to Sakshya servers.</p>
+                <p><strong>(g) "Privacy Mode"</strong> means the on-device processing feature of DoqSeal where sensitive documents are analysed locally without any upload to DoqSeal servers.</p>
                 <p><strong>(h) "Ephemeral Sandbox"</strong> means a temporary, isolated computing environment provisioned for server-side document processing that is permanently destroyed upon completion of the processing task.</p>
               </div>
             </div>
           </section>
 
           <section className="space-y-4">
-            <h2 className="text-lg font-bold text-black dark:text-white border-b border-zinc-100 dark:border-zinc-800 pb-2 uppercase tracking-wide">
+            <h2 className="text-lg font-bold text-black border-b border-zinc-100 pb-2 uppercase tracking-wide">
               3. Data We Collect
             </h2>
             <div className="space-y-6">
               <div className="space-y-2">
-                <p className="font-bold text-black dark:text-white text-sm">3.1 Data You Provide Directly</p>
+                <p className="font-bold text-black text-sm">3.1 Data You Provide Directly</p>
                 <ul className="list-disc pl-8 space-y-1">
                   <li>Account Registration: Name, email address, mobile number, and password.</li>
                   <li>Profile Information: Organisation name, designation, and address.</li>
@@ -113,7 +113,7 @@ export default function PrivacyPolicyPage() {
                 </ul>
               </div>
               <div className="space-y-2">
-                <p className="font-bold text-black dark:text-white text-sm">3.2 Data Collected Automatically</p>
+                <p className="font-bold text-black text-sm">3.2 Data Collected Automatically</p>
                 <ul className="list-disc pl-8 space-y-1">
                   <li>Device and Technical Data: Device type, OS, browser version, IP address.</li>
                   <li>Usage Data: Feature interaction, search queries, and click patterns.</li>
@@ -125,12 +125,12 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section className="space-y-4">
-            <h2 className="text-lg font-bold text-black dark:text-white border-b border-zinc-100 dark:border-zinc-800 pb-2 uppercase tracking-wide">
+            <h2 className="text-lg font-bold text-black border-b border-zinc-100 pb-2 uppercase tracking-wide">
               4. Legal Basis for Processing
             </h2>
             <div className="space-y-4">
               <p>
-                4.1 <strong>Consent (Section 6, DPDPA):</strong> We process personal data with your free, specific, informed, unconditional, and unambiguous consent. Withdrawal of consent can be initiated at privacy@sakshya.io.
+                4.1 <strong>Consent (Section 6, DPDPA):</strong> We process personal data with your free, specific, informed, unconditional, and unambiguous consent. Withdrawal of consent can be initiated at privacy@doqseal.io.
               </p>
               <p>
                 4.2 <strong>Legitimate Uses (Section 7, DPDPA):</strong> We may process certain personal data without consent for legal obligations, medical emergencies, or state functions under Indian law.
@@ -139,12 +139,12 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section className="space-y-4">
-            <h2 className="text-lg font-bold text-black dark:text-white border-b border-zinc-100 dark:border-zinc-800 pb-2 uppercase tracking-wide">
+            <h2 className="text-lg font-bold text-black border-b border-zinc-100 pb-2 uppercase tracking-wide">
               5. Zero-Knowledge Architecture
             </h2>
             <div className="space-y-4 text-justify">
               <p>
-                5.1 <strong>Privacy Mode:</strong> Documents designated as sensitive are processed entirely on the User's device. No raw document data is transmitted to or stored on Sakshya servers.
+                5.1 <strong>Privacy Mode:</strong> Documents designated as sensitive are processed entirely on the User's device. No raw document data is transmitted to or stored on DoqSeal servers.
               </p>
               <p>
                 5.2 <strong>Ephemeral Sandboxes:</strong> Server-side processing occurs in isolated containers destroyed immediately upon completion. Raw content exists only in volatile memory.
@@ -159,7 +159,7 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section className="space-y-4">
-            <h2 className="text-lg font-bold text-black dark:text-white border-b border-zinc-100 dark:border-zinc-800 pb-2 uppercase tracking-wide">
+            <h2 className="text-lg font-bold text-black border-b border-zinc-100 pb-2 uppercase tracking-wide">
               6. Your Rights Under DPDPA
             </h2>
             <div className="space-y-4">
@@ -174,29 +174,29 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section className="space-y-4">
-            <h2 className="text-lg font-bold text-black dark:text-white border-b border-zinc-100 dark:border-zinc-800 pb-2 uppercase tracking-wide">
+            <h2 className="text-lg font-bold text-black border-b border-zinc-100 pb-2 uppercase tracking-wide">
               7. Data Retention Schedule
             </h2>
             <div className="overflow-x-auto">
-              <table className="w-full text-sm border border-zinc-200 dark:border-zinc-800 text-left border-collapse">
+              <table className="w-full text-sm border border-zinc-200 text-left border-collapse">
                 <thead>
-                  <tr className="bg-zinc-50 dark:bg-zinc-800">
-                    <th className="px-4 py-2 border border-zinc-200 dark:border-zinc-800 font-bold">Data Category</th>
-                    <th className="px-4 py-2 border border-zinc-200 dark:border-zinc-800 font-bold">Retention Period</th>
+                  <tr className="bg-zinc-50">
+                    <th className="px-4 py-2 border border-zinc-200 font-bold">Data Category</th>
+                    <th className="px-4 py-2 border border-zinc-200 font-bold">Retention Period</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-zinc-200 dark:divide-zinc-800">
+                <tbody className="divide-y divide-zinc-200">
                   <tr>
-                    <td className="px-4 py-2 border border-zinc-200 dark:border-zinc-800">Account Credentials</td>
-                    <td className="px-4 py-2 border border-zinc-200 dark:border-zinc-800">Duration of account + 3 years</td>
+                    <td className="px-4 py-2 border border-zinc-200">Account Credentials</td>
+                    <td className="px-4 py-2 border border-zinc-200">Duration of account + 3 years</td>
                   </tr>
                   <tr>
-                    <td className="px-4 py-2 border border-zinc-200 dark:border-zinc-800">Extracted Metadata</td>
-                    <td className="px-4 py-2 border border-zinc-200 dark:border-zinc-800">Duration of account + 1 year</td>
+                    <td className="px-4 py-2 border border-zinc-200">Extracted Metadata</td>
+                    <td className="px-4 py-2 border border-zinc-200">Duration of account + 1 year</td>
                   </tr>
                   <tr>
-                    <td className="px-4 py-2 border border-zinc-200 dark:border-zinc-800">Audit & Share Logs</td>
-                    <td className="px-4 py-2 border border-zinc-200 dark:border-zinc-800">7 years (Statutory requirement)</td>
+                    <td className="px-4 py-2 border border-zinc-200">Audit & Share Logs</td>
+                    <td className="px-4 py-2 border border-zinc-200">7 years (Statutory requirement)</td>
                   </tr>
                 </tbody>
               </table>
@@ -204,16 +204,16 @@ export default function PrivacyPolicyPage() {
           </section>
 
           <section className="space-y-6">
-            <h2 className="text-lg font-bold text-black dark:text-white border-b border-zinc-100 dark:border-zinc-800 pb-2 uppercase tracking-wide">
+            <h2 className="text-lg font-bold text-black border-b border-zinc-100 pb-2 uppercase tracking-wide">
               8. Grievance Redressal
             </h2>
-            <div className="p-6 bg-zinc-50 dark:bg-zinc-800/50 border border-zinc-200 dark:border-zinc-800 rounded-lg space-y-4">
+            <div className="p-6 bg-zinc-50 border border-zinc-200 rounded-lg space-y-4">
               <p className="text-sm font-bold uppercase tracking-tight">Grievance Officer Contact Details:</p>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-6 text-sm">
                 <div>
                   <p className="font-bold">Ankit Nirala</p>
                   <p>Co-founder and CEO</p>
-                  <p className="mt-2 text-zinc-500">privacy@sakshya.io</p>
+                  <p className="mt-2 text-zinc-500">privacy@doqseal.io</p>
                 </div>
                 <div className="text-zinc-500 italic">
                   Quadkubes Technology Studio Private Limited,<br />
@@ -230,15 +230,15 @@ export default function PrivacyPolicyPage() {
         </div>
 
         {/* Footer */}
-        <div className="p-8 sm:p-12 border-t border-zinc-100 dark:border-zinc-800 text-center text-[10px] text-zinc-400 font-mono uppercase tracking-[0.2em]">
+        <div className="p-8 sm:p-12 border-t border-zinc-100 text-center text-[10px] text-zinc-400 font-mono uppercase tracking-[0.2em]">
           End of Privacy Policy • Quadkubes Technology Studio Private Limited
         </div>
 
       </div>
 
       <div className="max-w-4xl mx-auto mt-8 flex justify-center gap-6 text-[10px] font-bold text-zinc-400 uppercase tracking-widest print:hidden">
-        <Link href="/legal/terms-of-service" className="hover:text-black dark:hover:text-white transition-colors">Terms of Service</Link>
-        <Link href="/legal/data-processing-agreement" className="hover:text-black dark:hover:text-white transition-colors">Data Processing Agreement</Link>
+        <Link href="/legal/terms-of-service" className="hover:text-black transition-colors">Terms of Service</Link>
+        <Link href="/legal/data-processing-agreement" className="hover:text-black transition-colors">Data Processing Agreement</Link>
       </div>
     </div>
   );

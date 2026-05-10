@@ -213,8 +213,8 @@
             "type": "shareable_link",
             "document_id": "doc_aadhaar_01",
             "document_name": "Aadhaar Card",
-            "link": "https://share.sakshya.io/d/ax9k2-mq74r-zzp01",
-            "short_link": "sakshya.io/d/ax9k2",
+            "link": "https://share.doqseal.io/d/ax9k2-mq74r-zzp01",
+            "short_link": "doqseal.io/d/ax9k2",
             "created_at": "2026-03-10T11:44:53Z",
             "settings": {
               "expires_in": "24h",
@@ -224,10 +224,10 @@
               "password_protected": false,
               "allow_download": false,
               "watermark": true,
-              "watermark_text": "Shared by Kritarth Agrawal via Sakshya"
+              "watermark_text": "Shared by Kritarth Agrawal via DoqSeal"
             },
             "actions": [
-              { "label": "Copy Link", "type": "copy_link", "value": "https://share.sakshya.io/d/ax9k2-mq74r-zzp01" },
+              { "label": "Copy Link", "type": "copy_link", "value": "https://share.doqseal.io/d/ax9k2-mq74r-zzp01" },
               { "label": "Share via WhatsApp", "type": "share_whatsapp" },
               { "label": "Share via Email", "type": "share_email" },
               { "label": "Edit Settings", "type": "edit_link_settings", "document_id": "doc_aadhaar_01" },
@@ -235,7 +235,7 @@
             ],
             "warning": {
               "type": "sensitive_document",
-              "message": "Aadhaar is a sensitive identity document. Only share with trusted parties. Sakshya applies a watermark automatically."
+              "message": "Aadhaar is a sensitive identity document. Only share with trusted parties. DoqSeal applies a watermark automatically."
             }
           }
         ]

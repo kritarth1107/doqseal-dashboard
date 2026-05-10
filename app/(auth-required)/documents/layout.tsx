@@ -2,7 +2,7 @@ import { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Documents",
-  description: "Browse, search, and manage all your documents indexed with Sakshya intelligence.",
+  description: "Browse, search, and manage all your documents indexed with DoqSeal intelligence.",
 };
 
 export default function DocumentsLayout({

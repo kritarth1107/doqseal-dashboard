@@ -2,7 +2,7 @@ import { Metadata } from "next";
 
 export const metadata: Metadata = {
   title: "Dashboard",
-  description: "Your Sakshya dashboard overview, featuring recent activity and document insights.",
+  description: "Your DoqSeal dashboard overview, featuring recent activity and document insights.",
 };
 
 export default function DashboardLayout({

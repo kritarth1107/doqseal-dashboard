@@ -22,19 +22,19 @@ const GoogleIcon = () => (
 );
 
 const GithubIcon = () => (
-  <svg viewBox="0 0 24 24" className="w-8 h-8 text-[#181717] dark:text-white" fill="currentColor">
+  <svg viewBox="0 0 24 24" className="w-8 h-8 text-[#181717]" fill="currentColor">
     <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
   </svg>
 );
 
 const LinkedInIcon = () => (
-  <svg viewBox="0 0 24 24" className="w-7 h-7 text-[#0A66C2] dark:text-[#388bd1]" fill="currentColor">
+  <svg viewBox="0 0 24 24" className="w-7 h-7 text-[#0A66C2]" fill="currentColor">
     <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433c-1.144 0-2.063-.926-2.063-2.065 0-1.138.92-2.063 2.063-2.063 1.14 0 2.064.925 2.064 2.063 0 1.139-.925 2.065-2.064 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z" />
   </svg>
 );
 
 const XIcon = () => (
-  <svg viewBox="0 0 24 24" className="w-7 h-7 text-black dark:text-white" fill="currentColor">
+  <svg viewBox="0 0 24 24" className="w-7 h-7 text-black" fill="currentColor">
     <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z" />
   </svg>
 );
@@ -89,51 +89,51 @@ function HookContent() {
   const CurrentIcon = statuses[statusIndex].icon;
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center bg-[#fcfcfc] dark:bg-[#0a0a0a] relative overflow-hidden">
+    <div className="min-h-screen w-full flex flex-col items-center justify-center bg-[#fcfcfc] relative overflow-hidden">
       {/* Background Ambience */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-[#D4F46A]/10 dark:bg-[#D4F46A]/5 blur-[120px] rounded-full pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-[#2563eb]/10 blur-[120px] rounded-full pointer-events-none" />
       
       <div className="relative z-10 flex flex-col items-center max-w-sm w-full px-6">
         
         {/* Animated Connection UI */}
         <div className="flex items-center gap-8 mb-16 relative">
           {/* Provider Logo */}
-          <div className="w-20 h-20 rounded-2xl bg-white dark:bg-zinc-900 border border-zinc-200 dark:border-zinc-800 shadow-xl flex items-center justify-center animate-pulse-subtle">
+          <div className="w-20 h-20 rounded-2xl bg-white border border-zinc-200 shadow-xl flex items-center justify-center animate-pulse-subtle">
             {renderProviderIcon()}
           </div>
 
           {/* Connection Line */}
-          <div className="w-16 h-[2px] bg-zinc-200 dark:bg-zinc-800 relative overflow-hidden">
-            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#D4F46A] to-transparent animate-shimmer" />
+          <div className="w-16 h-[2px] bg-zinc-200 relative overflow-hidden">
+            <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#2563eb] to-transparent animate-shimmer" />
           </div>
 
-          {/* Sakshya Logo */}
-          <div className="w-20 h-20 rounded-2xl bg-[#D4F46A] shadow-lg shadow-[#D4F46A]/20 flex items-center justify-center rotate-3 animate-pulse-slow">
-            <img src="/sakshya_logo.svg" alt="Sakshya" className="w-10 h-10 brightness-0" />
+          {/* DoqSeal Logo */}
+          <div className="w-20 h-20 rounded-2xl bg-[#2563eb] shadow-lg shadow-[#2563eb]/20 flex items-center justify-center rotate-3 animate-pulse-slow">
+            <img src="/doqseal_logo.svg" alt="DoqSeal" className="w-10 h-10 brightness-0" />
           </div>
 
           {/* Particle Effects */}
           <div className="absolute -top-4 -bottom-4 -left-4 -right-4 pointer-events-none">
-            <div className="absolute top-0 left-1/4 w-1 h-1 bg-[#D4F46A] rounded-full animate-float-particle-1" />
-            <div className="absolute bottom-0 right-1/4 w-1 h-1 bg-[#D4F46A] rounded-full animate-float-particle-2" />
+            <div className="absolute top-0 left-1/4 w-1 h-1 bg-[#2563eb] rounded-full animate-float-particle-1" />
+            <div className="absolute bottom-0 right-1/4 w-1 h-1 bg-[#2563eb] rounded-full animate-float-particle-2" />
           </div>
         </div>
 
         {/* Status Section */}
         <div className="text-center space-y-6 w-full">
           <div className="h-8 flex items-center justify-center gap-3">
-             <div className={`transition-all duration-500 ${isDone ? 'text-emerald-500' : 'text-[#D4F46A]'}`}>
+             <div className={`transition-all duration-500 ${isDone ? 'text-emerald-500' : 'text-[#2563eb]'}`}>
                <CurrentIcon className="w-5 h-5 animate-in fade-in zoom-in duration-500" />
              </div>
-             <p className="text-base font-medium text-zinc-900 dark:text-zinc-100 tracking-tight transition-all duration-500 animate-in slide-in-from-bottom-2">
+             <p className="text-base font-medium text-zinc-900 tracking-tight transition-all duration-500 animate-in slide-in-from-bottom-2">
                {statuses[statusIndex].text}
              </p>
           </div>
 
           {/* Progress Bar */}
-          <div className="w-full h-1.5 bg-zinc-100 dark:bg-zinc-900 rounded-full overflow-hidden">
+          <div className="w-full h-1.5 bg-zinc-100 rounded-full overflow-hidden">
             <div 
-              className="h-full bg-[#D4F46A] transition-all duration-1000 ease-out rounded-full shadow-[0_0_8px_#D4F46A]" 
+              className="h-full bg-[#2563eb] transition-all duration-1000 ease-out rounded-full shadow-[0_0_8px_#2563eb]" 
               style={{ width: `${((statusIndex + 1) / statuses.length) * 100}%` }}
             />
           </div>
@@ -187,8 +187,8 @@ function HookContent() {
 export default function AuthHookPage() {
   return (
     <Suspense fallback={
-      <div className="min-h-screen flex items-center justify-center bg-[#fcfcfc] dark:bg-[#0a0a0a]">
-        <Loader2 className="w-8 h-8 animate-spin text-[#D4F46A]" />
+      <div className="min-h-screen flex items-center justify-center bg-[#fcfcfc]">
+        <Loader2 className="w-8 h-8 animate-spin text-[#2563eb]" />
       </div>
     }>
       <HookContent />

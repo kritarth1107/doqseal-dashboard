@@ -10,7 +10,7 @@ export default function RootLayout({
 }>) {
   return (
     <AuthProvider>
-      <div className="flex h-screen bg-white dark:bg-[#212121] overflow-hidden sm:flex-row flex-col">
+      <div className="flex h-screen bg-white overflow-hidden sm:flex-row flex-col">
         <Sidebar />
         <main className="flex-1 flex flex-col min-w-0 h-full overflow-hidden relative">
           <TopHeader />

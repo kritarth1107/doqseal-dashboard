@@ -15,14 +15,14 @@ const dummyFolders = [
 
 const FoldersPage = () => {
     return (
-        <div className="flex-1 flex flex-col h-full bg-[#f9f9f9] dark:bg-[#1f1f1f] relative overflow-hidden">
+        <div className="flex-1 flex flex-col h-full bg-[#f9f9f9] relative overflow-hidden">
 
             {/* Top Right Header - Plan & Upgrade */}
             <div className="absolute top-4 right-6 flex items-center justify-end w-full z-10">
-                <div className="flex items-center text-xs font-medium text-gray-500 bg-white dark:bg-[#2c2c2c] border border-gray-200 dark:border-white/10 rounded-full px-3 py-1.5 shadow-sm">
+                <div className="flex items-center text-xs font-medium text-gray-500 bg-white border border-gray-200 rounded-full px-3 py-1.5 shadow-sm">
                     <span className="text-gray-400">Free plan</span>
-                    <span className="mx-2 text-gray-300 dark:text-gray-600">•</span>
-                    <Link href="#" className="text-gray-700 dark:text-gray-200 hover:text-black dark:hover:text-white transition-colors">Upgrade</Link>
+                    <span className="mx-2 text-gray-300">•</span>
+                    <Link href="#" className="text-gray-700 hover:text-black transition-colors">Upgrade</Link>
                 </div>
             </div>
 
@@ -32,10 +32,10 @@ const FoldersPage = () => {
                     {/* Header */}
                     <div className="flex items-start justify-between mb-8">
                         <div>
-                            <h1 className="text-2xl font-serif text-[#333] dark:text-[#ececec] tracking-tight mb-2">
+                            <h1 className="text-2xl font-serif text-[#333] tracking-tight mb-2">
                                 My Folders
                             </h1>
-                            <p className="text-[15px] text-gray-500 dark:text-gray-400">
+                            <p className="text-[15px] text-gray-500">
                                 Organise your documents into folders. Folders can be shared, locked, or linked to a document request.
                             </p>
                         </div>
@@ -52,7 +52,7 @@ const FoldersPage = () => {
                         </div>
                         <input
                             type="text"
-                            className="w-full bg-[#f0f0f0] dark:bg-[#2c2c2c] border border-transparent focus:border-gray-300 dark:focus:border-white/20 rounded-xl text-[#333] dark:text-[#ececec] pl-10 pr-4 py-3 outline-none text-[15px] placeholder-gray-500 dark:placeholder-gray-400 transition-all font-sans"
+                            className="w-full bg-[#f0f0f0] border border-transparent focus:border-gray-300 rounded-xl text-[#333] pl-10 pr-4 py-3 outline-none text-[15px] placeholder-gray-500 transition-all font-sans"
                             placeholder="Search folders..."
                         />
                     </div>
@@ -61,7 +61,7 @@ const FoldersPage = () => {
                     <div className="flex items-center justify-end mb-6">
                         <div className="flex items-center gap-2 text-[13px] text-gray-500">
                             <span>Sort by</span>
-                            <button className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-white/5 transition-colors text-gray-700 dark:text-gray-300 font-medium">
+                            <button className="flex items-center gap-1.5 px-3 py-1.5 border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors text-gray-700 font-medium">
                                 Activity
                                 <ChevronDown className="w-3.5 h-3.5 opacity-70" />
                             </button>
@@ -71,22 +71,22 @@ const FoldersPage = () => {
                     {/* Grid */}
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                         {dummyFolders.map((folder) => (
-                            <Link href={`/folder/${folder.id}`} key={folder.id} className="flex flex-col p-4 bg-white dark:bg-[#2c2c2c] border border-gray-200 dark:border-white/10 rounded-xl hover:shadow-md transition-all group h-[160px] cursor-pointer">
+                            <Link href={`/folder/${folder.id}`} key={folder.id} className="flex flex-col p-4 bg-white border border-gray-200 rounded-xl hover:shadow-md transition-all group h-[160px] cursor-pointer">
                                 <div className="flex items-start justify-between gap-3 mb-2.5">
                                     <div className="flex items-center gap-2 overflow-hidden">
                                         <span className="text-xl shrink-0">{folder.icon}</span>
-                                        <h3 className="text-[15px] font-medium text-[#333] dark:text-[#ececec] truncate leading-tight mt-0.5">
+                                        <h3 className="text-[15px] font-medium text-[#333] truncate leading-tight mt-0.5">
                                             {folder.name}
                                         </h3>
                                     </div>
-                                    <span className="px-2 py-[3px] text-[11px] font-medium bg-gray-100 dark:bg-[#383838] text-gray-600 dark:text-gray-300 rounded-[#000] border border-gray-200 dark:border-white/5 shrink-0">
+                                    <span className="px-2 py-[3px] text-[11px] font-medium bg-gray-100 text-gray-600 rounded-[#000] border border-gray-200 shrink-0">
                                         {folder.docCount} docs
                                     </span>
                                 </div>
-                                <p className="text-[13px] text-gray-500 dark:text-gray-400 line-clamp-2 mb-3 flex-1 leading-snug">
+                                <p className="text-[13px] text-gray-500 line-clamp-2 mb-3 flex-1 leading-snug">
                                     {folder.hint}
                                 </p>
-                                <div className="flex items-center justify-between text-[11px] text-gray-400 dark:text-gray-500 mt-auto font-medium">
+                                <div className="flex items-center justify-between text-[11px] text-gray-400 mt-auto font-medium">
                                     <span className="truncate">Updated {folder.updatedStr}</span>
                                     <div className="flex items-center gap-1.5 shrink-0 ml-2">
                                         {folder.isLocked && <span title="Locked Folder" className="flex items-center justify-center"><Lock className="w-3.5 h-3.5 text-gray-400" /></span>}
