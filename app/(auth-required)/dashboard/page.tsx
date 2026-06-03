@@ -1,5 +1,6 @@
 "use client";
-import React from 'react';
+import React from "react";
+import { useAuth } from "@/components/AuthProvider";
 import { 
   FileText, 
   Search, 
@@ -17,18 +18,21 @@ import {
 import Link from 'next/link';
 
 export default function Dashboard() {
+  const { userData, activeOrg } = useAuth();
+  const firstName = userData?.name?.split(" ")[0] || "there";
+
   const stats = [
-    { label: "Total Documents", value: "12,482", icon: FileText, trend: "+12%", trendUp: true, color: "blue" },
-    { label: "AI Extractions", value: "8,291", icon: Cpu, trend: "+24%", trendUp: true, color: "lime" },
-    { label: "DPDP Compliance", value: "98.2%", icon: ShieldCheck, trend: "+0.5%", trendUp: true, color: "green" },
-    { label: "Time Saved", value: "420h", icon: Clock, trend: "+18%", trendUp: true, color: "purple" },
+    { label: "Documents in Drive", value: "12,482", icon: FileText, trend: "+12%", trendUp: true, color: "blue" },
+    { label: "AI extractions", value: "8,291", icon: Cpu, trend: "+24%", trendUp: true, color: "lime" },
+    { label: "Envelopes pending", value: "7", icon: ShieldCheck, trend: "3 due today", trendUp: false, color: "green" },
+    { label: "Active projects", value: "3", icon: Clock, trend: "Shared context", trendUp: true, color: "purple" },
   ];
 
   const recentDocuments = [
-    { id: 1, name: "Vendor_Agreement_Q1.pdf", type: "Contract", status: "Processed", confidence: "99.2%", date: "2 mins ago" },
-    { id: 2, name: "Employee_Onboarding_Form.pdf", type: "HR", status: "Review", confidence: "82.5%", date: "15 mins ago" },
-    { id: 3, name: "Tax_Invoice_April_2024.pdf", type: "Finance", status: "Processed", confidence: "98.8%", date: "1 hour ago" },
-    { id: 4, name: "Compliance_Audit_Report.pdf", type: "Legal", status: "Flagged", confidence: "74.1%", date: "3 hours ago" },
+    { id: 1, name: "MSA_Acme_Corp_Q2.pdf", type: "Contract", status: "Signed", confidence: "—", date: "2 mins ago" },
+    { id: 2, name: "Freelancer_NDA.pdf", type: "E-Sign", status: "Awaiting", confidence: "1/2 signers", date: "15 mins ago" },
+    { id: 3, name: "SOC2_Report_2026.pdf", type: "Compliance", status: "Indexed", confidence: "99.1%", date: "1 hour ago" },
+    { id: 4, name: "Pre_Auth_Form_Star_Health.pdf", type: "Project", status: "In review", confidence: "Insurance Documents", date: "3 hours ago" },
   ];
 
   const trends = [
@@ -48,16 +52,22 @@ export default function Dashboard() {
         {/* Welcome Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900">Good morning, Kritarth</h1>
-            <p className="text-sm text-gray-500">Here's what's happening with your document intelligence today.</p>
+            <h1 className="text-2xl font-semibold text-gray-900">Good morning, {firstName}</h1>
+            <p className="text-sm text-gray-500">
+              {activeOrg?.name ? `${activeOrg.name} · ` : ""}
+              Document intelligence, e-sign, and compliance at a glance.
+            </p>
           </div>
           <div className="flex items-center gap-3">
             <button className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
               Export Report
             </button>
-            <Link href="/new" className="px-4 py-2 text-sm font-medium text-black bg-[#2563eb] rounded-lg hover:opacity-90 transition-opacity flex items-center gap-2 shadow-sm">
+            <Link href="/sign/new" className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-2">
+              New envelope
+            </Link>
+            <Link href="/intelligence" className="px-4 py-2 text-sm font-medium text-white bg-[#2563eb] rounded-lg hover:bg-[#1d4ed8] flex items-center gap-2 shadow-sm">
               <Zap className="w-4 h-4" />
-              New Extraction
+              Ask AI
             </Link>
           </div>
         </div>

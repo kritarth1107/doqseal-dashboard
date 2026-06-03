@@ -382,7 +382,7 @@ export default function ApiManagementPage() {
                                             : "border-transparent text-gray-500 hover:text-gray-800"
                                         }`}
                                 >
-                                    <Icon className={`w-4 h-4 ${isActive ? 'text-black : ''}`} />
+                                    <Icon className={`w-4 h-4 ${isActive ? "text-black" : ""}`} />
                                     {tab.label}
                                 </button>
                             );

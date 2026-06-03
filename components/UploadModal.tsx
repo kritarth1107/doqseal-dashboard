@@ -92,12 +92,11 @@ export function UploadModal({ isOpen, onClose, onUpload }: UploadModalProps) {
                         onDragLeave={handleDragLeave}
                         onDrop={handleDrop}
                         onClick={() => fileInputRef.current?.click()}
-                        className={`w-full border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center cursor-pointer transition-all duration-200 ease-in-out
-                            ${isDragging
-                                ? 'border-[#2563eb] bg-[#2563eb]/5
-                                : 'border-gray-300 hover:bg-gray-50
-                            }
-                        `}
+                        className={`w-full border-2 border-dashed rounded-xl p-8 flex flex-col items-center justify-center cursor-pointer transition-all duration-200 ease-in-out ${
+                            isDragging
+                                ? "border-[#2563eb] bg-[#2563eb]/5"
+                                : "border-gray-300 hover:bg-gray-50"
+                        }`}
                     >
                         <input
                             type="file"
@@ -107,7 +106,7 @@ export function UploadModal({ isOpen, onClose, onUpload }: UploadModalProps) {
                             className="hidden"
                             accept=".pdf,.doc,.docx,.xls,.xlsx,.png,.jpg,.jpeg,.csv"
                         />
-                        <div className={`p-4 rounded-full mb-4 ${isDragging ? 'bg-[#2563eb]/20 text-black' : 'bg-gray-100 text-gray-500
+                        <div className={`p-4 rounded-full mb-4 ${isDragging ? "bg-[#2563eb]/20 text-black" : "bg-gray-100 text-gray-500"}`}>
                             <UploadCloud className="w-8 h-8" />
                         </div>
                         <p className="text-[#333] font-medium mb-1 text-center">

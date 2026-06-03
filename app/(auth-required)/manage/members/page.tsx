@@ -17,8 +17,9 @@ import {
 } from 'lucide-react';
 
 const tabs = [
-    { id: 'members', label: 'Team Members', icon: Users },
-    { id: 'domains', label: 'Domain Access', icon: Globe },
+    { id: 'members', label: 'Members & contractors', icon: Users },
+    { id: 'domains', label: 'Domain access', icon: Globe },
+    { id: 'api-access', label: 'API access', icon: Shield },
 ];
 
 export default function MembersManagementPage() {
@@ -28,10 +29,10 @@ export default function MembersManagementPage() {
     const [domain, setDomain] = useState('doqseal.io');
 
     const members = [
-        { id: 1, name: "Kritarth Singhal", email: "kritarth@doqseal.io", role: "Owner", status: "Active", avatar: "KS" },
-        { id: 2, name: "Mad Max", email: "m4dm4x@doqseal.io", role: "Admin", status: "Active", avatar: "MM" },
-        { id: 3, name: "Sarah Connor", email: "sarah.c@terminator.com", role: "Member", status: "Invited", avatar: "SC" },
-        { id: 4, name: "Tony Stark", email: "tony@starkindustries.com", role: "Viewer", status: "Active", avatar: "TS" },
+        { id: 1, name: "Workspace owner", email: "owner@company.com", role: "Owner", status: "Active", avatar: "OW" },
+        { id: 2, name: "Alex Dev", email: "alex@freelance.io", role: "Developer", status: "Active", avatar: "AD", access: "API + Drive" },
+        { id: 3, name: "Jane Legal", email: "jane@acme.com", role: "Signer", status: "Active", avatar: "JL", access: "E-Sign only" },
+        { id: 4, name: "Contractor PM", email: "pm@contractor.com", role: "Member", status: "Invited", avatar: "CP", access: "Project: Acme" },
     ];
 
     const renderMembers = () => (
@@ -203,7 +204,7 @@ export default function MembersManagementPage() {
                         <h1 className="text-2xl sm:text-3xl font-semibold text-[#333] tracking-tight">Members & Access</h1>
                     </div>
                     <p className="text-gray-500 text-sm sm:text-base max-w-2xl">
-                        Manage your team's workspace permissions and configure automatic onboarding rules for your organization.
+                        Invite freelancers and developers with scoped roles—sign-only, project access, or full API keys for your document intelligence stack.
                     </p>
                 </div>
 
@@ -234,6 +235,16 @@ export default function MembersManagementPage() {
                 <div className="pb-32">
                     {activeTab === 'members' && renderMembers()}
                     {activeTab === 'domains' && renderDomains()}
+                    {activeTab === 'api-access' && (
+                        <div className="bg-white border border-gray-200 rounded-2xl p-6 text-sm text-gray-600">
+                            <p className="mb-4">
+                                Issue per-contractor API keys with organisation scope. Revoke access without affecting production integrations.
+                            </p>
+                            <a href="/manage/api-keys" className="inline-flex items-center gap-2 text-[#2563eb] font-medium">
+                                Manage API keys <ArrowRight className="w-4 h-4" />
+                            </a>
+                        </div>
+                    )}
                 </div>
 
             </div>

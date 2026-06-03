@@ -1,31 +1,19 @@
 "use client";
 import React, { useState } from "react";
 import {
-  LayoutDashboard,
   Search,
-  Compass,
-  PlusSquare,
-  Folder,
-  BarChart3,
-  History,
-  Key,
-  Activity,
-  Users,
-  ShieldCheck,
-  Settings,
   Menu,
-  Download,
   ChevronRight,
-  ChevronDown,
   ChevronsUpDown,
   Check,
   Plus,
-  Database
+  Settings,
 } from "lucide-react";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import { signOut } from "next-auth/react";
+import { navGroups } from "@/lib/navigation";
 
 export function Sidebar() {
   const [isCollapsed, setIsCollapsed] = useState(false);
@@ -54,43 +42,11 @@ export function Sidebar() {
     }
   };
 
-  const navGroups = [
-    {
-      items: [
-        { name: "Dashboard", icon: LayoutDashboard, href: "/dashboard" },
-        // { name: "AI Search", icon: Search, onClick: () => setShowSearchModal(true) },
-        { name: "Explore", icon: Search, href: "/new" },
-      ]
-    },
-    {
-      label: "Documents",
-      items: [
-        { name: "Explore", icon: Compass, href: "/documents/explore" },
-        { name: "Request", icon: PlusSquare, href: "/documents/request" },
-        { name: "Folder", icon: Folder, href: "/documents/folder" },
-      ]
-    },
-    {
-      label: "Analytics",
-      items: [
-        { name: "Usage", icon: BarChart3, href: "/analytics/usage" },
-        { name: "Audit Logs", icon: History, href: "/analytics/audit-logs" },
-      ]
-    },
-    {
-      label: "Manage",
-      items: [
-        { name: "API Keys", icon: Key, href: "/manage/api-keys" },
-        { name: "Limits", icon: Activity, href: "/manage/limits" },
-        { name: "Members", icon: Users, href: "/manage/members" },
-        { name: "Settings", icon: Settings, href: "/settings" },
-      ]
-    }
-  ];
-
-  const NavItem = ({ item }: { item: any }) => {
+  const NavItem = ({ item }: { item: (typeof navGroups)[0]["items"][0] & { onClick?: () => void } }) => {
     const Icon = item.icon;
-    const isActive = pathname === item.href;
+    const isActive =
+      pathname === item.href ||
+      (item.href !== "/dashboard" && pathname.startsWith(item.href + "/"));
     const content = (
       <>
         <Icon className={`w-4 h-4 shrink-0 ${isActive ? "text-[#2563eb]" : "text-gray-500"}`} />

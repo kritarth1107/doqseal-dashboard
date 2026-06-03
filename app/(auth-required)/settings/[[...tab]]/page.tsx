@@ -52,8 +52,8 @@ export default function SettingsPage() {
                                         key={tab.id}
                                         href={tab.path}
                                         className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive
-                                            ? 'bg-[#ececec] text-black
-                                            : 'text-gray-600 hover:bg-gray-200/50 hover:text-gray-900
+                                            ? "bg-[#ececec] text-black"
+                                            : "text-gray-600 hover:bg-gray-200/50 hover:text-gray-900"
                                             }`}
                                     >
                                         {tab.label}
@@ -143,8 +143,7 @@ export default function SettingsPage() {
                                         {/* Toggle Switch */}
                                         <button
                                             onClick={() => setResponseCompletions(!responseCompletions)}
-                                            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full outline-none transition-colors ${responseCompletions ? 'bg-blue-500' : 'bg-gray-300
-                                                }`}
+                                            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full outline-none transition-colors ${responseCompletions ? "bg-blue-500" : "bg-gray-300"}`}
                                         >
                                             <span className="sr-only">Toggle response completions</span>
                                             <span
@@ -168,7 +167,7 @@ export default function SettingsPage() {
                                                 onClick={() => setTheme('light')}
                                                 className={`flex flex-col items-center gap-2 group`}
                                             >
-                                                <div className={`w-28 h-20 bg-[#f5f5f5] rounded-xl border-2 flex flex-col p-2 gap-2 overflow-hidden transition-colors ${currentTheme === 'light' ? 'border-blue-500' : 'border-gray-200 hover:border-gray-300
+                                                <div className={`w-28 h-20 bg-[#f5f5f5] rounded-xl border-2 flex flex-col p-2 gap-2 overflow-hidden transition-colors ${currentTheme === "light" ? "border-blue-500" : "border-gray-200 hover:border-gray-300"}`}>
                                                     <div className="flex justify-end"><div className="w-4 h-1.5 rounded-full bg-gray-300" /></div>
                                                     <div className="flex flex-col gap-1">
                                                         <div className="w-10 h-1.5 rounded-full bg-gray-200" />
@@ -185,7 +184,7 @@ export default function SettingsPage() {
                                                 onClick={() => setTheme('dark')}
                                                 className={`flex flex-col items-center gap-2 group`}
                                             >
-                                                <div className={`w-28 h-20 bg-[#232323] rounded-xl border-2 flex flex-col p-2 gap-2 overflow-hidden transition-colors ${currentTheme === 'dark' ? 'border-blue-500' : 'border-gray-200 hover:border-gray-300
+                                                <div className={`w-28 h-20 bg-[#232323] rounded-xl border-2 flex flex-col p-2 gap-2 overflow-hidden transition-colors ${currentTheme === "dark" ? "border-blue-500" : "border-gray-200 hover:border-gray-300"}`}>
                                                     <div className="flex flex-col flex-1 bg-[#2c2c2c] rounded-md overflow-hidden p-1.5 gap-2 border border-white/5">
                                                         <div className="flex justify-end"><div className="w-4 h-1.5 rounded-full bg-white/20" /></div>
                                                         <div className="flex flex-col gap-1">
@@ -204,7 +203,7 @@ export default function SettingsPage() {
                                                 onClick={() => setTheme('system')}
                                                 className={`flex flex-col items-center gap-2 group`}
                                             >
-                                                <div className={`w-28 h-20 bg-[#232323] rounded-xl border-2 flex overflow-hidden transition-colors ${currentTheme === 'system' ? 'border-gray-500' : 'border-gray-200 hover:border-gray-300
+                                                <div className={`w-28 h-20 bg-[#232323] rounded-xl border-2 flex overflow-hidden transition-colors ${currentTheme === "system" ? "border-gray-500" : "border-gray-200 hover:border-gray-300"}`}>
                                                     {/* Left Half (Light) */}
                                                     <div className="flex-1 bg-[#f5f5f5] h-full flex flex-col p-2 gap-1.5 relative border-r border-gray-300">
                                                         <div className="flex flex-col gap-1 mt-3">
