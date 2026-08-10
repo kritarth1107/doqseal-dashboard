@@ -12,6 +12,9 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { isPrescriptionExtraction } from "@/lib/demo-extraction";
+import { ExtractionFields } from "@/components/ExtractionFields";
+import { useAuth } from "@/components/AuthProvider";
+import { withOrgHeaders } from "@/lib/client-api";
 import { ExtractedDocument, StoredDocument } from "@/types/extraction";
 
 function StatusBadge({ status }: { status: string }) {
@@ -74,19 +77,32 @@ function Section({
   );
 }
 
+function isNestedExtraction(
+  extracted: StoredDocument["extractedJson"]
+): extracted is ExtractedDocument {
+  return Boolean(
+    extracted &&
+      typeof extracted === "object" &&
+      "institution" in extracted
+  );
+}
+
 export default function ProjectDocumentPage() {
   const params = useParams<{ projectId: string; documentId: string }>();
   const router = useRouter();
+  const { activeOrgId } = useAuth();
   const [doc, setDoc] = useState<StoredDocument | null>(null);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
   const [pdfPage, setPdfPage] = useState(1);
 
   async function loadDocument(silent = false) {
+    if (!activeOrgId) return null;
     if (!silent) setLoading(true);
     try {
       const res = await fetch(
-        `/api/projects/${params.projectId}/documents/${params.documentId}`
+        `/api/projects/${params.projectId}/documents/${params.documentId}`,
+        withOrgHeaders(activeOrgId)
       );
       if (!res.ok) throw new Error("Failed to load");
       const data = (await res.json()) as StoredDocument;
@@ -103,15 +119,15 @@ export default function ProjectDocumentPage() {
   useEffect(() => {
     if (!params.documentId) return;
     loadDocument();
-  }, [params.documentId, params.projectId]);
+  }, [params.documentId, params.projectId, activeOrgId]);
 
   useEffect(() => {
     if (!doc || doc.status !== "processing") return;
     const interval = setInterval(async () => {
       await loadDocument(true);
-    }, 3000);
+    }, 2000);
     return () => clearInterval(interval);
-  }, [doc?.status, params.documentId, params.projectId]);
+  }, [doc?.status, params.documentId, params.projectId, activeOrgId]);
 
   const handleDelete = async () => {
     if (!doc) return;
@@ -127,7 +143,7 @@ export default function ProjectDocumentPage() {
     try {
       const res = await fetch(
         `/api/projects/${params.projectId}/documents/${params.documentId}`,
-        { method: "DELETE" }
+        withOrgHeaders(activeOrgId, { method: "DELETE" })
       );
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Delete failed");
@@ -162,9 +178,16 @@ export default function ProjectDocumentPage() {
     );
   }
 
-  const extracted = doc.extractedJson as ExtractedDocument | null;
-  const fileUrl = `/api/files/${doc.storedFilename}`;
-  const isPrescription = extracted ? isPrescriptionExtraction(extracted) : false;
+  const extracted = doc.extractedJson;
+  const nestedExtraction = isNestedExtraction(extracted) ? extracted : null;
+  const flatExtraction =
+    extracted && !isNestedExtraction(extracted)
+      ? (extracted as Record<string, unknown>)
+      : null;
+  const fileUrl = `/api/documents/${doc.id}/file`;
+  const isPrescription = nestedExtraction
+    ? isPrescriptionExtraction(nestedExtraction)
+    : false;
 
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-[#f8fafc]">
@@ -181,7 +204,7 @@ export default function ProjectDocumentPage() {
           {doc.status === "processing" && (
             <div className="mb-4 flex items-center gap-2 rounded-2xl border border-[#2563eb]/20 bg-[#2563eb]/5 px-4 py-3 text-sm text-[#2563eb]">
               <Loader2 className="h-4 w-4 animate-spin" />
-              Extracting data from document — this takes about 45 seconds…
+              Extracting data from document — usually a few seconds…
             </div>
           )}
 
@@ -199,7 +222,15 @@ export default function ProjectDocumentPage() {
                   <> · {(doc.confidence * 100).toFixed(0)}% confidence</>
                 )}
                 {doc.extractionStrategy && (
-                  <> · {doc.extractionStrategy === "demo" ? "Demo extraction" : doc.extractionStrategy}</>
+                  <>
+                    {" "}
+                    ·{" "}
+                    {["backend", "hybrid", "ocr", "ocr_fallback"].includes(
+                      doc.extractionStrategy
+                    )
+                      ? "Real AI extraction"
+                      : doc.extractionStrategy}
+                  </>
                 )}
               </p>
             </div>
@@ -286,54 +317,59 @@ export default function ProjectDocumentPage() {
             </div>
 
             <div className="lg:col-span-3 space-y-4">
-              {extracted ? (
+              {flatExtraction ? (
+                <ExtractionFields
+                  data={flatExtraction}
+                  fieldConfidence={doc.fieldConfidence}
+                />
+              ) : nestedExtraction ? (
                 <>
                   <Section title="Institution">
-                    <Field label="Hospital" value={extracted.institution.name} />
-                    <Field label="Department" value={extracted.institution.branch} />
+                    <Field label="Hospital" value={nestedExtraction.institution.name} />
+                    <Field label="Department" value={nestedExtraction.institution.branch} />
                     {!isPrescription && (
                       <>
-                        <Field label="Scheme" value={extracted.institution.scheme} />
-                        <Field label="GST number" value={extracted.institution.gst_number} />
-                        <Field label="CIN" value={extracted.institution.cin} />
+                        <Field label="Scheme" value={nestedExtraction.institution.scheme} />
+                        <Field label="GST number" value={nestedExtraction.institution.gst_number} />
+                        <Field label="CIN" value={nestedExtraction.institution.cin} />
                       </>
                     )}
-                    <Field label="PIN" value={extracted.institution.pin} />
+                    <Field label="PIN" value={nestedExtraction.institution.pin} />
                   </Section>
 
                   <Section title="Patient">
-                    <Field label="Name" value={extracted.patient.name} />
-                    <Field label="Age" value={extracted.patient.age} />
-                    <Field label="Gender" value={extracted.patient.gender} />
-                    <Field label="Contact" value={extracted.patient.contact} />
-                    <Field label="Address" value={extracted.patient.address} />
-                    <Field label="Patient code" value={extracted.patient.patient_code} />
-                    <Field label="Patient type" value={extracted.patient.patient_type} />
+                    <Field label="Name" value={nestedExtraction.patient.name} />
+                    <Field label="Age" value={nestedExtraction.patient.age} />
+                    <Field label="Gender" value={nestedExtraction.patient.gender} />
+                    <Field label="Contact" value={nestedExtraction.patient.contact} />
+                    <Field label="Address" value={nestedExtraction.patient.address} />
+                    <Field label="Patient code" value={nestedExtraction.patient.patient_code} />
+                    <Field label="Patient type" value={nestedExtraction.patient.patient_type} />
                   </Section>
 
                   <Section title="Referral & clinical">
-                    <Field label="Referred by" value={extracted.referral.referred_by} />
+                    <Field label="Referred by" value={nestedExtraction.referral.referred_by} />
                     <Field
                       label="Clinical history"
-                      value={extracted.referral.clinical_history}
+                      value={nestedExtraction.referral.clinical_history}
                     />
                   </Section>
 
-                  {extracted.prescription && (
+                  {nestedExtraction.prescription && (
                     <Section title="Prescription">
-                      <Field label="Consultant" value={extracted.prescription.prescriber} />
+                      <Field label="Consultant" value={nestedExtraction.prescription.prescriber} />
                       <Field
                         label="Registration"
-                        value={extracted.prescription.registration_no}
+                        value={nestedExtraction.prescription.registration_no}
                       />
-                      <Field label="Assessment" value={extracted.prescription.diagnosis} />
-                      {extracted.prescription.medications.length > 0 ? (
+                      <Field label="Assessment" value={nestedExtraction.prescription.diagnosis} />
+                      {nestedExtraction.prescription.medications.length > 0 ? (
                         <div className="sm:col-span-2">
                           <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
                             Medications
                           </p>
                           <ul className="mt-2 space-y-3">
-                            {extracted.prescription.medications.map((med) => (
+                            {nestedExtraction.prescription.medications.map((med) => (
                               <li
                                 key={med.name}
                                 className="rounded-xl border border-gray-100 bg-gray-50 p-3 text-sm"
@@ -347,13 +383,13 @@ export default function ProjectDocumentPage() {
                             ))}
                           </ul>
                         </div>
-                      ) : extracted.tests.requested.length > 0 ? (
+                      ) : nestedExtraction.tests.requested.length > 0 ? (
                         <div className="sm:col-span-2">
                           <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
                             Investigations advised
                           </p>
                           <ul className="mt-2 space-y-1">
-                            {extracted.tests.requested.map((test) => (
+                            {nestedExtraction.tests.requested.map((test) => (
                               <li
                                 key={test}
                                 className="text-sm text-gray-900 flex items-start gap-2"
@@ -366,28 +402,28 @@ export default function ProjectDocumentPage() {
                         </div>
                       ) : null}
                       <div className="sm:col-span-2">
-                        <Field label="Advice" value={extracted.prescription.advice} />
+                        <Field label="Advice" value={nestedExtraction.prescription.advice} />
                       </div>
                     </Section>
                   )}
 
                   <Section title="Visit">
-                    <Field label="Date" value={extracted.visit.date} />
-                    <Field label="Time" value={extracted.visit.time} />
-                    <Field label="Receipt number" value={extracted.visit.rec_number} />
-                    <Field label="IPD/OPD" value={extracted.visit.ipd_opd} />
-                    <Field label="Bill type" value={extracted.visit.bill_type} />
+                    <Field label="Date" value={nestedExtraction.visit.date} />
+                    <Field label="Time" value={nestedExtraction.visit.time} />
+                    <Field label="Receipt number" value={nestedExtraction.visit.rec_number} />
+                    <Field label="IPD/OPD" value={nestedExtraction.visit.ipd_opd} />
+                    <Field label="Bill type" value={nestedExtraction.visit.bill_type} />
                   </Section>
 
-                  {!isPrescription && extracted.tests.requested.length > 0 && (
+                  {!isPrescription && nestedExtraction.tests.requested.length > 0 && (
                   <Section title="Tests">
-                    <Field label="Section" value={extracted.tests.section} />
+                    <Field label="Section" value={nestedExtraction.tests.section} />
                     <div className="sm:col-span-2">
                       <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
                         Requested tests
                       </p>
                       <ul className="mt-2 space-y-1">
-                        {extracted.tests.requested.map((test) => (
+                        {nestedExtraction.tests.requested.map((test) => (
                           <li
                             key={test}
                             className="text-sm text-gray-900 flex items-start gap-2"
@@ -401,35 +437,35 @@ export default function ProjectDocumentPage() {
                   </Section>
                   )}
 
-                  {!isPrescription && extracted.billing.gross > 0 && (
+                  {!isPrescription && nestedExtraction.billing.gross > 0 && (
                   <Section title="Billing">
                     <Field
                       label="Gross"
-                      value={`${extracted.billing.currency} ${extracted.billing.gross.toLocaleString("en-IN")}`}
+                      value={`${nestedExtraction.billing.currency} ${nestedExtraction.billing.gross.toLocaleString("en-IN")}`}
                     />
                     <Field
                       label="Net"
-                      value={`${extracted.billing.currency} ${extracted.billing.net.toLocaleString("en-IN")}`}
+                      value={`${nestedExtraction.billing.currency} ${nestedExtraction.billing.net.toLocaleString("en-IN")}`}
                     />
                     <Field
                       label="Paid"
-                      value={`${extracted.billing.currency} ${extracted.billing.paid.toLocaleString("en-IN")}`}
+                      value={`${nestedExtraction.billing.currency} ${nestedExtraction.billing.paid.toLocaleString("en-IN")}`}
                     />
                     <Field
                       label="Balance"
-                      value={`${extracted.billing.currency} ${extracted.billing.balance.toLocaleString("en-IN")}`}
+                      value={`${nestedExtraction.billing.currency} ${nestedExtraction.billing.balance.toLocaleString("en-IN")}`}
                     />
                     <div className="sm:col-span-2">
                       <Field
                         label="Amount in words"
-                        value={extracted.billing.amount_in_words}
+                        value={nestedExtraction.billing.amount_in_words}
                       />
                     </div>
                   </Section>
                   )}
 
                   <Section title="Verification">
-                    {Object.entries(extracted.verification).map(([key, passed]) => (
+                    {Object.entries(nestedExtraction.verification).map(([key, passed]) => (
                       <div key={key} className="flex items-center gap-2">
                         {passed ? (
                           <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
@@ -443,9 +479,9 @@ export default function ProjectDocumentPage() {
                     ))}
                   </Section>
 
-                  {extracted.auto_tags.length > 0 && (
+                  {nestedExtraction.auto_tags.length > 0 && (
                     <div className="flex flex-wrap gap-2">
-                      {extracted.auto_tags.map((tag) => (
+                      {nestedExtraction.auto_tags.map((tag) => (
                         <span
                           key={tag}
                           className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700"

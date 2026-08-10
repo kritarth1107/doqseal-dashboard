@@ -20,7 +20,8 @@ import {
   TypingIndicator,
   UserMessage,
 } from "@/components/intelligence/ChatMessage";
-import { projects } from "@/lib/mock-data";
+import { useAuth } from "@/components/AuthProvider";
+import { withOrgHeaders } from "@/lib/client-api";
 import { isPrescriptionProject } from "@/lib/project-config";
 
 type Highlight = {
@@ -107,11 +108,18 @@ const renderGreetingText = (greeting: Greeting) => {
   return parts;
 };
 
+type ProjectSummary = {
+  projectId: string;
+  name: string;
+  extractionHint?: string;
+};
+
 const NewSearchPage = () => {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const projectId = searchParams.get("project") ?? "p-test-request";
-  const project = projects.find((p) => p.id === projectId);
+  const { activeOrgId } = useAuth();
+  const projectId = searchParams.get("project") ?? "";
+  const [project, setProject] = useState<ProjectSummary | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   const [query, setQuery] = useState("");
@@ -131,6 +139,27 @@ const NewSearchPage = () => {
     setGreeting(randomGreeting);
     setIsMounted(true);
   }, []);
+
+  useEffect(() => {
+    async function loadProject() {
+      if (!projectId || !activeOrgId) {
+        setProject(null);
+        return;
+      }
+      try {
+        const res = await fetch(
+          `/api/projects/${projectId}`,
+          withOrgHeaders(activeOrgId)
+        );
+        if (!res.ok) throw new Error("Project not found");
+        const data = await res.json();
+        setProject(data.project);
+      } catch {
+        setProject(null);
+      }
+    }
+    loadProject();
+  }, [projectId, activeOrgId]);
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
@@ -174,22 +203,23 @@ const NewSearchPage = () => {
     }
   };
 
-  const handleUpload = async (files: File[]) => {
-    if (files.length === 0) return;
+  const handleUpload = async (files: File[], consent: boolean) => {
+    if (!activeOrgId || files.length === 0 || !projectId || !consent) return;
     setUploading(true);
 
     const formData = new FormData();
     formData.append("file", files[0]);
+    formData.append("consent", "true");
 
     try {
-      const res = await fetch(`/api/projects/${projectId}/upload`, {
-        method: "POST",
-        body: formData,
-      });
+      const res = await fetch(
+        `/api/projects/${projectId}/upload`,
+        withOrgHeaders(activeOrgId, { method: "POST", body: formData })
+      );
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Upload failed");
 
-      toast.success("Upload started — extraction takes about 45 seconds");
+      toast.success("Upload queued — opening extraction…");
       router.push(`/projects/${projectId}/documents/${data.documentId}`);
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : "Upload failed");
@@ -215,7 +245,7 @@ const NewSearchPage = () => {
             </div>
             <div className="min-w-0 flex-1">
               <p className="text-sm font-medium text-gray-900 truncate">{project.name}</p>
-              <p className="text-xs text-gray-500 truncate">{project.contextTokens}</p>
+              <p className="text-xs text-gray-500 truncate">{project.extractionHint}</p>
             </div>
             <Link
               href={`/projects/${projectId}`}

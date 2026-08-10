@@ -103,6 +103,10 @@ export function getHeadersFromRequest(request: any, token?: string, isMultipart:
   const contentType = request.headers.get('content-type') || '';
   const multipart = isMultipart || contentType.includes('multipart/form-data');
 
+  const organisationId =
+    request.headers.get('x-organisation-id') ||
+    request.cookies?.get('active_organisation_id')?.value;
+
   const metadata = {
     token: token || request.cookies?.get('session_token')?.value,
     fingerprint,
@@ -110,5 +114,13 @@ export function getHeadersFromRequest(request: any, token?: string, isMultipart:
     ip
   };
 
-  return multipart ? createMultipartHeaders(metadata) : createJsonHeaders(metadata);
+  const headers = multipart
+    ? createMultipartHeaders(metadata)
+    : createJsonHeaders(metadata);
+
+  if (organisationId) {
+    headers['x-organisation-id'] = organisationId;
+  }
+
+  return headers;
 }

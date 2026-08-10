@@ -125,7 +125,11 @@ export default function DrivePage() {
           ))}
         </div>
       </div>
-      <UploadModal isOpen={uploadOpen} onClose={() => setUploadOpen(false)} onUpload={() => setUploadOpen(false)} />
+      <UploadModal
+        isOpen={uploadOpen}
+        onClose={() => setUploadOpen(false)}
+        onUpload={(_files, _consent) => setUploadOpen(false)}
+      />
     </div>
   );
 }

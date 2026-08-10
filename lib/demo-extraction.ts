@@ -14,6 +14,15 @@ const AFSANA_PATIENT: ExtractedDocument["patient"] = {
   contact: "8975670107",
 };
 
+const AFSANA_INSTITUTION: ExtractedDocument["institution"] = {
+  name: "Krsnaa Diagnostics Ltd.",
+  branch: "CT Scan Dept., Sub District Hospital, Parli, Dist. Beed",
+  scheme: "NHM Free Diagnostic Initiative",
+  gst_number: "27AAECK2179H2ZD",
+  cin: "U74900PN2010PLC138068",
+  pin: "431515",
+};
+
 /** Demo extraction for Afsana Pinjari TRF + billing receipt (Parli, Beed). */
 function getTrfDemoExtraction(): ExtractedDocument {
   return {
@@ -21,14 +30,7 @@ function getTrfDemoExtraction(): ExtractedDocument {
     category: "Medical",
     sub_category: "Radiology",
     page_count: 2,
-    institution: {
-      name: "Krsnaa Diagnostics Ltd.",
-      branch: "CT Scan Dept., Sub District Hospital, Parli, Dist. Beed",
-      scheme: "NHM Free Diagnostic Initiative",
-      gst_number: "27AAECK2179H2ZD",
-      cin: "U74900PN2010PLC138068",
-      pin: "431515",
-    },
+    institution: { ...AFSANA_INSTITUTION },
     patient: { ...AFSANA_PATIENT },
     referral: {
       referred_by: "Dr. Rafat Rehman",
@@ -68,31 +70,24 @@ function getTrfDemoExtraction(): ExtractedDocument {
   };
 }
 
-/** Demo extraction — Medical Prescription for Afsana Pinjari (OPD Rx). */
-function getPrescriptionDemoExtraction(): ExtractedDocument {
+/** Demo extraction — prescription (Afsana Pinjari); hospital matches TRF. */
+export function getPrescriptionDemoExtraction(): ExtractedDocument {
   return {
     document_type: "Medical Prescription",
     category: "Medical",
     sub_category: "Prescription",
     page_count: 1,
-    institution: {
-      name: "Sub District Hospital, Parli Vaijnath",
-      branch: "OPD · Dist. Beed",
-      scheme: "Government of Maharashtra",
-      gst_number: "",
-      cin: "",
-      pin: "431515",
-    },
+    institution: { ...AFSANA_INSTITUTION },
     patient: { ...AFSANA_PATIENT },
     referral: {
-      referred_by: "Dr. Musaib Qureshi",
-      clinical_history: "Abdominal pain, suspected gastritis; advised imaging follow-up",
+      referred_by: "Dr. Satish Kumar Jyoti",
+      clinical_history: "Acute febrile illness",
     },
     visit: {
-      date: "2026-03-07",
-      time: "11:30",
-      rec_number: "OPD/28768",
-      ipd_opd: "28768",
+      date: "2024-05-13",
+      time: "12:08",
+      rec_number: "OPD Prescription",
+      ipd_opd: "OPD",
       bill_type: "OPD",
     },
     tests: {
@@ -100,31 +95,37 @@ function getPrescriptionDemoExtraction(): ExtractedDocument {
       section: "",
     },
     prescription: {
-      prescriber: "Dr. Musaib Qureshi",
-      registration_no: "MMC-2018-45678",
-      diagnosis: "Acute gastritis / abdominal discomfort",
+      prescriber: "Dr. Satish Kumar Jyoti",
+      registration_no: "Consultant — General Medicine",
+      diagnosis: "Acute febrile illness",
       medications: [
         {
-          name: "Pantoprazole 40mg",
-          dosage: "1 tab OD before breakfast",
-          duration: "14 days",
-          instructions: "Before food",
+          name: "Tab. HIFENAC-P",
+          dosage: "Twice after food",
+          duration: "3 days",
+          instructions: "Oral",
         },
         {
-          name: "Domperidone 10mg",
-          dosage: "1 tab TDS",
+          name: "Tab. DOLO 650mg",
+          dosage: "SOS",
+          duration: "As needed",
+          instructions: "Oral",
+        },
+        {
+          name: "Tab. CEFTAS 200mg",
+          dosage: "Twice after food",
           duration: "7 days",
-          instructions: "After food",
+          instructions: "Oral",
         },
         {
-          name: "Paracetamol 650mg",
-          dosage: "SOS for pain",
-          duration: "5 days",
-          instructions: "Max 3 per day",
+          name: "Tab. URSOCOL 300mg",
+          dosage: "Twice after food",
+          duration: "10 days",
+          instructions: "Oral",
         },
       ],
       advice:
-        "Avoid spicy food. Follow up if symptoms persist. CT scan as per lab order (linked patient: Afsana Pinjari).",
+        "Continue other medicines as advised. Valid before 19-May-2024. Patient: Afsana Pinjari. Emergency: 0771-2513500 / 9300373737.",
     },
     billing: {
       gross: 0,
@@ -142,12 +143,12 @@ function getPrescriptionDemoExtraction(): ExtractedDocument {
       patient_signature: false,
       user_signature: true,
     },
-    auto_tags: ["Prescription", "OPD", "Gastro", "Afsana Pinjari", "Parli"],
+    auto_tags: ["Prescription", "Febrile illness", "Afsana Pinjari", "Parli", "NHM"],
     confidence_scores: {
       patient_name: 0.94,
       prescriber: 0.91,
-      medications: 0.89,
-      diagnosis: 0.87,
+      medications: 0.92,
+      diagnosis: 0.90,
     },
   };
 }

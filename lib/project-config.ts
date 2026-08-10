@@ -5,8 +5,8 @@ export const UPLOAD_ENABLED_PROJECT_IDS = [
 
 export type UploadEnabledProjectId = (typeof UPLOAD_ENABLED_PROJECT_IDS)[number];
 
-export function supportsProjectUpload(projectId: string): boolean {
-  return UPLOAD_ENABLED_PROJECT_IDS.includes(projectId as UploadEnabledProjectId);
+export function supportsProjectUpload(projectId?: string): boolean {
+  return Boolean(projectId);
 }
 
 export function isPrescriptionProject(projectId: string): boolean {

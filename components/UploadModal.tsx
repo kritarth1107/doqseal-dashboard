@@ -4,7 +4,7 @@ import { UploadCloud, File, X, AlertCircle, CheckCircle2 } from 'lucide-react';
 interface UploadModalProps {
     isOpen: boolean;
     onClose: () => void;
-    onUpload: (files: File[]) => void;
+    onUpload: (files: File[], consent: boolean) => void;
 }
 
 export function UploadModal({ isOpen, onClose, onUpload }: UploadModalProps) {
@@ -49,7 +49,7 @@ export function UploadModal({ isOpen, onClose, onUpload }: UploadModalProps) {
 
     const handleUploadClick = () => {
         if (!agreedToDPA || selectedFiles.length === 0) return;
-        onUpload(selectedFiles);
+        onUpload(selectedFiles, true);
         // Reset state
         setSelectedFiles([]);
         setAgreedToDPA(false);

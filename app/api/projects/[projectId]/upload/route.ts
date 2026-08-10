@@ -1,24 +1,13 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { writeFile } from "fs/promises";
-import path from "path";
-import { randomUUID } from "crypto";
-import {
-  createDocument,
-  ensureUploadDir,
-  getProjectDocuments,
-  resolveUploadPath,
-} from "@/lib/document-store";
-import { processDocumentRecord } from "@/lib/document-processing";
-import { supportsProjectUpload } from "@/lib/project-config";
+import { backendFetch, parseBackendJson } from "@/lib/backend-client";
+import { mapBackendDocumentList } from "@/lib/document-api";
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024;
 
 async function requireSession() {
   const cookieStore = await cookies();
-  const token = cookieStore.get("session_token")?.value;
-  if (!token) return null;
-  return token;
+  return cookieStore.get("session_token")?.value ?? null;
 }
 
 export async function POST(
@@ -32,15 +21,11 @@ export async function POST(
 
   const { projectId } = await params;
 
-  if (!supportsProjectUpload(projectId)) {
-    return NextResponse.json({ error: "Upload not enabled for this project" }, { status: 400 });
-  }
-
   try {
     const formData = await request.formData();
-    const file = formData.get("file") as File | null;
+    const file = formData.get("file");
 
-    if (!file) {
+    if (!(file instanceof File)) {
       return NextResponse.json({ error: "No file provided" }, { status: 400 });
     }
 
@@ -48,54 +33,44 @@ export async function POST(
       return NextResponse.json({ error: "File too large (max 20MB)" }, { status: 400 });
     }
 
-    const allowedTypes = [
-      "application/pdf",
-      "image/png",
-      "image/jpeg",
-      "image/jpg",
-    ];
-    if (!allowedTypes.includes(file.type)) {
-      return NextResponse.json(
-        { error: "Only PDF, PNG, and JPG files are allowed" },
-        { status: 400 }
-      );
+    const consent = formData.get("consent");
+    if (consent !== "true") {
+      return NextResponse.json({ error: "Consent is required before upload" }, { status: 400 });
     }
 
-    await ensureUploadDir();
+    const backendForm = new FormData();
+    backendForm.append("file", file);
+    backendForm.append("projectId", projectId);
+    backendForm.append("consent", "true");
 
-    const ext = path.extname(file.name) || ".pdf";
-    const storedFilename = `${randomUUID()}${ext}`;
-    const filePath = resolveUploadPath(storedFilename);
-    const buffer = Buffer.from(await file.arrayBuffer());
-    await writeFile(filePath, buffer);
-
-    const doc = await createDocument({
-      projectId,
-      originalFilename: file.name,
-      storedFilename,
-      mimeType: file.type,
-      size: file.size,
+    const response = await backendFetch(request, "documents/upload", {
+      method: "POST",
+      body: backendForm,
     });
 
-    void processDocumentRecord(doc.id).catch((error) => {
-      console.error(`[Upload] Demo processing failed for ${file.name}:`, error);
-    });
+    const payload = await parseBackendJson<{
+      documentId: string;
+      jobId: string;
+      status: string;
+      message: string;
+    }>(response);
 
     return NextResponse.json({
       success: true,
-      documentId: doc.id,
-      status: "processing",
-      message: "File uploaded. Extraction started.",
+      documentId: payload.data.documentId,
+      jobId: payload.data.jobId,
+      status: payload.data.status,
+      message: payload.data.message,
     });
   } catch (error: unknown) {
-    console.error("Upload error:", error);
     const message = error instanceof Error ? error.message : "Upload failed";
-    return NextResponse.json({ error: message }, { status: 500 });
+    const status = message.includes("quota") ? 429 : 500;
+    return NextResponse.json({ error: message }, { status });
   }
 }
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ projectId: string }> }
 ) {
   const token = await requireSession();
@@ -104,6 +79,18 @@ export async function GET(
   }
 
   const { projectId } = await params;
-  const documents = await getProjectDocuments(projectId);
-  return NextResponse.json({ documents });
+
+  try {
+    const response = await backendFetch(
+      request,
+      `documents?projectId=${encodeURIComponent(projectId)}`
+    );
+    const payload = await parseBackendJson(response);
+    const documents = mapBackendDocumentList(payload.data as any[]);
+
+    return NextResponse.json({ documents });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Failed to list documents";
+    return NextResponse.json({ error: message }, { status: 500 });
+  }
 }

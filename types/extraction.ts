@@ -95,12 +95,14 @@ export type DocumentStatus =
 export type StoredDocument = {
   id: string;
   projectId: string;
+  jobId?: string;
   originalFilename: string;
   storedFilename: string;
   mimeType: string;
   size: number;
   status: DocumentStatus;
-  extractedJson: ExtractedDocument | null;
+  extractedJson: ExtractedDocument | Record<string, unknown> | null;
+  fieldConfidence?: Record<string, number>;
   confidence: number;
   extractionStrategy: string;
   uploadedAt: string;

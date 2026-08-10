@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import { deleteDocument, getDocument } from "@/lib/document-store";
+import { backendFetch, parseBackendJson } from "@/lib/backend-client";
+import { mapBackendDocument } from "@/lib/document-api";
 
 async function requireSession() {
   const cookieStore = await cookies();
@@ -8,7 +9,7 @@ async function requireSession() {
 }
 
 export async function GET(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ projectId: string; documentId: string }> }
 ) {
   const token = await requireSession();
@@ -17,17 +18,26 @@ export async function GET(
   }
 
   const { projectId, documentId } = await params;
-  const doc = await getDocument(documentId);
 
-  if (!doc || doc.projectId !== projectId) {
-    return NextResponse.json({ error: "Document not found" }, { status: 404 });
+  try {
+    const response = await backendFetch(request, `documents/${documentId}`);
+    const payload = await parseBackendJson(response);
+    const doc = mapBackendDocument(payload.data as any);
+
+    if (doc.projectId !== projectId) {
+      return NextResponse.json({ error: "Document not found" }, { status: 404 });
+    }
+
+    return NextResponse.json(doc);
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Failed to load document";
+    const status = message.includes("not found") ? 404 : 500;
+    return NextResponse.json({ error: message }, { status });
   }
-
-  return NextResponse.json(doc);
 }
 
 export async function DELETE(
-  _request: NextRequest,
+  request: NextRequest,
   { params }: { params: Promise<{ projectId: string; documentId: string }> }
 ) {
   const token = await requireSession();
@@ -35,17 +45,16 @@ export async function DELETE(
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
 
-  const { projectId, documentId } = await params;
-  const doc = await getDocument(documentId);
+  const { documentId } = await params;
 
-  if (!doc || doc.projectId !== projectId) {
-    return NextResponse.json({ error: "Document not found" }, { status: 404 });
+  try {
+    const response = await backendFetch(request, `documents/${documentId}`, {
+      method: "DELETE",
+    });
+    await parseBackendJson(response);
+    return NextResponse.json({ success: true });
+  } catch (error: unknown) {
+    const message = error instanceof Error ? error.message : "Delete failed";
+    return NextResponse.json({ error: message }, { status: 500 });
   }
-
-  const deleted = await deleteDocument(documentId);
-  if (!deleted) {
-    return NextResponse.json({ error: "Failed to delete document" }, { status: 500 });
-  }
-
-  return NextResponse.json({ success: true });
 }

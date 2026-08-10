@@ -16,34 +16,59 @@ import {
 import { toast } from "sonner";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { UploadModal } from "@/components/UploadModal";
-import { projects } from "@/lib/mock-data";
-import { supportsProjectUpload } from "@/lib/project-config";
+import { useAuth } from "@/components/AuthProvider";
+import { withOrgHeaders } from "@/lib/client-api";
 import { StoredDocument } from "@/types/extraction";
 
+type Project = {
+  projectId: string;
+  name: string;
+  description?: string;
+  extractionHint?: string;
+};
+
 type ListedDocument = {
-  id?: string;
+  id: string;
   name: string;
   status: string;
-  href?: string;
-  uploading?: boolean;
+  href: string;
 };
 
 export default function ProjectDetailPage() {
   const params = useParams();
   const router = useRouter();
+  const { activeOrgId } = useAuth();
   const projectId = String(params.projectId);
-  const project = projects.find((p) => p.id === projectId) ?? projects[0];
-  const canUpload = supportsProjectUpload(projectId);
 
+  const [project, setProject] = useState<Project | null>(null);
   const [uploadOpen, setUploadOpen] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [uploadedDocs, setUploadedDocs] = useState<ListedDocument[]>([]);
   const [deletingId, setDeletingId] = useState<string | null>(null);
+  const [loading, setLoading] = useState(true);
+
+  const loadProject = useCallback(async () => {
+    if (!activeOrgId) return;
+    try {
+      const res = await fetch(
+        `/api/projects/${projectId}`,
+        withOrgHeaders(activeOrgId)
+      );
+      if (!res.ok) throw new Error("Project not found");
+      const data = await res.json();
+      setProject(data.project);
+    } catch {
+      setProject(null);
+    }
+  }, [activeOrgId, projectId]);
 
   const loadUploadedDocs = useCallback(async () => {
-    if (!canUpload) return;
+    if (!activeOrgId) return;
     try {
-      const res = await fetch(`/api/projects/${projectId}/upload`);
+      const res = await fetch(
+        `/api/projects/${projectId}/upload`,
+        withOrgHeaders(activeOrgId)
+      );
       if (!res.ok) return;
       const data = await res.json();
       const docs = (data.documents as StoredDocument[]).map((doc) => ({
@@ -54,39 +79,38 @@ export default function ProjectDetailPage() {
       }));
       setUploadedDocs(docs);
     } catch {
-      // ignore — demo store may be empty
+      setUploadedDocs([]);
     }
-  }, [canUpload, projectId]);
+  }, [activeOrgId, projectId]);
 
   useEffect(() => {
-    loadUploadedDocs();
-  }, [loadUploadedDocs]);
+    async function load() {
+      setLoading(true);
+      await Promise.all([loadProject(), loadUploadedDocs()]);
+      setLoading(false);
+    }
+    load();
+  }, [loadProject, loadUploadedDocs]);
 
-  const staticDocs: ListedDocument[] = project.documents.map((doc) => ({
-    name: doc.name,
-    status: doc.status,
-  }));
-
-  const allDocs = [...uploadedDocs, ...staticDocs];
-
-  const handleUpload = async (files: File[]) => {
-    if (!canUpload || files.length === 0) return;
+  const handleUpload = async (files: File[], consent: boolean) => {
+    if (!activeOrgId || files.length === 0 || !consent) return;
 
     const file = files[0];
     setUploading(true);
 
     const formData = new FormData();
     formData.append("file", file);
+    formData.append("consent", "true");
 
     try {
-      const res = await fetch(`/api/projects/${projectId}/upload`, {
-        method: "POST",
-        body: formData,
-      });
+      const res = await fetch(
+        `/api/projects/${projectId}/upload`,
+        withOrgHeaders(activeOrgId, { method: "POST", body: formData })
+      );
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Upload failed");
 
-      toast.success("Upload started — opening extraction…");
+      toast.success("Upload queued — opening extraction…");
       router.push(`/projects/${projectId}/documents/${data.documentId}`);
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : "Upload failed");
@@ -96,13 +120,14 @@ export default function ProjectDetailPage() {
   };
 
   const handleDelete = async (documentId: string, name: string) => {
+    if (!activeOrgId) return;
     if (!confirm(`Delete "${name}"? This removes the file and extracted data.`)) return;
 
     setDeletingId(documentId);
     try {
       const res = await fetch(
         `/api/projects/${projectId}/documents/${documentId}`,
-        { method: "DELETE" }
+        withOrgHeaders(activeOrgId, { method: "DELETE" })
       );
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Delete failed");
@@ -115,6 +140,25 @@ export default function ProjectDetailPage() {
       setDeletingId(null);
     }
   };
+
+  if (loading) {
+    return (
+      <div className="flex-1 flex items-center justify-center bg-[#f8fafc]">
+        <Loader2 className="w-6 h-6 animate-spin text-[#2563eb]" />
+      </div>
+    );
+  }
+
+  if (!project) {
+    return (
+      <div className="flex-1 flex flex-col items-center justify-center bg-[#f8fafc] gap-3">
+        <p className="text-sm text-gray-600">Project not found</p>
+        <Link href="/projects" className="text-sm text-[#2563eb] hover:underline">
+          Back to projects
+        </Link>
+      </div>
+    );
+  }
 
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-[#f8fafc]">
@@ -129,7 +173,7 @@ export default function ProjectDetailPage() {
           </Link>
           <PageHeader
             title={project.name}
-            description={project.description}
+            description={project.description || ""}
             actions={
               <>
                 <button
@@ -141,8 +185,8 @@ export default function ProjectDetailPage() {
                 </button>
                 <button
                   type="button"
-                  onClick={() => canUpload && setUploadOpen(true)}
-                  disabled={!canUpload || uploading}
+                  onClick={() => setUploadOpen(true)}
+                  disabled={uploading}
                   className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg disabled:opacity-50"
                 >
                   {uploading ? (
@@ -167,74 +211,64 @@ export default function ProjectDetailPage() {
             <Sparkles className="w-5 h-5 text-[#2563eb] shrink-0" />
             <div>
               <p className="text-sm font-medium text-gray-900">Shared AI context active</p>
-              <p className="text-sm text-gray-600 mt-0.5">{project.contextTokens}</p>
+              <p className="text-sm text-gray-600 mt-0.5">
+                {project.extractionHint || "Project-specific extraction schema"}
+              </p>
               <p className="text-xs text-gray-500 mt-2">
-                {project.documentCount + uploadedDocs.length} documents indexed · Context
-                persists across all team chats in this project
+                {uploadedDocs.length} documents uploaded · Real backend extraction pipeline
               </p>
             </div>
           </div>
 
           <h3 className="text-sm font-semibold text-gray-900 mb-3">Project documents</h3>
           <div className="bg-white border border-gray-200 rounded-2xl divide-y divide-gray-100">
-            {allDocs.map((doc) => {
-              if (doc.id && doc.href) {
-                return (
-                  <div
-                    key={doc.id}
-                    className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 group"
-                  >
-                    <Link
-                      href={doc.href}
-                      className="flex items-center gap-3 flex-1 min-w-0"
-                    >
-                      <FileText className="w-5 h-5 text-red-500 shrink-0" />
-                      <span className="text-sm font-medium text-gray-800 truncate">
-                        {doc.name}
-                      </span>
-                    </Link>
-                    <span className="text-xs text-gray-400 capitalize shrink-0">
-                      {doc.status}
-                    </span>
-                    <button
-                      type="button"
-                      onClick={() => handleDelete(doc.id!, doc.name)}
-                      disabled={deletingId === doc.id}
-                      className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 shrink-0"
-                      title="Delete document"
-                    >
-                      {deletingId === doc.id ? (
-                        <Loader2 className="w-4 h-4 animate-spin" />
-                      ) : (
-                        <Trash2 className="w-4 h-4" />
-                      )}
-                    </button>
-                  </div>
-                );
-              }
-
-              return (
+            {uploadedDocs.length === 0 ? (
+              <div className="px-4 py-8 text-center text-sm text-gray-500">
+                No documents uploaded yet.
+              </div>
+            ) : (
+              uploadedDocs.map((doc) => (
                 <div
-                  key={doc.name}
-                  className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50"
+                  key={doc.id}
+                  className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 group"
                 >
-                  <FileText className="w-5 h-5 text-red-500 shrink-0" />
-                  <span className="text-sm font-medium text-gray-800 flex-1">{doc.name}</span>
-                  <span className="text-xs text-gray-400 capitalize">{doc.status}</span>
+                  <Link
+                    href={doc.href}
+                    className="flex items-center gap-3 flex-1 min-w-0"
+                  >
+                    <FileText className="w-5 h-5 text-red-500 shrink-0" />
+                    <span className="text-sm font-medium text-gray-800 truncate">
+                      {doc.name}
+                    </span>
+                  </Link>
+                  <span className="text-xs text-gray-400 capitalize shrink-0">
+                    {doc.status}
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(doc.id, doc.name)}
+                    disabled={deletingId === doc.id}
+                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 shrink-0"
+                    title="Delete document"
+                  >
+                    {deletingId === doc.id ? (
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                    ) : (
+                      <Trash2 className="w-4 h-4" />
+                    )}
+                  </button>
                 </div>
-              );
-            })}
+              ))
+            )}
           </div>
         </div>
       </div>
 
-      {canUpload && (
-        <UploadModal
-          isOpen={uploadOpen}
-          onClose={() => setUploadOpen(false)}
-          onUpload={handleUpload}
-        />
-      )}
+      <UploadModal
+        isOpen={uploadOpen}
+        onClose={() => setUploadOpen(false)}
+        onUpload={handleUpload}
+      />
     </div>
   );
 }

@@ -38,12 +38,14 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     const savedOrgId = localStorage.getItem("active_organisation_id");
     if (savedOrgId) {
       setActiveOrgIdState(savedOrgId);
+      document.cookie = `active_organisation_id=${encodeURIComponent(savedOrgId)}; path=/; SameSite=Lax`;
     }
   }, []);
 
   const setActiveOrgId = (id: string) => {
     setActiveOrgIdState(id);
     localStorage.setItem("active_organisation_id", id);
+    document.cookie = `active_organisation_id=${encodeURIComponent(id)}; path=/; SameSite=Lax`;
   };
 
   const fetchUser = async () => {
