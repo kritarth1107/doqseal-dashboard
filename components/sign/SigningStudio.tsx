@@ -2,6 +2,7 @@
 
 import { useCallback, useMemo, useRef, useState } from "react";
 import Link from "next/link";
+import { useRouter } from "next/navigation";
 import dynamic from "next/dynamic";
 import { toast } from "sonner";
 import {
@@ -27,6 +28,8 @@ import {
 } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import { SignatureModal } from "@/components/sign/SignatureModal";
+import { withOrgHeaders } from "@/lib/client-api";
+import { mapFieldsToApi, mapSignersToApi } from "@/lib/envelope-api";
 import type {
   EnvelopeMode,
   FieldType,
@@ -87,9 +90,11 @@ const STEPS: { id: StudioStep; label: string }[] = [
   { id: "review", label: "Review" },
 ];
 
-export function SigningStudio() {
-  const { userData } = useAuth();
+export function SigningStudio({ projectId }: { projectId?: string }) {
+  const router = useRouter();
+  const { userData, activeOrgId } = useAuth();
   const displayName = userData?.name?.split(" ")[0] || "Me";
+  const userEmail = userData?.email || "";
 
   const [step, setStep] = useState<StudioStep>("document");
   const [mode, setMode] = useState<EnvelopeMode>("self");
@@ -108,6 +113,7 @@ export function SigningStudio() {
   const [expiresDays, setExpiresDays] = useState(14);
   const [sequentialSigning, setSequentialSigning] = useState(true);
   const [placementHint, setPlacementHint] = useState<string | null>(null);
+  const [submitting, setSubmitting] = useState(false);
   const uploadRef = useRef<HTMLInputElement>(null);
 
   const activeSigner = signers.find((s) => s.id === activeSignerId) ?? signers[0];
@@ -208,7 +214,7 @@ export function SigningStudio() {
   const canProceedToPrepare = !!pdfFile;
   const canReview = fields.some((f) => f.type === "signature" || f.type === "initials");
 
-  const validateAndSubmit = () => {
+  const validateAndSubmit = async () => {
     if (!pdfFile) {
       toast.error("Add a document");
       return;
@@ -224,23 +230,91 @@ export function SigningStudio() {
         return;
       }
     }
+    if (!activeOrgId) {
+      toast.error("Select an organisation first");
+      return;
+    }
+    if (!userEmail) {
+      toast.error("Your account email is required");
+      return;
+    }
 
-    const msg =
-      mode === "self"
-        ? "Ready to sign"
-        : mode === "mixed"
-          ? "Ready to sign and send to others"
-          : "Envelope ready to send";
-    toast.success(msg);
-    console.log({
-      mode,
-      title: title || pdfFile.name.replace(/\.pdf$/i, ""),
-      signers,
-      fields,
-      message,
-      expiresDays,
-      sequentialSigning,
-    });
+    setSubmitting(true);
+    try {
+      let resolvedProjectId = projectId;
+      if (!resolvedProjectId) {
+        const projectsRes = await fetch("/api/projects", withOrgHeaders(activeOrgId));
+        const projectsData = await projectsRes.json();
+        if (!projectsRes.ok) {
+          throw new Error(projectsData.error || "Failed to load projects");
+        }
+        resolvedProjectId = projectsData.projects?.[0]?.projectId;
+        if (!resolvedProjectId) {
+          throw new Error("Create a project before sending envelopes");
+        }
+      }
+
+      const formData = new FormData();
+      formData.append("file", pdfFile);
+      formData.append("consent", "true");
+
+      const uploadRes = await fetch(
+        `/api/projects/${resolvedProjectId}/upload`,
+        withOrgHeaders(activeOrgId, { method: "POST", body: formData })
+      );
+      const uploadData = await uploadRes.json();
+      if (!uploadRes.ok) {
+        throw new Error(uploadData.error || "Upload failed");
+      }
+
+      const envelopeTitle = title.trim() || pdfFile.name.replace(/\.pdf$/i, "");
+      const createRes = await fetch(
+        "/api/envelopes",
+        withOrgHeaders(activeOrgId, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            organisationId: activeOrgId,
+            documentId: uploadData.documentId,
+            title: envelopeTitle,
+            message,
+            signers: mapSignersToApi(signers, userData?.name || displayName, userEmail),
+            fields: mapFieldsToApi(fields, signers),
+          }),
+        })
+      );
+      const createData = await createRes.json();
+      if (!createRes.ok) {
+        throw new Error(createData.error || "Failed to create envelope");
+      }
+
+      const envelopeId = createData.envelope?.envelopeId;
+      if (!envelopeId) {
+        throw new Error("Envelope was not created");
+      }
+
+      const sendRes = await fetch(
+        `/api/envelopes/${envelopeId}/send`,
+        withOrgHeaders(activeOrgId, { method: "POST" })
+      );
+      const sendData = await sendRes.json();
+      if (!sendRes.ok) {
+        throw new Error(sendData.error || "Failed to send envelope");
+      }
+
+      toast.success(
+        mode === "self"
+          ? "Envelope sent — opening signing view"
+          : mode === "mixed"
+            ? "Envelope sent to all recipients"
+            : "Envelope sent"
+      );
+      router.push(`/sign/${envelopeId}`);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Failed to create envelope");
+    } finally {
+      setSubmitting(false);
+    }
   };
 
   return (
@@ -334,7 +408,8 @@ export function SigningStudio() {
               <button
                 type="button"
                 onClick={validateAndSubmit}
-                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 shadow-sm"
+                disabled={submitting}
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-indigo-600 rounded-lg hover:bg-indigo-700 shadow-sm disabled:opacity-50"
               >
                 {mode === "self" ? (
                   <>
@@ -615,7 +690,8 @@ export function SigningStudio() {
               <button
                 type="button"
                 onClick={validateAndSubmit}
-                className="w-full py-3 bg-indigo-600 text-white rounded-xl font-semibold text-sm"
+                disabled={submitting}
+                className="w-full py-3 bg-indigo-600 text-white rounded-xl font-semibold text-sm disabled:opacity-50"
               >
                 {mode === "self" ? "Sign now" : mode === "mixed" ? "Sign & send" : "Send envelope"}
               </button>

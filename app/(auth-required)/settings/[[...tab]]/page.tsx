@@ -26,7 +26,7 @@ export default function SettingsPage() {
     const { theme, setTheme } = useTheme();
     const [mounted, setMounted] = useState(false);
 
-    const { userData } = useAuth();
+    const { userData, activeOrgId, activeOrg } = useAuth();
 
     // Wait for mount to avoid hydration mismatch
     React.useEffect(() => {
@@ -255,12 +255,35 @@ export default function SettingsPage() {
                                         <div className="flex items-center justify-between pb-6 border-b border-gray-100">
                                             <span className="text-sm font-medium text-black">Organization ID</span>
                                             <div className="flex items-center gap-2 bg-[#f5f5f5] px-3 py-1.5 rounded-lg border border-gray-200">
-                                                <span className="text-xs font-mono text-gray-500">719a8350-13aa-4a0d-b86d-12ba5ddb0f6e</span>
-                                                <button className="p-1 text-gray-400 hover:text-black transition-colors" title="Copy ID">
-                                                    <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                                                </button>
+                                                <span className="text-xs font-mono text-gray-500">
+                                                    {activeOrgId || "—"}
+                                                </span>
+                                                {activeOrgId && (
+                                                    <button
+                                                        type="button"
+                                                        onClick={() => navigator.clipboard.writeText(activeOrgId)}
+                                                        className="p-1 text-gray-400 hover:text-black transition-colors"
+                                                        title="Copy ID"
+                                                    >
+                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
+                                                    </button>
+                                                )}
                                             </div>
                                         </div>
+                                        {activeOrg && (
+                                            <div className="flex items-center justify-between pb-6 border-b border-gray-100">
+                                                <span className="text-sm font-medium text-black">Organisation</span>
+                                                <span className="text-sm text-gray-600">
+                                                    {activeOrg.name} · {activeOrg.role}
+                                                </span>
+                                            </div>
+                                        )}
+                                        {userData?.userId && (
+                                            <div className="flex items-center justify-between pb-6 border-b border-gray-100">
+                                                <span className="text-sm font-medium text-black">User ID</span>
+                                                <span className="text-xs font-mono text-gray-500">{userData.userId}</span>
+                                            </div>
+                                        )}
                                     </div>
                                 </section>
 

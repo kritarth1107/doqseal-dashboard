@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Search,
@@ -12,10 +12,50 @@ import {
   MoreVertical,
   Grid3x3,
   List,
+  Loader2,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { UploadModal } from "@/components/UploadModal";
-import { driveItems } from "@/lib/mock-data";
+import { useAuth } from "@/components/AuthProvider";
+import { withOrgHeaders } from "@/lib/client-api";
+
+type DriveDocument = {
+  documentId: string;
+  projectId: string;
+  originalFilename: string;
+  mimeType: string;
+  size: number;
+  status: string;
+  updatedAt?: string;
+};
+
+function formatSize(bytes: number) {
+  if (bytes < 1024) return `${bytes} B`;
+  if (bytes < 1024 * 1024) return `${(bytes / 1024).toFixed(0)} KB`;
+  return `${(bytes / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function formatModified(dateStr?: string) {
+  if (!dateStr) return "—";
+  const date = new Date(dateStr);
+  const now = new Date();
+  const diffMs = now.getTime() - date.getTime();
+  const diffHours = Math.floor(diffMs / (1000 * 60 * 60));
+  if (diffHours < 1) return "Just now";
+  if (diffHours < 24) return `${diffHours}h ago`;
+  const diffDays = Math.floor(diffHours / 24);
+  if (diffDays === 1) return "Yesterday";
+  if (diffDays < 7) return `${diffDays}d ago`;
+  return date.toLocaleDateString();
+}
+
+function mimeToType(mime: string): "pdf" | "doc" | "image" | "csv" | "folder" {
+  if (mime.includes("pdf")) return "pdf";
+  if (mime.includes("image")) return "image";
+  if (mime.includes("csv") || mime.includes("spreadsheet")) return "csv";
+  if (mime.includes("word") || mime.includes("document")) return "doc";
+  return "pdf";
+}
 
 function typeIcon(type: string) {
   if (type === "folder") return <Folder className="w-5 h-5 text-amber-600" />;
@@ -24,8 +64,44 @@ function typeIcon(type: string) {
 }
 
 export default function DrivePage() {
+  const { activeOrgId } = useAuth();
   const [view, setView] = useState<"grid" | "list">("list");
   const [uploadOpen, setUploadOpen] = useState(false);
+  const [documents, setDocuments] = useState<DriveDocument[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [search, setSearch] = useState("");
+
+  useEffect(() => {
+    async function loadDocuments() {
+      if (!activeOrgId) {
+        setLoading(false);
+        return;
+      }
+
+      setLoading(true);
+      try {
+        const res = await fetch("/api/documents", withOrgHeaders(activeOrgId));
+        const data = await res.json();
+        if (res.ok) {
+          setDocuments(data.documents || []);
+        } else {
+          setDocuments([]);
+        }
+      } catch {
+        setDocuments([]);
+      } finally {
+        setLoading(false);
+      }
+    }
+
+    loadDocuments();
+  }, [activeOrgId]);
+
+  const filtered = documents.filter(
+    (doc) =>
+      !search ||
+      doc.originalFilename.toLowerCase().includes(search.toLowerCase())
+  );
 
   return (
     <div className="flex-1 overflow-y-auto bg-[#f8fafc] p-4 sm:p-8 pt-16 sm:pt-20">
@@ -60,6 +136,8 @@ export default function DrivePage() {
             <input
               type="search"
               placeholder="Search files and folders…"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
               className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm outline-none focus:border-[#2563eb]"
             />
           </div>
@@ -90,39 +168,55 @@ export default function DrivePage() {
             <div className="col-span-2 hidden md:block">Size</div>
             <div className="col-span-1" />
           </div>
-          {driveItems.map((item) => (
-            <div
-              key={item.id}
-              className="grid grid-cols-12 gap-4 px-4 py-3 items-center border-b border-gray-50 last:border-0 hover:bg-gray-50/80 text-sm"
-            >
-              <div className="col-span-10 sm:col-span-5 flex items-center gap-3 min-w-0">
-                <div className="p-2 rounded-lg bg-gray-50 shrink-0">{typeIcon(item.type)}</div>
-                <div className="min-w-0">
-                  <p className="font-medium text-gray-900 truncate">{item.name}</p>
-                  <div className="flex gap-2 mt-0.5">
-                    {item.projectId && (
-                      <Link
-                        href={`/projects/${item.projectId}`}
-                        className="text-[11px] text-[#2563eb] hover:underline"
-                      >
-                        In project
-                      </Link>
-                    )}
-                    {item.signed && (
-                      <span className="text-[11px] text-emerald-600 font-medium">Signed</span>
-                    )}
+
+          {loading ? (
+            <div className="flex items-center justify-center py-20">
+              <Loader2 className="w-6 h-6 animate-spin text-[#2563eb]" />
+            </div>
+          ) : filtered.length === 0 ? (
+            <div className="py-16 text-center text-sm text-gray-500">No documents found</div>
+          ) : (
+            filtered.map((item) => {
+              const type = mimeToType(item.mimeType);
+              return (
+                <div
+                  key={item.documentId}
+                  className="grid grid-cols-12 gap-4 px-4 py-3 items-center border-b border-gray-50 last:border-0 hover:bg-gray-50/80 text-sm"
+                >
+                  <div className="col-span-10 sm:col-span-5 flex items-center gap-3 min-w-0">
+                    <div className="p-2 rounded-lg bg-gray-50 shrink-0">{typeIcon(type)}</div>
+                    <div className="min-w-0">
+                      <p className="font-medium text-gray-900 truncate">{item.originalFilename}</p>
+                      <div className="flex gap-2 mt-0.5">
+                        {item.projectId && (
+                          <Link
+                            href={`/projects/${item.projectId}`}
+                            className="text-[11px] text-[#2563eb] hover:underline"
+                          >
+                            In project
+                          </Link>
+                        )}
+                        {item.status === "completed" && (
+                          <span className="text-[11px] text-emerald-600 font-medium">Indexed</span>
+                        )}
+                      </div>
+                    </div>
+                  </div>
+                  <div className="col-span-3 hidden sm:block text-gray-500">
+                    {formatModified(item.updatedAt)}
+                  </div>
+                  <div className="col-span-2 hidden md:block text-gray-500">
+                    {formatSize(item.size)}
+                  </div>
+                  <div className="col-span-2 sm:col-span-1 flex justify-end">
+                    <button type="button" className="p-1.5 text-gray-400 hover:text-gray-700 rounded-md">
+                      <MoreVertical className="w-4 h-4" />
+                    </button>
                   </div>
                 </div>
-              </div>
-              <div className="col-span-3 hidden sm:block text-gray-500">{item.modified}</div>
-              <div className="col-span-2 hidden md:block text-gray-500">{item.size || "—"}</div>
-              <div className="col-span-2 sm:col-span-1 flex justify-end">
-                <button type="button" className="p-1.5 text-gray-400 hover:text-gray-700 rounded-md">
-                  <MoreVertical className="w-4 h-4" />
-                </button>
-              </div>
-            </div>
-          ))}
+              );
+            })
+          )}
         </div>
       </div>
       <UploadModal

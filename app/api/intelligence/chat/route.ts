@@ -1,16 +1,17 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
-import {
-  ChatMessage,
-  generateProjectChatReply,
-} from "@/lib/project-chat";
-import { projects } from "@/lib/mock-data";
-import { supportsProjectUpload } from "@/lib/project-config";
+import { backendFetch, parseBackendJson } from "@/lib/backend-client";
 
 async function requireSession() {
   const cookieStore = await cookies();
   return cookieStore.get("session_token")?.value ?? null;
 }
+
+type ChatCitation = {
+  documentId?: string;
+  projectId?: string;
+  snippet?: string;
+};
 
 export async function POST(request: NextRequest) {
   const token = await requireSession();
@@ -20,12 +21,11 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
-    const projectId = String(body.projectId ?? "p-test-request");
-    const messages = (body.messages ?? []) as ChatMessage[];
-
-    if (!supportsProjectUpload(projectId) && !projects.some((p) => p.id === projectId)) {
-      return NextResponse.json({ error: "Unknown project" }, { status: 400 });
-    }
+    const projectId = body.projectId ? String(body.projectId) : undefined;
+    const messages = (body.messages ?? []) as Array<{
+      role: string;
+      content: string;
+    }>;
 
     if (!Array.isArray(messages) || messages.length === 0) {
       return NextResponse.json({ error: "Messages required" }, { status: 400 });
@@ -39,8 +39,37 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const result = await generateProjectChatReply(projectId, messages);
-    return NextResponse.json(result);
+    const response = await backendFetch(request, "chat", {
+      method: "POST",
+      body: JSON.stringify({
+        message: last.content.trim(),
+        projectId,
+      }),
+    });
+
+    const payload = await parseBackendJson<{
+      answer: string;
+      citations: ChatCitation[];
+      mode: string;
+    }>(response);
+
+    const documents = (payload.data.citations ?? [])
+      .filter((c) => c.documentId)
+      .map((c) => ({
+        id: c.documentId as string,
+        patientName: "Referenced document",
+        filename: c.snippet?.slice(0, 80) || c.documentId || "Document",
+        status: "indexed",
+        href: c.projectId
+          ? `/projects/${c.projectId}/documents/${c.documentId}`
+          : `/projects`,
+      }));
+
+    return NextResponse.json({
+      reply: payload.data.answer,
+      documents,
+      mode: payload.data.mode,
+    });
   } catch (error: unknown) {
     console.error("[Intelligence] chat error:", error);
     return NextResponse.json(
