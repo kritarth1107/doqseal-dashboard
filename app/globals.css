@@ -93,6 +93,9 @@ html.dark {
   }
 
   .bg-gray-50,
+  .bg-gray-50\/80,
+  .bg-gray-50\/50,
+  .bg-gray-50\/60,
   .bg-\[\#f5f5f5\],
   .bg-\[\#ececec\],
   .bg-\[\#f2f2f2\] {
@@ -100,6 +103,29 @@ html.dark {
   }
 
   .bg-gray-100 {
+    background-color: #1e293b !important;
+  }
+
+  /* Table headers / thead strips — blend with card surface (cool slate, not warm zinc) */
+  thead,
+  thead tr {
+    background-color: transparent !important;
+  }
+
+  .hover\:bg-gray-50:hover,
+  .hover\:bg-gray-50\/80:hover,
+  .hover\:bg-gray-50\/50:hover,
+  .hover\:bg-gray-100:hover,
+  .hover\:bg-gray-200:hover,
+  .hover\:bg-gray-200\/50:hover {
+    background-color: rgb(30 41 59 / 0.65) !important;
+  }
+
+  /* Prefer cool slate hover when both light + dark hover utilities are present */
+  .dark\:hover\:bg-zinc-800:hover,
+  .dark\:hover\:\!bg-zinc-800:hover,
+  .dark\:hover\:bg-slate-800:hover,
+  .dark\:hover\:\!bg-slate-800:hover {
     background-color: #1e293b !important;
   }
 
@@ -161,12 +187,6 @@ html.dark {
   .divide-gray-100 > :not([hidden]) ~ :not([hidden]),
   .divide-gray-200 > :not([hidden]) ~ :not([hidden]) {
     border-color: #1f2937 !important;
-  }
-
-  .hover\:bg-gray-50:hover,
-  .hover\:bg-gray-100:hover,
-  .hover\:bg-gray-200:hover {
-    background-color: #1e293b !important;
   }
 
   .hover\:bg-blue-50:hover {

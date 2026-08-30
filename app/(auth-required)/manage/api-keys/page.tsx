@@ -199,7 +199,7 @@ export default function ApiManagementPage() {
 
                 <div className="bg-white rounded-xl border border-gray-200 overflow-hidden shadow-sm">
                     <table className="w-full text-sm text-left">
-                        <thead className="bg-gray-50 text-gray-500 text-xs uppercase font-medium">
+                        <thead className="bg-transparent text-gray-500 dark:text-slate-500 text-xs uppercase font-medium border-b border-gray-100 dark:border-white/10">
                             <tr>
                                 <th className="px-6 py-3">Name</th>
                                 <th className="px-6 py-3">Secret Key</th>

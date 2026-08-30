@@ -9,10 +9,10 @@ import {
   Folder,
   FileText,
   Image as ImageIcon,
-  MoreVertical,
   Grid3x3,
   List,
   Loader2,
+  Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -25,12 +25,17 @@ type DriveDocument = {
   documentId: string;
   projectId: string | null;
   originalFilename: string;
+  displayTitle?: string | null;
   mimeType: string;
   size: number;
   status: string;
   sharedWithOrganisation?: boolean;
   updatedAt?: string;
 };
+
+function docTitle(doc: { displayTitle?: string | null; originalFilename: string }) {
+  return doc.displayTitle?.trim() || doc.originalFilename;
+}
 
 function formatSize(bytes: number) {
   if (bytes < 1024) return `${bytes} B`;
@@ -60,10 +65,40 @@ function mimeToType(mime: string): "pdf" | "doc" | "image" | "csv" | "folder" {
   return "pdf";
 }
 
-function typeIcon(type: string) {
-  if (type === "folder") return <Folder className="w-5 h-5 text-amber-600" />;
-  if (type === "image") return <ImageIcon className="w-5 h-5 text-blue-500" />;
-  return <FileText className="w-5 h-5 text-red-500" />;
+function typeIcon(type: string, className = "w-5 h-5") {
+  if (type === "folder") return <Folder className={`${className} text-amber-500`} />;
+  if (type === "image") return <ImageIcon className={`${className} text-sky-400`} />;
+  return <FileText className={`${className} text-rose-400`} />;
+}
+
+function DocMeta({ item }: { item: DriveDocument }) {
+  return (
+    <div className="flex gap-2 mt-0.5 flex-wrap">
+      {item.projectId ? (
+        <Link
+          href={`/projects/${item.projectId}`}
+          className="text-[11px] text-[#2563eb] hover:underline"
+          onClick={(e) => e.stopPropagation()}
+        >
+          In project
+        </Link>
+      ) : (
+        <span className="text-[11px] text-gray-400 dark:text-slate-500">Drive</span>
+      )}
+      <span
+        className={`text-[11px] font-medium ${
+          item.sharedWithOrganisation !== false
+            ? "text-[#2563eb]"
+            : "text-amber-500"
+        }`}
+      >
+        {item.sharedWithOrganisation !== false ? "Shared" : "Private"}
+      </span>
+      {item.status === "completed" && (
+        <span className="text-[11px] text-emerald-500 font-medium">Indexed</span>
+      )}
+    </div>
+  );
 }
 
 export default function DrivePage() {
@@ -144,8 +179,32 @@ export default function DrivePage() {
   const filtered = documents.filter(
     (doc) =>
       !search ||
+      docTitle(doc).toLowerCase().includes(search.toLowerCase()) ||
       doc.originalFilename.toLowerCase().includes(search.toLowerCase())
   );
+
+  const handleDelete = async (item: DriveDocument) => {
+    if (!activeOrgId) return;
+    if (
+      !confirm(
+        `Remove "${docTitle(item)}" from Drive?\n\nThe original file will be deleted from storage. Extracted context stays available for AI chat.`
+      )
+    ) {
+      return;
+    }
+    try {
+      const res = await fetch(
+        `/api/documents/${item.documentId}`,
+        withOrgHeaders(activeOrgId, { method: "DELETE" })
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Delete failed");
+      toast.success("File removed — context retained");
+      void loadDocuments();
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Delete failed");
+    }
+  };
 
   return (
     <div className="flex-1 overflow-y-auto bg-[#f8fafc] p-4 sm:p-8 pt-8 sm:pt-10">
@@ -157,7 +216,7 @@ export default function DrivePage() {
             <>
               <button
                 type="button"
-                className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50"
+                className="px-4 py-2 text-sm font-medium text-gray-700 dark:text-slate-300 bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800"
               >
                 <Filter className="w-4 h-4 inline mr-2 -mt-0.5" />
                 Filter
@@ -182,110 +241,127 @@ export default function DrivePage() {
               placeholder="Search files and folders…"
               value={search}
               onChange={(e) => setSearch(e.target.value)}
-              className="w-full pl-10 pr-4 py-2.5 bg-white border border-gray-200 rounded-xl text-sm outline-none focus:border-[#2563eb]"
+              className="w-full pl-10 pr-4 py-2.5 bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/10 rounded-xl text-sm outline-none focus:border-[#2563eb] dark:text-slate-100"
             />
           </div>
-          <div className="flex rounded-lg border border-gray-200 bg-white p-0.5">
+          <div className="flex rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-[#111827] p-0.5">
             <button
               type="button"
               onClick={() => setView("list")}
-              className={`p-2 rounded-md ${view === "list" ? "bg-gray-100" : ""}`}
+              className={`p-2 rounded-md transition-colors ${
+                view === "list"
+                  ? "bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-white"
+                  : "text-gray-400 hover:text-gray-700 dark:hover:text-slate-200"
+              }`}
               aria-label="List view"
+              aria-pressed={view === "list"}
             >
               <List className="w-4 h-4" />
             </button>
             <button
               type="button"
               onClick={() => setView("grid")}
-              className={`p-2 rounded-md ${view === "grid" ? "bg-gray-100" : ""}`}
+              className={`p-2 rounded-md transition-colors ${
+                view === "grid"
+                  ? "bg-gray-100 dark:bg-slate-800 text-gray-900 dark:text-white"
+                  : "text-gray-400 hover:text-gray-700 dark:hover:text-slate-200"
+              }`}
               aria-label="Grid view"
+              aria-pressed={view === "grid"}
             >
               <Grid3x3 className="w-4 h-4" />
             </button>
           </div>
         </div>
 
-        <div className="bg-white border border-gray-200 rounded-2xl shadow-sm overflow-hidden">
-          <div className="grid grid-cols-12 gap-4 px-4 py-3 border-b border-gray-100 text-[11px] font-semibold text-gray-500 uppercase tracking-wider bg-gray-50/80">
-            <div className="col-span-6 sm:col-span-5">Name</div>
-            <div className="col-span-3 hidden sm:block">Modified</div>
-            <div className="col-span-2 hidden md:block">Size</div>
-            <div className="col-span-1" />
+        {loading ? (
+          <div className="flex items-center justify-center py-20 bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/10 rounded-2xl">
+            <Loader2 className="w-6 h-6 animate-spin text-[#2563eb]" />
           </div>
-
-          {loading ? (
-            <div className="flex items-center justify-center py-20">
-              <Loader2 className="w-6 h-6 animate-spin text-[#2563eb]" />
-            </div>
-          ) : filtered.length === 0 ? (
-            <div className="py-16 text-center text-sm text-gray-500">
-              No documents found
-            </div>
-          ) : (
-            filtered.map((item) => {
+        ) : filtered.length === 0 ? (
+          <div className="py-16 text-center text-sm text-gray-500 dark:text-slate-400 bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/10 rounded-2xl">
+            No documents found
+          </div>
+        ) : view === "grid" ? (
+          <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
+            {filtered.map((item) => {
               const type = mimeToType(item.mimeType);
               return (
                 <div
                   key={item.documentId}
-                  className="grid grid-cols-12 gap-4 px-4 py-3 items-center border-b border-gray-50 last:border-0 hover:bg-gray-50/80 text-sm"
+                  className="group relative flex flex-col rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#111827] p-4 hover:border-gray-300 dark:hover:border-white/20 hover:bg-gray-50/80 dark:hover:bg-slate-800/60 transition-colors"
+                >
+                  <button
+                    type="button"
+                    onClick={() => handleDelete(item)}
+                    className="absolute top-2 right-2 p-1.5 text-gray-400 opacity-0 group-hover:opacity-100 hover:text-red-500 rounded-md transition-opacity"
+                    aria-label="Delete file"
+                  >
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                  <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-gray-50 dark:bg-slate-800/80">
+                    {typeIcon(type, "w-6 h-6")}
+                  </div>
+                  <p className="text-sm font-medium text-gray-900 dark:text-slate-100 truncate pr-6" title={item.originalFilename}>
+                    {docTitle(item)}
+                  </p>
+                  <DocMeta item={item} />
+                  <div className="mt-auto pt-3 flex items-center justify-between text-[11px] text-gray-400 dark:text-slate-500">
+                    <span>{formatModified(item.updatedAt)}</span>
+                    <span>{formatSize(item.size)}</span>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        ) : (
+          <div className="bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/10 rounded-2xl shadow-sm overflow-hidden">
+            <div className="grid grid-cols-12 gap-4 px-4 py-3 border-b border-gray-100 dark:border-white/10 text-[11px] font-semibold text-gray-500 dark:text-slate-500 uppercase tracking-wider bg-transparent">
+              <div className="col-span-6 sm:col-span-5">Name</div>
+              <div className="col-span-3 hidden sm:block">Modified</div>
+              <div className="col-span-2 hidden md:block">Size</div>
+              <div className="col-span-1" />
+            </div>
+
+            {filtered.map((item) => {
+              const type = mimeToType(item.mimeType);
+              return (
+                <div
+                  key={item.documentId}
+                  className="grid grid-cols-12 gap-4 px-4 py-3 items-center border-b border-gray-100 dark:border-white/5 last:border-0 hover:bg-gray-50/80 dark:hover:bg-white/[0.03] text-sm transition-colors"
                 >
                   <div className="col-span-10 sm:col-span-5 flex items-center gap-3 min-w-0">
-                    <div className="p-2 rounded-lg bg-gray-50 shrink-0">
+                    <div className="p-2 rounded-lg bg-gray-50 dark:bg-slate-800/60 shrink-0">
                       {typeIcon(type)}
                     </div>
                     <div className="min-w-0">
-                      <p className="font-medium text-gray-900 truncate">
-                        {item.originalFilename}
+                      <p className="font-medium text-gray-900 dark:text-slate-100 truncate" title={item.originalFilename}>
+                        {docTitle(item)}
                       </p>
-                      <div className="flex gap-2 mt-0.5 flex-wrap">
-                        {item.projectId ? (
-                          <Link
-                            href={`/projects/${item.projectId}`}
-                            className="text-[11px] text-[#2563eb] hover:underline"
-                          >
-                            In project
-                          </Link>
-                        ) : (
-                          <span className="text-[11px] text-gray-400">Drive</span>
-                        )}
-                        <span
-                          className={`text-[11px] font-medium ${
-                            item.sharedWithOrganisation !== false
-                              ? "text-[#2563eb]"
-                              : "text-amber-600"
-                          }`}
-                        >
-                          {item.sharedWithOrganisation !== false
-                            ? "Shared"
-                            : "Private"}
-                        </span>
-                        {item.status === "completed" && (
-                          <span className="text-[11px] text-emerald-600 font-medium">
-                            Indexed
-                          </span>
-                        )}
-                      </div>
+                      <DocMeta item={item} />
                     </div>
                   </div>
-                  <div className="col-span-3 hidden sm:block text-gray-500">
+                  <div className="col-span-3 hidden sm:block text-gray-500 dark:text-slate-400">
                     {formatModified(item.updatedAt)}
                   </div>
-                  <div className="col-span-2 hidden md:block text-gray-500">
+                  <div className="col-span-2 hidden md:block text-gray-500 dark:text-slate-400">
                     {formatSize(item.size)}
                   </div>
                   <div className="col-span-2 sm:col-span-1 flex justify-end">
                     <button
                       type="button"
-                      className="p-1.5 text-gray-400 hover:text-gray-700 rounded-md"
+                      onClick={() => handleDelete(item)}
+                      className="p-1.5 text-gray-400 hover:text-red-500 rounded-md"
+                      aria-label="Delete file"
                     >
-                      <MoreVertical className="w-4 h-4" />
+                      <Trash2 className="w-4 h-4" />
                     </button>
                   </div>
                 </div>
               );
-            })
-          )}
-        </div>
+            })}
+          </div>
+        )}
       </div>
       <UploadModal
         isOpen={uploadOpen}

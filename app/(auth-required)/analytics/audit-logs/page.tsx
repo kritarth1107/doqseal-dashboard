@@ -100,7 +100,7 @@ export default function AuditLogsPage() {
           />
         </div>
         <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
-          <div className="grid grid-cols-12 gap-2 px-4 py-3 bg-gray-50 text-[11px] font-semibold text-gray-500 uppercase border-b border-gray-100">
+          <div className="grid grid-cols-12 gap-2 px-4 py-3 bg-transparent text-[11px] font-semibold text-gray-500 dark:text-slate-500 uppercase border-b border-gray-100 dark:border-white/10">
             <div className="col-span-2">Time</div>
             <div className="col-span-3">Actor</div>
             <div className="col-span-3">Action</div>

@@ -97,6 +97,7 @@ export type StoredDocument = {
   projectId: string;
   jobId?: string;
   originalFilename: string;
+  displayTitle?: string | null;
   storedFilename: string;
   mimeType: string;
   size: number;
@@ -108,4 +109,5 @@ export type StoredDocument = {
   uploadedAt: string;
   processedAt?: string;
   processingError?: string;
+  filePurgedAt?: string | null;
 };

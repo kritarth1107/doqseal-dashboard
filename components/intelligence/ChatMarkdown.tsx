@@ -65,7 +65,7 @@ export function ChatMarkdown({ content }: { content: string }) {
         <div key={`table-${i}`} className="my-3 overflow-x-auto rounded-xl border border-gray-200">
           <table className="w-full text-sm">
             <thead>
-              <tr className="bg-gray-50 border-b border-gray-200">
+              <tr className="bg-transparent border-b border-gray-200 dark:border-white/10">
                 {header.map((cell, idx) => (
                   <th
                     key={idx}

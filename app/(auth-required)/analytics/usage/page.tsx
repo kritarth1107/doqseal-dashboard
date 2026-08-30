@@ -2,7 +2,7 @@
 
 import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { BarChart3, Cpu, FileText, Loader2, PenLine } from "lucide-react";
+import { BarChart3, Cpu, FileText, HardDrive, Loader2 } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
 import { withOrgHeaders } from "@/lib/client-api";
 
@@ -12,10 +12,22 @@ type OrgStats = {
   pendingJobs?: number;
 };
 
+type QuotaItem = {
+  id?: string;
+  name: string;
+  used: number;
+  limit: number;
+  unit?: string;
+  usedLabel?: string;
+  limitLabel?: string;
+  utilisedText?: string;
+};
+
 type UsageData = {
   uploadCount?: number;
   limit?: number;
-  quotas?: { name: string; used: number; limit: number }[];
+  quotas?: QuotaItem[];
+  plan?: { name?: string };
 };
 
 function formatCount(value?: number) {
@@ -23,6 +35,12 @@ function formatCount(value?: number) {
   if (value >= 1_000_000) return `${(value / 1_000_000).toFixed(1)}M`;
   if (value >= 1_000) return `${(value / 1_000).toFixed(1)}K`;
   return value.toLocaleString();
+}
+
+function findQuota(quotas: QuotaItem[] | undefined, idOrName: RegExp) {
+  return quotas?.find(
+    (q) => (q.id && idOrName.test(q.id)) || idOrName.test(q.name)
+  );
 }
 
 export default function AnalyticsUsagePage() {
@@ -61,39 +79,41 @@ export default function AnalyticsUsagePage() {
     loadData();
   }, [activeOrgId]);
 
-  const apiUsed =
-    usage?.quotas?.find((q) => q.name.toLowerCase().includes("api"))?.used ??
-    usage?.uploadCount ??
-    0;
-  const apiLimit =
-    usage?.quotas?.find((q) => q.name.toLowerCase().includes("api"))?.limit ??
-    usage?.limit ??
-    0;
+  const storage = findQuota(usage?.quotas, /storage/i);
+  const extractions = findQuota(usage?.quotas, /extraction/i);
+  const api = findQuota(usage?.quotas, /api/i);
 
   const metrics = [
     {
-      label: "Documents processed",
-      value: formatCount(stats?.documentCount),
-      icon: FileText,
-      change: stats?.documentCount ? "Live count" : "—",
+      label: "Document storage",
+      value: storage?.usedLabel || (storage ? `${storage.used}${storage.unit ? ` ${storage.unit}` : ""}` : "—"),
+      icon: HardDrive,
+      change: storage?.utilisedText
+        || (storage ? `${storage.limit} ${storage.unit || "MB"} limit` : "Starter plan"),
     },
     {
       label: "AI extractions",
-      value: formatCount(stats?.extractionCount),
+      value: formatCount(extractions?.used ?? stats?.extractionCount),
       icon: Cpu,
-      change: stats?.extractionCount ? "Live count" : "—",
+      change: extractions
+        ? `${extractions.used.toLocaleString()}/${extractions.limit.toLocaleString()} this month`
+        : "Current period",
     },
     {
-      label: "Pending jobs",
-      value: formatCount(stats?.pendingJobs),
-      icon: PenLine,
-      change: "In queue",
+      label: "Documents",
+      value: formatCount(stats?.documentCount),
+      icon: FileText,
+      change: stats?.pendingJobs
+        ? `${stats.pendingJobs} pending jobs`
+        : "Live count",
     },
     {
-      label: "Daily uploads",
-      value: formatCount(usage?.uploadCount),
+      label: "API requests / day",
+      value: formatCount(api?.used),
       icon: BarChart3,
-      change: apiLimit ? `${apiUsed}/${apiLimit} quota` : "Current period",
+      change: api
+        ? `${api.used.toLocaleString()}/${api.limit.toLocaleString()} quota`
+        : "Current day",
     },
   ];
 
@@ -104,7 +124,7 @@ export default function AnalyticsUsagePage() {
       <div className="max-w-6xl mx-auto">
         <PageHeader
           title="Usage analytics"
-          description="Track document intelligence and API consumption for your organisation."
+          description={`Track document intelligence and API consumption${usage?.plan?.name ? ` on the ${usage.plan.name} plan` : ""}.`}
         />
 
         {loading ? (

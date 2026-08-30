@@ -1,26 +1,26 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
 import {
   ArrowLeft,
   CheckCircle2,
   Loader2,
+  RefreshCw,
   Trash2,
   XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
-import { isPrescriptionExtraction } from "@/lib/demo-extraction";
 import { ExtractionFields } from "@/components/ExtractionFields";
 import { useAuth } from "@/components/AuthProvider";
 import { withOrgHeaders } from "@/lib/client-api";
-import { ExtractedDocument, StoredDocument } from "@/types/extraction";
+import { StoredDocument } from "@/types/extraction";
 
 function StatusBadge({ status }: { status: string }) {
   if (status === "processing") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 px-2.5 py-0.5 text-xs font-medium text-amber-700 border border-amber-200">
+      <span className="inline-flex items-center gap-1 rounded-full bg-amber-50 dark:bg-amber-500/10 px-2.5 py-0.5 text-xs font-medium text-amber-700 dark:text-amber-400 border border-amber-200 dark:border-amber-500/20">
         <Loader2 className="h-3 w-3 animate-spin" />
         Processing
       </span>
@@ -28,7 +28,7 @@ function StatusBadge({ status }: { status: string }) {
   }
   if (status === "completed") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 px-2.5 py-0.5 text-xs font-medium text-emerald-700 border border-emerald-200">
+      <span className="inline-flex items-center gap-1 rounded-full bg-emerald-50 dark:bg-emerald-500/10 px-2.5 py-0.5 text-xs font-medium text-emerald-700 dark:text-emerald-400 border border-emerald-200 dark:border-emerald-500/20">
         <CheckCircle2 className="h-3 w-3" />
         Completed
       </span>
@@ -36,55 +36,55 @@ function StatusBadge({ status }: { status: string }) {
   }
   if (status === "failed") {
     return (
-      <span className="inline-flex items-center gap-1 rounded-full bg-red-50 px-2.5 py-0.5 text-xs font-medium text-red-700 border border-red-200">
+      <span className="inline-flex items-center gap-1 rounded-full bg-red-50 dark:bg-red-500/10 px-2.5 py-0.5 text-xs font-medium text-red-700 dark:text-red-400 border border-red-200 dark:border-red-500/20">
         <XCircle className="h-3 w-3" />
         Failed
       </span>
     );
   }
   return (
-    <span className="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-0.5 text-xs font-medium text-gray-600 capitalize">
+    <span className="inline-flex items-center rounded-full bg-gray-100 dark:bg-slate-800 px-2.5 py-0.5 text-xs font-medium text-gray-600 dark:text-slate-300 capitalize">
       {status.replace("_", " ")}
     </span>
   );
 }
 
-function Field({ label, value }: { label: string; value: string | number | null | undefined }) {
-  const display =
-    value === null || value === undefined || value === "" ? "—" : String(value);
-  return (
-    <div>
-      <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
-        {label}
-      </p>
-      <p className="mt-1 text-sm text-gray-900">{display}</p>
-    </div>
-  );
+type PageTab = { page: number; title: string };
+
+function derivePageTabs(
+  extracted: Record<string, unknown> | null,
+  _filename: string
+): PageTab[] {
+  const pages = extracted?.pages;
+  if (Array.isArray(pages) && pages.length > 0) {
+    return pages
+      .map((entry, index) => {
+        if (!entry || typeof entry !== "object") return null;
+        const row = entry as Record<string, unknown>;
+        const pageNum =
+          typeof row.page === "number"
+            ? row.page
+            : Number(row.page) || index + 1;
+        const title =
+          typeof row.title === "string" && row.title.trim()
+            ? row.title.trim()
+            : `Page ${pageNum}`;
+        return { page: pageNum, title };
+      })
+      .filter((tab): tab is PageTab => Boolean(tab));
+  }
+
+  return [
+    { page: 1, title: "Page 1" },
+    { page: 2, title: "Page 2" },
+  ];
 }
 
-function Section({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="bg-white border border-gray-200 rounded-2xl p-5">
-      <h3 className="text-sm font-semibold text-gray-900 mb-4">{title}</h3>
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">{children}</div>
-    </div>
-  );
-}
-
-function isNestedExtraction(
+function asExtractionRecord(
   extracted: StoredDocument["extractedJson"]
-): extracted is ExtractedDocument {
-  return Boolean(
-    extracted &&
-      typeof extracted === "object" &&
-      "institution" in extracted
-  );
+): Record<string, unknown> | null {
+  if (!extracted || typeof extracted !== "object") return null;
+  return extracted as Record<string, unknown>;
 }
 
 export default function ProjectDocumentPage() {
@@ -94,6 +94,7 @@ export default function ProjectDocumentPage() {
   const [doc, setDoc] = useState<StoredDocument | null>(null);
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
+  const [reprocessing, setReprocessing] = useState(false);
   const [pdfPage, setPdfPage] = useState(1);
 
   async function loadDocument(silent = false) {
@@ -129,11 +130,52 @@ export default function ProjectDocumentPage() {
     return () => clearInterval(interval);
   }, [doc?.status, params.documentId, params.projectId, activeOrgId]);
 
+  const extracted = useMemo(
+    () => asExtractionRecord(doc?.extractedJson ?? null),
+    [doc?.extractedJson]
+  );
+
+  const pageTabs = useMemo(
+    () =>
+      doc
+        ? derivePageTabs(extracted, doc.originalFilename)
+        : [{ page: 1, title: "Page 1" }],
+    [doc, extracted]
+  );
+
+  useEffect(() => {
+    if (!pageTabs.some((tab) => tab.page === pdfPage)) {
+      setPdfPage(pageTabs[0]?.page ?? 1);
+    }
+  }, [pageTabs, pdfPage]);
+
+  const handleReprocess = async () => {
+    if (!doc || !activeOrgId) return;
+    setReprocessing(true);
+    try {
+      const res = await fetch(
+        `/api/documents/${doc.id}/reprocess`,
+        withOrgHeaders(activeOrgId, { method: "POST" })
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Reprocess failed");
+      toast.success("Re-extraction queued");
+      setDoc((prev) =>
+        prev ? { ...prev, status: "processing", extractedJson: prev.extractedJson } : prev
+      );
+      await loadDocument(true);
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Reprocess failed");
+    } finally {
+      setReprocessing(false);
+    }
+  };
+
   const handleDelete = async () => {
     if (!doc) return;
     if (
       !confirm(
-        `Delete "${doc.originalFilename}"? This removes the file and extracted data.`
+        `Remove "${doc.displayTitle?.trim() || doc.originalFilename}"?\n\nThe original file will be deleted from storage. Extracted context stays available for AI chat.`
       )
     ) {
       return;
@@ -148,7 +190,7 @@ export default function ProjectDocumentPage() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Delete failed");
 
-      toast.success("Document deleted");
+      toast.success("File removed — context retained");
       router.push(`/projects/${params.projectId}`);
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : "Delete failed");
@@ -167,7 +209,7 @@ export default function ProjectDocumentPage() {
   if (!doc) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center bg-[#f8fafc] gap-3">
-        <p className="text-sm text-gray-600">Document not found</p>
+        <p className="text-sm text-gray-600 dark:text-slate-400">Document not found</p>
         <Link
           href={`/projects/${params.projectId}`}
           className="text-sm text-[#2563eb] hover:underline"
@@ -178,16 +220,18 @@ export default function ProjectDocumentPage() {
     );
   }
 
-  const extracted = doc.extractedJson;
-  const nestedExtraction = isNestedExtraction(extracted) ? extracted : null;
-  const flatExtraction =
-    extracted && !isNestedExtraction(extracted)
-      ? (extracted as Record<string, unknown>)
-      : null;
   const fileUrl = `/api/documents/${doc.id}/file`;
-  const isPrescription = nestedExtraction
-    ? isPrescriptionExtraction(nestedExtraction)
-    : false;
+  const documentType =
+    typeof extracted?.suggested_title === "string"
+      ? extracted.suggested_title
+      : typeof extracted?.summary === "string"
+        ? extracted.summary.split(".")[0]
+        : null;
+  const hasFields =
+    extracted &&
+    Object.values(extracted).some(
+      (value) => value !== null && value !== undefined && value !== ""
+    );
 
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-[#f8fafc]">
@@ -195,7 +239,7 @@ export default function ProjectDocumentPage() {
         <div className="max-w-6xl mx-auto">
           <Link
             href={`/projects/${params.projectId}`}
-            className="inline-flex items-center gap-1 text-sm text-gray-500 hover:text-gray-900 mb-4"
+            className="inline-flex items-center gap-1 text-sm text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white mb-4"
           >
             <ArrowLeft className="w-4 h-4" />
             Back to project
@@ -204,20 +248,28 @@ export default function ProjectDocumentPage() {
           {doc.status === "processing" && (
             <div className="mb-4 flex items-center gap-2 rounded-2xl border border-[#2563eb]/20 bg-[#2563eb]/5 px-4 py-3 text-sm text-[#2563eb]">
               <Loader2 className="h-4 w-4 animate-spin" />
-              Extracting data from document — usually a few seconds…
+              Identifying document and extracting pointers — usually a few seconds…
             </div>
           )}
 
           <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-xl sm:text-2xl font-semibold text-gray-900">
-                  {doc.originalFilename}
+                <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-slate-50">
+                  {doc.displayTitle?.trim() || doc.originalFilename}
                 </h1>
                 <StatusBadge status={doc.status} />
               </div>
-              <p className="mt-1 text-sm text-gray-500">
+              <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">
+                {doc.displayTitle?.trim() &&
+                doc.displayTitle.trim() !== doc.originalFilename ? (
+                  <>
+                    Original file: {doc.originalFilename}
+                    {" · "}
+                  </>
+                ) : null}
                 Uploaded {new Date(doc.uploadedAt).toLocaleString()}
+                {documentType && <> · {documentType}</>}
                 {doc.confidence > 0 && (
                   <> · {(doc.confidence * 100).toFixed(0)}% confidence</>
                 )}
@@ -234,26 +286,41 @@ export default function ProjectDocumentPage() {
                 )}
               </p>
             </div>
-            <button
-              type="button"
-              onClick={handleDelete}
-              disabled={deleting}
-              className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 bg-white border border-red-200 rounded-lg hover:bg-red-50 disabled:opacity-50"
-            >
-              {deleting ? (
-                <Loader2 className="w-4 h-4 animate-spin" />
-              ) : (
-                <Trash2 className="w-4 h-4" />
-              )}
-              Delete
-            </button>
+            <div className="flex items-center gap-2">
+              <button
+                type="button"
+                onClick={handleReprocess}
+                disabled={reprocessing || deleting || doc.status === "processing"}
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 dark:text-slate-200 bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 disabled:opacity-50"
+              >
+                {reprocessing ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-4 h-4" />
+                )}
+                Re-run extraction
+              </button>
+              <button
+                type="button"
+                onClick={handleDelete}
+                disabled={deleting || reprocessing}
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 bg-white dark:bg-[#111827] border border-red-200 dark:border-red-500/30 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 disabled:opacity-50"
+              >
+                {deleting ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <Trash2 className="w-4 h-4" />
+                )}
+                Delete
+              </button>
+            </div>
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
             <div className="lg:col-span-2">
-              <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden sticky top-24">
-                <div className="flex items-center justify-between border-b border-gray-100 px-4 py-3 text-sm">
-                  <span className="text-gray-500">Preview</span>
+              <div className="bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/10 rounded-2xl overflow-hidden sticky top-24">
+                <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/10 px-4 py-3 text-sm">
+                  <span className="text-gray-500 dark:text-slate-400">Preview</span>
                   <a
                     href={fileUrl}
                     target="_blank"
@@ -264,37 +331,30 @@ export default function ProjectDocumentPage() {
                   </a>
                 </div>
                 {doc.mimeType.includes("pdf") && (
-                  <div className="flex gap-1 border-b border-gray-100 px-4 py-2">
-                    <button
-                      type="button"
-                      onClick={() => setPdfPage(1)}
-                      className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
-                        pdfPage === 1
-                          ? "bg-[#2563eb] text-white"
-                          : "text-gray-600 hover:bg-gray-100"
-                      }`}
-                    >
-                      Page 1 · {isPrescription ? "Case sheet" : "TRF"}
-                    </button>
-                    {!isPrescription && (
+                  <div className="flex flex-wrap gap-1 border-b border-gray-100 dark:border-white/10 px-4 py-2">
+                    {pageTabs.map((tab) => (
                       <button
+                        key={`${tab.page}-${tab.title}`}
                         type="button"
-                        onClick={() => setPdfPage(2)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium ${
-                          pdfPage === 2
+                        onClick={() => setPdfPage(tab.page)}
+                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                          pdfPage === tab.page
                             ? "bg-[#2563eb] text-white"
-                            : "text-gray-600 hover:bg-gray-100"
+                            : "text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800"
                         }`}
                       >
-                        Page 2 · Billing
+                        Page {tab.page}
+                        {tab.title && tab.title !== `Page ${tab.page}`
+                          ? ` · ${tab.title}`
+                          : ""}
                       </button>
-                    )}
+                    ))}
                   </div>
                 )}
                 <div className="p-4">
                   {doc.mimeType.includes("pdf") ? (
                     <div
-                      className="overflow-hidden rounded-xl border border-gray-200 bg-gray-50"
+                      className="overflow-hidden rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-slate-900"
                       style={{ height: "480px" }}
                     >
                       <iframe
@@ -309,7 +369,7 @@ export default function ProjectDocumentPage() {
                     <img
                       src={fileUrl}
                       alt="Document preview"
-                      className="w-full rounded-xl border border-gray-200"
+                      className="w-full rounded-xl border border-gray-200 dark:border-white/10"
                     />
                   )}
                 </div>
@@ -317,186 +377,18 @@ export default function ProjectDocumentPage() {
             </div>
 
             <div className="lg:col-span-3 space-y-4">
-              {flatExtraction ? (
+              {hasFields ? (
                 <ExtractionFields
-                  data={flatExtraction}
+                  data={extracted!}
                   fieldConfidence={doc.fieldConfidence}
                 />
-              ) : nestedExtraction ? (
-                <>
-                  <Section title="Institution">
-                    <Field label="Hospital" value={nestedExtraction.institution.name} />
-                    <Field label="Department" value={nestedExtraction.institution.branch} />
-                    {!isPrescription && (
-                      <>
-                        <Field label="Scheme" value={nestedExtraction.institution.scheme} />
-                        <Field label="GST number" value={nestedExtraction.institution.gst_number} />
-                        <Field label="CIN" value={nestedExtraction.institution.cin} />
-                      </>
-                    )}
-                    <Field label="PIN" value={nestedExtraction.institution.pin} />
-                  </Section>
-
-                  <Section title="Patient">
-                    <Field label="Name" value={nestedExtraction.patient.name} />
-                    <Field label="Age" value={nestedExtraction.patient.age} />
-                    <Field label="Gender" value={nestedExtraction.patient.gender} />
-                    <Field label="Contact" value={nestedExtraction.patient.contact} />
-                    <Field label="Address" value={nestedExtraction.patient.address} />
-                    <Field label="Patient code" value={nestedExtraction.patient.patient_code} />
-                    <Field label="Patient type" value={nestedExtraction.patient.patient_type} />
-                  </Section>
-
-                  <Section title="Referral & clinical">
-                    <Field label="Referred by" value={nestedExtraction.referral.referred_by} />
-                    <Field
-                      label="Clinical history"
-                      value={nestedExtraction.referral.clinical_history}
-                    />
-                  </Section>
-
-                  {nestedExtraction.prescription && (
-                    <Section title="Prescription">
-                      <Field label="Consultant" value={nestedExtraction.prescription.prescriber} />
-                      <Field
-                        label="Registration"
-                        value={nestedExtraction.prescription.registration_no}
-                      />
-                      <Field label="Assessment" value={nestedExtraction.prescription.diagnosis} />
-                      {nestedExtraction.prescription.medications.length > 0 ? (
-                        <div className="sm:col-span-2">
-                          <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
-                            Medications
-                          </p>
-                          <ul className="mt-2 space-y-3">
-                            {nestedExtraction.prescription.medications.map((med) => (
-                              <li
-                                key={med.name}
-                                className="rounded-xl border border-gray-100 bg-gray-50 p-3 text-sm"
-                              >
-                                <p className="font-medium text-gray-900">{med.name}</p>
-                                <p className="text-gray-600 mt-1">{med.dosage}</p>
-                                <p className="text-gray-500 text-xs mt-1">
-                                  {med.duration} · {med.instructions}
-                                </p>
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      ) : nestedExtraction.tests.requested.length > 0 ? (
-                        <div className="sm:col-span-2">
-                          <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
-                            Investigations advised
-                          </p>
-                          <ul className="mt-2 space-y-1">
-                            {nestedExtraction.tests.requested.map((test) => (
-                              <li
-                                key={test}
-                                className="text-sm text-gray-900 flex items-start gap-2"
-                              >
-                                <span className="text-[#2563eb] mt-0.5">•</span>
-                                {test}
-                              </li>
-                            ))}
-                          </ul>
-                        </div>
-                      ) : null}
-                      <div className="sm:col-span-2">
-                        <Field label="Advice" value={nestedExtraction.prescription.advice} />
-                      </div>
-                    </Section>
-                  )}
-
-                  <Section title="Visit">
-                    <Field label="Date" value={nestedExtraction.visit.date} />
-                    <Field label="Time" value={nestedExtraction.visit.time} />
-                    <Field label="Receipt number" value={nestedExtraction.visit.rec_number} />
-                    <Field label="IPD/OPD" value={nestedExtraction.visit.ipd_opd} />
-                    <Field label="Bill type" value={nestedExtraction.visit.bill_type} />
-                  </Section>
-
-                  {!isPrescription && nestedExtraction.tests.requested.length > 0 && (
-                  <Section title="Tests">
-                    <Field label="Section" value={nestedExtraction.tests.section} />
-                    <div className="sm:col-span-2">
-                      <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500">
-                        Requested tests
-                      </p>
-                      <ul className="mt-2 space-y-1">
-                        {nestedExtraction.tests.requested.map((test) => (
-                          <li
-                            key={test}
-                            className="text-sm text-gray-900 flex items-start gap-2"
-                          >
-                            <span className="text-[#2563eb] mt-0.5">•</span>
-                            {test}
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-                  </Section>
-                  )}
-
-                  {!isPrescription && nestedExtraction.billing.gross > 0 && (
-                  <Section title="Billing">
-                    <Field
-                      label="Gross"
-                      value={`${nestedExtraction.billing.currency} ${nestedExtraction.billing.gross.toLocaleString("en-IN")}`}
-                    />
-                    <Field
-                      label="Net"
-                      value={`${nestedExtraction.billing.currency} ${nestedExtraction.billing.net.toLocaleString("en-IN")}`}
-                    />
-                    <Field
-                      label="Paid"
-                      value={`${nestedExtraction.billing.currency} ${nestedExtraction.billing.paid.toLocaleString("en-IN")}`}
-                    />
-                    <Field
-                      label="Balance"
-                      value={`${nestedExtraction.billing.currency} ${nestedExtraction.billing.balance.toLocaleString("en-IN")}`}
-                    />
-                    <div className="sm:col-span-2">
-                      <Field
-                        label="Amount in words"
-                        value={nestedExtraction.billing.amount_in_words}
-                      />
-                    </div>
-                  </Section>
-                  )}
-
-                  <Section title="Verification">
-                    {Object.entries(nestedExtraction.verification).map(([key, passed]) => (
-                      <div key={key} className="flex items-center gap-2">
-                        {passed ? (
-                          <CheckCircle2 className="h-4 w-4 text-emerald-600 shrink-0" />
-                        ) : (
-                          <XCircle className="h-4 w-4 text-red-500 shrink-0" />
-                        )}
-                        <span className="text-sm text-gray-800 capitalize">
-                          {key.replace(/_/g, " ")}
-                        </span>
-                      </div>
-                    ))}
-                  </Section>
-
-                  {nestedExtraction.auto_tags.length > 0 && (
-                    <div className="flex flex-wrap gap-2">
-                      {nestedExtraction.auto_tags.map((tag) => (
-                        <span
-                          key={tag}
-                          className="rounded-full bg-gray-100 px-3 py-1 text-xs font-medium text-gray-700"
-                        >
-                          {tag}
-                        </span>
-                      ))}
-                    </div>
-                  )}
-                </>
               ) : (
-                <div className="bg-white border border-gray-200 rounded-2xl p-8 text-center text-sm text-gray-500">
+                <div className="bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/10 rounded-2xl p-8 text-center text-sm text-gray-500 dark:text-slate-400">
                   {doc.status === "processing"
                     ? "Extraction in progress…"
-                    : "No extracted data available."}
+                    : doc.status === "failed"
+                      ? doc.processingError || "Extraction failed."
+                      : "No extracted data available. Re-upload or re-run extraction after the worker is updated."}
                 </div>
               )}
             </div>

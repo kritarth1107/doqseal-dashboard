@@ -30,6 +30,7 @@ type Project = {
 type ListedDocument = {
   id: string;
   name: string;
+  originalFilename?: string;
   status: string;
   href: string;
 };
@@ -72,7 +73,8 @@ export default function ProjectDetailPage() {
       const data = await res.json();
       const docs = (data.documents as StoredDocument[]).map((doc) => ({
         id: doc.id,
-        name: doc.originalFilename,
+        name: doc.displayTitle?.trim() || doc.originalFilename,
+        originalFilename: doc.originalFilename,
         status: doc.status === "completed" ? "indexed" : doc.status,
         href: `/projects/${projectId}/documents/${doc.id}`,
       }));
@@ -103,7 +105,7 @@ export default function ProjectDetailPage() {
 
   const handleDelete = async (documentId: string, name: string) => {
     if (!activeOrgId) return;
-    if (!confirm(`Delete "${name}"? This removes the file and extracted data.`)) return;
+    if (!confirm(`Remove "${name}" from this project?\n\nThe original file will be deleted from storage. Extracted context stays available for AI chat.`)) return;
 
     setDeletingId(documentId);
     try {
@@ -115,7 +117,7 @@ export default function ProjectDetailPage() {
       if (!res.ok) throw new Error(data.error || "Delete failed");
 
       setUploadedDocs((prev) => prev.filter((doc) => doc.id !== documentId));
-      toast.success("Document deleted");
+      toast.success("File removed — context retained");
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : "Delete failed");
     } finally {
@@ -197,45 +199,60 @@ export default function ProjectDetailPage() {
             </div>
           </div>
 
-          <h3 className="text-sm font-semibold text-gray-900 mb-3">Project documents</h3>
-          <div className="bg-white border border-gray-200 rounded-2xl divide-y divide-gray-100">
+          <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100 mb-3">
+            Project documents
+          </h3>
+          <div className="bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/10 rounded-2xl overflow-hidden">
             {uploadedDocs.length === 0 ? (
-              <div className="px-4 py-8 text-center text-sm text-gray-500">
+              <div className="px-4 py-8 text-center text-sm text-gray-500 dark:text-slate-400">
                 No documents uploaded yet.
               </div>
             ) : (
-              uploadedDocs.map((doc) => (
-                <div
-                  key={doc.id}
-                  className="flex items-center gap-3 px-4 py-3 hover:bg-gray-50 group"
-                >
-                  <Link
-                    href={doc.href}
-                    className="flex items-center gap-3 flex-1 min-w-0"
-                  >
-                    <FileText className="w-5 h-5 text-red-500 shrink-0" />
-                    <span className="text-sm font-medium text-gray-800 truncate">
-                      {doc.name}
-                    </span>
-                  </Link>
-                  <span className="text-xs text-gray-400 capitalize shrink-0">
-                    {doc.status}
-                  </span>
-                  <button
-                    type="button"
-                    onClick={() => handleDelete(doc.id, doc.name)}
-                    disabled={deletingId === doc.id}
-                    className="p-1.5 text-gray-400 hover:text-red-600 hover:bg-red-50 rounded-lg transition-colors disabled:opacity-50 shrink-0"
-                    title="Delete document"
-                  >
-                    {deletingId === doc.id ? (
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                    ) : (
-                      <Trash2 className="w-4 h-4" />
-                    )}
-                  </button>
+              <>
+                <div className="hidden sm:grid grid-cols-12 gap-3 px-4 py-3 border-b border-gray-100 dark:border-white/10 text-[11px] font-semibold text-gray-500 dark:text-slate-500 uppercase tracking-wider bg-transparent">
+                  <div className="col-span-8">Name</div>
+                  <div className="col-span-3">Status</div>
+                  <div className="col-span-1" />
                 </div>
-              ))
+                <div className="divide-y divide-gray-100 dark:divide-white/5">
+                  {uploadedDocs.map((doc) => (
+                    <div
+                      key={doc.id}
+                      className="flex sm:grid sm:grid-cols-12 gap-3 items-center px-4 py-3 hover:bg-gray-50 dark:hover:bg-white/[0.03] group transition-colors"
+                    >
+                      <Link
+                        href={doc.href}
+                        className="flex items-center gap-3 flex-1 min-w-0 sm:col-span-8"
+                      >
+                        <div className="p-2 rounded-lg bg-gray-50 dark:bg-slate-800/60 shrink-0">
+                          <FileText className="w-4 h-4 text-rose-400" />
+                        </div>
+                        <span className="text-sm font-medium text-gray-800 dark:text-slate-100 truncate">
+                          {doc.name}
+                        </span>
+                      </Link>
+                      <span className="text-xs text-gray-400 dark:text-slate-500 capitalize shrink-0 sm:col-span-3">
+                        {doc.status}
+                      </span>
+                      <div className="sm:col-span-1 flex justify-end shrink-0">
+                        <button
+                          type="button"
+                          onClick={() => handleDelete(doc.id, doc.name)}
+                          disabled={deletingId === doc.id}
+                          className="p-1.5 text-gray-400 hover:text-red-500 hover:bg-red-50 dark:hover:bg-red-500/10 rounded-lg transition-colors disabled:opacity-50"
+                          title="Delete document"
+                        >
+                          {deletingId === doc.id ? (
+                            <Loader2 className="w-4 h-4 animate-spin" />
+                          ) : (
+                            <Trash2 className="w-4 h-4" />
+                          )}
+                        </button>
+                      </div>
+                    </div>
+                  ))}
+                </div>
+              </>
             )}
           </div>
         </div>

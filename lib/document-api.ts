@@ -5,10 +5,12 @@ type BackendDocumentPayload = {
     documentId: string;
     projectId: string;
     originalFilename: string;
+    displayTitle?: string | null;
     mimeType: string;
     size: number;
     status: string;
     contentHash?: string;
+    filePurgedAt?: string | null;
     createdAt: string;
     updatedAt: string;
   };
@@ -18,7 +20,7 @@ type BackendDocumentPayload = {
     error?: string | null;
     completedAt?: string | null;
   } | null;
-    extraction?: {
+  extraction?: {
     extractionId: string;
     jobId: string;
     data: Record<string, unknown>;
@@ -55,6 +57,7 @@ export function mapBackendDocument(
     projectId: document.projectId,
     jobId: job?.jobId,
     originalFilename: document.originalFilename,
+    displayTitle: document.displayTitle || null,
     storedFilename: document.documentId,
     mimeType: document.mimeType,
     size: document.size,
@@ -62,10 +65,11 @@ export function mapBackendDocument(
     extractedJson: (extraction?.data as StoredDocument["extractedJson"]) ?? null,
     fieldConfidence,
     confidence: averageConfidence(fieldConfidence),
-      extractionStrategy: extraction?.strategy || (extraction ? "hybrid" : "pending"),
+    extractionStrategy: extraction?.strategy || (extraction ? "hybrid" : "pending"),
     uploadedAt: document.createdAt,
     processedAt: extraction?.approvedAt ?? undefined,
     processingError: job?.error ?? undefined,
+    filePurgedAt: document.filePurgedAt || null,
   };
 }
 
@@ -74,6 +78,7 @@ export function mapBackendDocumentList(
     documentId: string;
     projectId: string;
     originalFilename: string;
+    displayTitle?: string | null;
     mimeType: string;
     size: number;
     status: string;
@@ -85,6 +90,7 @@ export function mapBackendDocumentList(
     id: document.documentId,
     projectId: document.projectId,
     originalFilename: document.originalFilename,
+    displayTitle: document.displayTitle || null,
     storedFilename: document.documentId,
     mimeType: document.mimeType,
     size: document.size,

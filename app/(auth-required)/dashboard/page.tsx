@@ -264,7 +264,7 @@ export default function Dashboard() {
             ) : (
               <table className="w-full text-left border-collapse">
                 <thead>
-                  <tr className="text-[11px] font-bold text-gray-400 uppercase tracking-wider">
+                  <tr className="text-[11px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-wider bg-transparent border-b border-gray-100 dark:border-white/10">
                     <th className="px-6 py-4">Document Name</th>
                     <th className="px-6 py-4">Category</th>
                     <th className="px-6 py-4">Status</th>

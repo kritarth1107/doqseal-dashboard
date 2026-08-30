@@ -282,7 +282,7 @@ export default function MembersManagementPage() {
         <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
           <table className="w-full text-left border-collapse">
             <thead>
-              <tr className="bg-gray-50/50 text-[11px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-200">
+              <tr className="bg-transparent text-[11px] font-bold text-gray-400 dark:text-slate-500 uppercase tracking-widest border-b border-gray-200 dark:border-white/10">
                 <th className="px-6 py-4">Member</th>
                 <th className="px-6 py-4">Role</th>
                 <th className="px-6 py-4">Status</th>

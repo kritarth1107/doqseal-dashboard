@@ -311,7 +311,7 @@ export default function SettingsPage() {
 
                                     <div className="overflow-x-auto">
                                         <table className="w-full text-left border-collapse">
-                                            <thead className="text-[13px] font-medium text-black border-b border-gray-200">
+                                            <thead className="text-[13px] font-medium text-black dark:text-slate-200 border-b border-gray-200 dark:border-white/10 bg-transparent">
                                                 <tr>
                                                     <th className="py-3 pr-4 font-medium">Device</th>
                                                     <th className="py-3 px-4 font-medium">Location</th>

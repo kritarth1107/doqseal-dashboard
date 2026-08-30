@@ -90,7 +90,7 @@ export function Sidebar() {
           )}
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="text-gray-400 hover:text-black dark:hover:text-white transition-colors p-1 rounded-md hover:bg-gray-100 dark:hover:bg-zinc-800"
+            className="text-gray-400 hover:text-black dark:hover:text-white transition-colors p-1 rounded-md hover:bg-gray-100 dark:hover:!bg-zinc-800"
           >
             {isCollapsed ? (
               <Menu className="w-5 h-5" />
@@ -107,7 +107,7 @@ export function Sidebar() {
         <div className={`px-3 mb-4 relative ${isCollapsed ? 'flex justify-center' : ''}`}>
           <button
             onClick={() => setShowOrgSwitcher(!showOrgSwitcher)}
-            className={`flex items-center gap-2 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-800 transition-all text-left group ${
+            className={`flex items-center gap-2 rounded-lg hover:bg-gray-50 dark:hover:!bg-zinc-800 transition-all text-left group ${
               isCollapsed ? "w-10 h-10 justify-center p-0" : "w-full p-2 px-2.5 border border-gray-100 dark:border-zinc-800 shadow-sm"
             }`}
           >
@@ -151,7 +151,7 @@ export function Sidebar() {
                         setShowOrgSwitcher(false);
                         window.location.reload();
                       }}
-                      className={`flex w-full items-center justify-between gap-2 px-2.5 py-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg transition-colors text-left ${activeOrgId === org.organisationId ? 'bg-blue-50 dark:bg-blue-950/40' : ''}`}
+                      className={`flex w-full items-center justify-between gap-2 px-2.5 py-2 hover:bg-gray-100 dark:hover:!bg-zinc-800 rounded-lg transition-colors text-left ${activeOrgId === org.organisationId ? 'bg-blue-50 dark:bg-blue-950/40' : ''}`}
                     >
                       <div className="flex flex-col truncate">
                         <span className={`text-sm font-medium truncate ${activeOrgId === org.organisationId ? 'text-[#2563eb]' : 'text-gray-600 dark:text-slate-300'}`}>
@@ -172,7 +172,7 @@ export function Sidebar() {
                   <Link 
                     href="/manage/create-organisation"
                     onClick={() => setShowOrgSwitcher(false)}
-                    className="flex w-full items-center gap-2 px-2.5 py-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg transition-colors text-left text-gray-600 dark:text-slate-300"
+                    className="flex w-full items-center gap-2 px-2.5 py-2 hover:bg-gray-100 dark:hover:!bg-zinc-800 rounded-lg transition-colors text-left text-gray-600 dark:text-slate-300"
                   >
                     <Plus className="w-4 h-4" />
                     <span className="text-sm">Create New</span>
@@ -206,18 +206,18 @@ export function Sidebar() {
               className="fixed inset-0 z-40"
               onClick={() => setShowProfileMenu(false)}
             />
-            <div className="absolute bottom-[72px] left-2 w-64 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden text-sm text-gray-700 transform origin-bottom-left transition-all">
-              <div className="px-4 py-3 border-b border-gray-100">
-                <div className="truncate text-black font-medium">{userData?.email || 'Loading...'}</div>
+            <div className="absolute bottom-[72px] left-2 w-64 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl shadow-lg z-50 overflow-hidden text-sm text-gray-700 dark:text-slate-200 transform origin-bottom-left transition-all">
+              <div className="px-4 py-3 border-b border-gray-100 dark:border-zinc-800">
+                <div className="truncate text-black dark:text-slate-100 font-medium">{userData?.email || 'Loading...'}</div>
               </div>
               <div className="p-1.5">
-                <Link href="/settings" onClick={() => setShowProfileMenu(false)} className="flex w-full items-center justify-between gap-2 px-2.5 py-2 hover:bg-gray-100 rounded-lg transition-colors text-left">
+                <Link href="/settings" onClick={() => setShowProfileMenu(false)} className="flex w-full items-center justify-between gap-2 px-2.5 py-2 hover:bg-gray-100 dark:hover:!bg-zinc-800 rounded-lg transition-colors text-left">
                   <div className="flex items-center gap-2">
                     <Settings className="w-4 h-4" />
                     Settings
                   </div>
                 </Link>
-                <button className="flex w-full items-center justify-between gap-2 px-2.5 py-2 hover:bg-gray-100 rounded-lg transition-colors text-left">
+                <button className="flex w-full items-center justify-between gap-2 px-2.5 py-2 hover:bg-gray-100 dark:hover:!bg-zinc-800 rounded-lg transition-colors text-left">
                   <div className="flex items-center gap-2">
                     <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="10"></circle><path d="M12 2a15.3 15.3 0 0 1 4 10 15.3 15.3 0 0 1-4 10 15.3 15.3 0 0 1-4-10 15.3 15.3 0 0 1 4-10z"></path><path d="M2 12h20"></path></svg>
                     Language
@@ -225,22 +225,22 @@ export function Sidebar() {
                   <ChevronRight className="w-3.5 h-3.5" />
                 </button>
                 
-                <div className="h-px bg-gray-100 my-1 mx-2" />
+                <div className="h-px bg-gray-100 dark:bg-zinc-800 my-1 mx-2" />
 
                 <div className="px-2.5 py-2 text-[11px] font-bold text-gray-400 uppercase tracking-widest">
                   Legal
                 </div>
-                <Link href="/legal/privacy-policy" onClick={() => setShowProfileMenu(false)} className="flex w-full items-center gap-2 px-2.5 py-1.5 hover:bg-gray-100 rounded-lg transition-colors text-left text-xs">
+                <Link href="/legal/privacy-policy" onClick={() => setShowProfileMenu(false)} className="flex w-full items-center gap-2 px-2.5 py-1.5 hover:bg-gray-100 dark:hover:!bg-zinc-800 rounded-lg transition-colors text-left text-xs">
                   Privacy Policy
                 </Link>
-                <Link href="/legal/terms-of-service" onClick={() => setShowProfileMenu(false)} className="flex w-full items-center gap-2 px-2.5 py-1.5 hover:bg-gray-100 rounded-lg transition-colors text-left text-xs">
+                <Link href="/legal/terms-of-service" onClick={() => setShowProfileMenu(false)} className="flex w-full items-center gap-2 px-2.5 py-1.5 hover:bg-gray-100 dark:hover:!bg-zinc-800 rounded-lg transition-colors text-left text-xs">
                   Terms of Service
                 </Link>
-                <Link href="/legal/data-processing-agreement" onClick={() => setShowProfileMenu(false)} className="flex w-full items-center gap-2 px-2.5 py-1.5 hover:bg-gray-100 rounded-lg transition-colors text-left text-xs">
+                <Link href="/legal/data-processing-agreement" onClick={() => setShowProfileMenu(false)} className="flex w-full items-center gap-2 px-2.5 py-1.5 hover:bg-gray-100 dark:hover:!bg-zinc-800 rounded-lg transition-colors text-left text-xs">
                   Data Processing Agreement
                 </Link>
 
-                <div className="h-px bg-gray-100 my-1 mx-2" />
+                <div className="h-px bg-gray-100 dark:bg-zinc-800 my-1 mx-2" />
 
                 <button 
                   onClick={handleLogout}
@@ -257,7 +257,7 @@ export function Sidebar() {
         {/* Footer / User Profile */}
         <div
           onClick={() => setShowProfileMenu(true)}
-          className={`p-3 mx-2 my-2 rounded-xl hover:bg-gray-200/50 transition-colors cursor-pointer flex items-center group ${isCollapsed ? 'justify-center p-1.5' : 'justify-between'}`}
+          className={`p-3 mx-2 my-2 rounded-xl hover:bg-gray-200/50 dark:hover:!bg-zinc-800 transition-colors cursor-pointer flex items-center group ${isCollapsed ? 'justify-center p-1.5' : 'justify-between'}`}
         >
           <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3 overflow-hidden flex-1'}`}>
             <div className="w-8 h-8 rounded-full bg-[#e3d5c8] text-[#5c4a3d] flex items-center justify-center font-semibold text-sm shrink-0">
@@ -269,10 +269,10 @@ export function Sidebar() {
             </div>
             {!isCollapsed && (
               <div className="flex flex-col truncate">
-                <span className="text-sm font-medium text-black leading-tight truncate">
+                <span className="text-sm font-medium text-black dark:text-slate-100 leading-tight truncate">
                   {userData?.name || 'Loading...'}
                 </span>
-                <span className="text-[10px] text-gray-500 truncate">
+                <span className="text-[10px] text-gray-500 dark:text-slate-400 truncate">
                   {userData?.email}
                 </span>
               </div>
