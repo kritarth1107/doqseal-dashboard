@@ -11,7 +11,7 @@ import { BrandLogo } from '@/components/BrandLogo'
 export default function AuthPage() {
     return (
         <Suspense fallback={
-            <div className="min-h-screen w-full flex items-center justify-center bg-zinc-50">
+            <div className="min-h-screen w-full flex items-center justify-center bg-zinc-50 dark:bg-[#0b1220]">
                 <Loader2 className="w-8 h-8 animate-spin text-[#2563eb]" />
             </div>
         }>
@@ -145,28 +145,28 @@ function AuthContent() {
     }
 
     return (
-        <div className="min-h-screen w-full flex items-center justify-center bg-zinc-50 p-4 relative overflow-hidden font-sans">
+        <div className="min-h-screen w-full flex items-center justify-center bg-zinc-50 dark:bg-[#0b1220] p-4 relative overflow-hidden font-sans">
             {/* Background decoration elements for premium feel */}
-            <div className="absolute inset-0 bg-[linear-gradient(to_right,#2563eb_1px,transparent_1px),linear-gradient(to_bottom,#2563eb_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_110%)] opacity-20 pointer-events-none" />
-            <div className="absolute top-[10%] left-[50%] translate-x-[-50%] w-[40%] h-[40%] rounded-full bg-[#2563eb]/20 blur-[120px] pointer-events-none" />
+            <div className="absolute inset-0 bg-[linear-gradient(to_right,#2563eb_1px,transparent_1px),linear-gradient(to_bottom,#2563eb_1px,transparent_1px)] bg-[size:4rem_4rem] [mask-image:radial-gradient(ellipse_60%_50%_at_50%_0%,#000_70%,transparent_110%)] opacity-20 dark:opacity-10 pointer-events-none" />
+            <div className="absolute top-[10%] left-[50%] translate-x-[-50%] w-[40%] h-[40%] rounded-full bg-[#2563eb]/20 dark:bg-[#2563eb]/25 blur-[120px] pointer-events-none" />
 
-            <div className="w-full max-w-[26rem] bg-white/70 backdrop-blur-xl border border-zinc-200/50 rounded-[2rem] shadow-sm p-8 relative z-10 transition-all duration-500">
+            <div className="w-full max-w-[26rem] bg-white/70 dark:bg-[#111827]/90 backdrop-blur-xl border border-zinc-200/50 dark:border-white/10 rounded-[2rem] shadow-sm dark:shadow-none p-8 relative z-10 transition-all duration-500">
                 <div className="flex flex-col items-center mb-8">
                     <BrandLogo className="w-48 h-10 shrink-0 mb-8" />
-                    <h1 className="text-2xl font-semibold text-zinc-900 mb-2 tracking-tight">
+                    <h1 className="text-2xl font-semibold text-zinc-900 dark:text-slate-50 mb-2 tracking-tight">
                         {showOTP ? (userExists ? "Verify it's you" : "Create your account") : "Welcome back"}
                     </h1>
                     {showOTP ? (
-                        <div className="flex flex-col items-center gap-2 text-sm text-zinc-500 text-center px-2">
+                        <div className="flex flex-col items-center gap-2 text-sm text-zinc-500 dark:text-slate-400 text-center px-2">
                             <p>
                                 {userExists
                                     ? `We've sent a 6-digit verification code to `
                                     : `Enter the 6-digit code sent to `}
-                                <span className="font-semibold text-zinc-900">{email}</span>
+                                <span className="font-semibold text-zinc-900 dark:text-slate-100">{email}</span>
                                 {!userExists && " to verify your email."}
                             </p>
                             <p className="text-xs opacity-80">
-                                Can't find it? Please check your <span className="text-zinc-900 font-medium">spam</span> or junk folder.
+                                Can&apos;t find it? Please check your <span className="text-zinc-900 dark:text-slate-200 font-medium">spam</span> or junk folder.
                             </p>
                             <button
                                 onClick={() => setShowOTP(false)}
@@ -176,7 +176,7 @@ function AuthContent() {
                             </button>
                         </div>
                     ) : (
-                        <p className="text-sm text-zinc-500 text-center">
+                        <p className="text-sm text-zinc-500 dark:text-slate-400 text-center">
                             Enter your details to sign in to your account
                         </p>
                     )}
@@ -185,8 +185,8 @@ function AuthContent() {
                 {!showOTP ? (
                     <>
                         <form onSubmit={handleEmailSubmit} className="space-y-4 mb-8 group">
-                            <div className="relative overflow-hidden rounded-xl bg-zinc-50 border border-zinc-200 focus-within:border-zinc-900 transition-colors">
-                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-400">
+                            <div className="relative overflow-hidden rounded-xl bg-zinc-50 dark:bg-slate-900/80 border border-zinc-200 dark:border-white/10 focus-within:border-zinc-900 dark:focus-within:border-[#2563eb] transition-colors">
+                                <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none text-zinc-400 dark:text-slate-500">
                                     <Mail className="h-5 w-5" />
                                 </div>
                                 <input
@@ -195,13 +195,13 @@ function AuthContent() {
                                     onChange={(e) => setEmail(e.target.value)}
                                     placeholder="name@example.com"
                                     required
-                                    className="block w-full pl-11 pr-4 py-3.5 bg-transparent text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none transition-all"
+                                    className="block w-full pl-11 pr-4 py-3.5 bg-transparent text-sm text-zinc-900 dark:text-slate-100 placeholder-zinc-400 dark:placeholder-slate-500 focus:outline-none transition-all"
                                 />
                             </div>
                             <button
                                 type="submit"
                                 disabled={isSubmitting || !email}
-                                className="w-full flex items-center justify-center gap-2 bg-zinc-900 text-white py-3.5 rounded-xl text-sm font-medium hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-zinc-900 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md"
+                                className="w-full flex items-center justify-center gap-2 bg-zinc-900 dark:bg-[#2563eb] text-white py-3.5 rounded-xl text-sm font-medium hover:bg-zinc-800 dark:hover:bg-[#1d4ed8] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-zinc-900 dark:focus:ring-[#2563eb] dark:focus:ring-offset-[#111827] transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md"
                             >
                                 {isSubmitting ? (
                                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -215,10 +215,10 @@ function AuthContent() {
 
                         <div className="relative mb-8">
                             <div className="absolute inset-0 flex items-center" aria-hidden="true">
-                                <div className="w-full border-t border-zinc-200" />
+                                <div className="w-full border-t border-zinc-200 dark:border-white/10" />
                             </div>
                             <div className="relative flex justify-center">
-                                <span className="px-3 bg-white/0 backdrop-blur-md text-[11px] font-medium text-zinc-500 uppercase tracking-widest">
+                                <span className="px-3 bg-zinc-50/80 dark:bg-[#111827] text-[11px] font-medium text-zinc-500 dark:text-slate-400 uppercase tracking-widest">
                                     Or continue with
                                 </span>
                             </div>
@@ -248,7 +248,7 @@ function AuthContent() {
                                         onChange={(e) => handleOtpChange(idx, e.target.value)}
                                         onKeyDown={(e) => handleKeyDown(idx, e)}
                                         onPaste={handlePaste}
-                                        className="w-12 h-14 text-center text-lg font-semibold bg-zinc-50 border border-zinc-200 rounded-xl focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb] outline-none transition-all text-zinc-900"
+                                        className="w-12 h-14 text-center text-lg font-semibold bg-zinc-50 dark:bg-slate-900/80 border border-zinc-200 dark:border-white/10 rounded-xl focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb] outline-none transition-all text-zinc-900 dark:text-slate-100"
                                     />
                                 ))}
                             </div>
@@ -258,7 +258,7 @@ function AuthContent() {
                             <button
                                 type="submit"
                                 disabled={isSubmitting || otp.some(d => !d)}
-                                className="w-full flex items-center justify-center gap-2 bg-zinc-900 text-white py-3.5 rounded-xl text-sm font-medium hover:bg-zinc-800 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-zinc-900 transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md"
+                                className="w-full flex items-center justify-center gap-2 bg-zinc-900 dark:bg-[#2563eb] text-white py-3.5 rounded-xl text-sm font-medium hover:bg-zinc-800 dark:hover:bg-[#1d4ed8] focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-zinc-900 dark:focus:ring-[#2563eb] dark:focus:ring-offset-[#111827] transition-all disabled:opacity-50 disabled:cursor-not-allowed hover:shadow-md"
                             >
                                 {isSubmitting ? (
                                     <Loader2 className="w-4 h-4 animate-spin" />
@@ -268,18 +268,18 @@ function AuthContent() {
                             </button>
                         </div>
                         <div className="text-center">
-                            <button type="button" className="text-xs text-zinc-500 hover:text-zinc-900 transition-colors">
+                            <button type="button" className="text-xs text-zinc-500 dark:text-slate-400 hover:text-zinc-900 dark:hover:text-slate-100 transition-colors">
                                 Resend code in 0:59
                             </button>
                         </div>
                     </form>
                 )}
 
-                <p className="text-center text-[13px] text-zinc-500 leading-relaxed px-2">
+                <p className="text-center text-[13px] text-zinc-500 dark:text-slate-400 leading-relaxed px-2">
                     By clicking continue, you agree to our{' '}
-                    <a href="#" className="underline decoration-zinc-300 hover:text-zinc-900 transition-colors">Terms of Service</a>
+                    <a href="#" className="underline decoration-zinc-300 dark:decoration-slate-600 hover:text-zinc-900 dark:hover:text-slate-100 transition-colors">Terms of Service</a>
                     {' '}and{' '}
-                    <a href="#" className="underline decoration-zinc-300 hover:text-zinc-900 transition-colors">Privacy Policy</a>.
+                    <a href="#" className="underline decoration-zinc-300 dark:decoration-slate-600 hover:text-zinc-900 dark:hover:text-slate-100 transition-colors">Privacy Policy</a>.
                 </p>
             </div>
         </div>
@@ -291,7 +291,7 @@ function SocialButton({ icon, onClick }: { icon: React.ReactNode, onClick?: () =
         <button
             type="button"
             onClick={onClick}
-            className="flex items-center justify-center w-12 h-12 bg-white border border-zinc-200 rounded-full hover:bg-zinc-50 transition-all focus:outline-none focus:ring-2 focus:ring-zinc-200 group shadow-sm hover:shadow active:scale-[0.98]"
+            className="flex items-center justify-center w-12 h-12 bg-white dark:bg-slate-900 border border-zinc-200 dark:border-white/10 rounded-full hover:bg-zinc-50 dark:hover:bg-slate-800 transition-all focus:outline-none focus:ring-2 focus:ring-zinc-200 dark:focus:ring-white/20 group shadow-sm hover:shadow dark:shadow-none active:scale-[0.98]"
         >
             <span className="w-5 h-5 flex items-center justify-center group-hover:scale-110 transition-transform duration-300">{icon}</span>
         </button>
@@ -314,7 +314,7 @@ function GoogleIcon() {
 
 function GithubIcon() {
     return (
-        <svg viewBox="0 0 24 24" className="w-full h-full text-[#181717]" fill="currentColor" aria-hidden="true">
+        <svg viewBox="0 0 24 24" className="w-full h-full text-[#181717] dark:text-white" fill="currentColor" aria-hidden="true">
             <path fillRule="evenodd" clipRule="evenodd" d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
         </svg>
     )
@@ -331,7 +331,7 @@ function LinkedInIcon() {
 
 function XIcon() {
     return (
-        <svg viewBox="0 0 24 24" className="w-[85%] h-[85%] text-black" fill="currentColor" aria-hidden="true">
+        <svg viewBox="0 0 24 24" className="w-[85%] h-[85%] text-black dark:text-white" fill="currentColor" aria-hidden="true">
             <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z" />
         </svg>
     )

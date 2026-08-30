@@ -22,7 +22,7 @@ const GoogleIcon = () => (
 );
 
 const GithubIcon = () => (
-  <svg viewBox="0 0 24 24" className="w-8 h-8 text-[#181717]" fill="currentColor">
+  <svg viewBox="0 0 24 24" className="w-8 h-8 text-[#181717] dark:text-white" fill="currentColor">
     <path d="M12 2C6.477 2 2 6.484 2 12.017c0 4.425 2.865 8.18 6.839 9.504.5.092.682-.217.682-.483 0-.237-.008-.868-.013-1.703-2.782.605-3.369-1.343-3.369-1.343-.454-1.158-1.11-1.466-1.11-1.466-.908-.62.069-.608.069-.608 1.003.07 1.531 1.032 1.531 1.032.892 1.53 2.341 1.088 2.91.832.092-.647.35-1.088.636-1.338-2.22-.253-4.555-1.113-4.555-4.951 0-1.093.39-1.988 1.029-2.688-.103-.253-.446-1.272.098-2.65 0 0 .84-.27 2.75 1.026A9.564 9.564 0 0112 6.844c.85.004 1.705.115 2.504.337 1.909-1.296 2.747-1.027 2.747-1.027.546 1.379.202 2.398.1 2.651.64.7 1.028 1.595 1.028 2.688 0 3.848-2.339 4.695-4.566 4.943.359.309.678.92.678 1.855 0 1.338-.012 2.419-.012 2.747 0 .268.18.58.688.482A10.019 10.019 0 0022 12.017C22 6.484 17.522 2 12 2z" />
   </svg>
 );
@@ -34,7 +34,7 @@ const LinkedInIcon = () => (
 );
 
 const XIcon = () => (
-  <svg viewBox="0 0 24 24" className="w-7 h-7 text-black" fill="currentColor">
+  <svg viewBox="0 0 24 24" className="w-7 h-7 text-black dark:text-white" fill="currentColor">
     <path d="M18.901 1.153h3.68l-8.04 9.19L24 22.846h-7.406l-5.8-7.584-6.638 7.584H.474l8.6-9.83L0 1.154h7.594l5.243 6.932ZM17.61 20.644h2.039L6.486 3.24H4.298Z" />
   </svg>
 );
@@ -106,21 +106,21 @@ function HookContent() {
   const CurrentIcon = statuses[statusIndex].icon;
 
   return (
-    <div className="min-h-screen w-full flex flex-col items-center justify-center bg-[#fcfcfc] relative overflow-hidden">
+    <div className="min-h-screen w-full flex flex-col items-center justify-center bg-[#fcfcfc] dark:bg-[#0b1220] relative overflow-hidden">
       {/* Background Ambience */}
-      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-[#2563eb]/10 blur-[120px] rounded-full pointer-events-none" />
+      <div className="absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[500px] h-[500px] bg-[#2563eb]/10 dark:bg-[#2563eb]/20 blur-[120px] rounded-full pointer-events-none" />
       
       <div className="relative z-10 flex flex-col items-center max-w-sm w-full px-6">
         
         {/* Animated Connection UI */}
         <div className="flex items-center gap-8 mb-16 relative">
           {/* Provider Logo */}
-          <div className="w-20 h-20 rounded-2xl bg-white border border-zinc-200 shadow-xl flex items-center justify-center animate-pulse-subtle">
+          <div className="w-20 h-20 rounded-2xl bg-white dark:bg-[#111827] border border-zinc-200 dark:border-white/10 shadow-xl dark:shadow-none flex items-center justify-center animate-pulse-subtle">
             {renderProviderIcon()}
           </div>
 
           {/* Connection Line */}
-          <div className="w-16 h-[2px] bg-zinc-200 relative overflow-hidden">
+          <div className="w-16 h-[2px] bg-zinc-200 dark:bg-white/10 relative overflow-hidden">
             <div className="absolute inset-0 bg-gradient-to-r from-transparent via-[#2563eb] to-transparent animate-shimmer" />
           </div>
 
@@ -148,7 +148,7 @@ function HookContent() {
           </div>
 
           {/* Progress Bar */}
-          <div className="w-full h-1.5 bg-zinc-100 rounded-full overflow-hidden">
+          <div className="w-full h-1.5 bg-zinc-100 dark:bg-slate-800 rounded-full overflow-hidden">
             <div 
               className="h-full bg-[#2563eb] transition-all duration-1000 ease-out rounded-full shadow-[0_0_8px_#2563eb]" 
               style={{ width: `${((statusIndex + 1) / statuses.length) * 100}%` }}
@@ -157,11 +157,11 @@ function HookContent() {
 
           <div className="flex items-center justify-center gap-2">
             {!isDone ? (
-              <Loader2 className="w-3.5 h-3.5 animate-spin text-zinc-400" />
+              <Loader2 className="w-3.5 h-3.5 animate-spin text-zinc-400 dark:text-slate-500" />
             ) : (
               <CheckCircle2 className="w-3.5 h-3.5 text-emerald-500" />
             )}
-            <span className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest">
+            <span className="text-[11px] font-bold text-zinc-400 dark:text-slate-500 uppercase tracking-widest">
               {isDone ? 'Authenticated' : 'Secure Handshake'}
             </span>
           </div>
