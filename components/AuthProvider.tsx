@@ -1,6 +1,7 @@
 "use client";
 
 import React, { createContext, useContext, useEffect, useState } from "react";
+import { usePathname, useRouter } from "next/navigation";
 
 interface UserOrganisation {
   organisationId: string;
@@ -15,6 +16,7 @@ interface UserData {
   avatar: string;
   organisationName: string;
   organisations: UserOrganisation[];
+  onboardingCompleted?: boolean;
 }
 
 interface AuthContextType {
@@ -32,6 +34,8 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
   const [activeOrgId, setActiveOrgIdState] = useState<string | null>(null);
+  const pathname = usePathname();
+  const router = useRouter();
 
   // Initialize activeOrgId from localStorage
   useEffect(() => {
@@ -81,7 +85,45 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     fetchUser();
   }, []);
 
+  // Gate dashboard until onboarding is complete
+  useEffect(() => {
+    if (loading || !userData) return;
+
+    const onboardingDone = userData.onboardingCompleted !== false;
+    const onOnboardingPage = pathname?.startsWith("/onboarding");
+
+    if (!onboardingDone && !onOnboardingPage) {
+      router.replace("/onboarding");
+    } else if (onboardingDone && onOnboardingPage) {
+      router.replace("/dashboard");
+    }
+  }, [loading, userData, pathname, router]);
+
   const activeOrg = userData?.organisations.find(o => o.organisationId === activeOrgId) || null;
+
+  const onboardingDone = !userData || userData.onboardingCompleted !== false;
+  const onOnboardingPage = pathname?.startsWith("/onboarding");
+  const blockingForOnboarding =
+    !loading &&
+    userData &&
+    ((!onboardingDone && !onOnboardingPage) || (onboardingDone && onOnboardingPage));
+
+  if (loading || blockingForOnboarding) {
+    return (
+      <AuthContext.Provider value={{ 
+        userData, 
+        loading: true, 
+        refreshUser: fetchUser,
+        activeOrgId,
+        setActiveOrgId,
+        activeOrg
+      }}>
+        <div className="min-h-screen flex items-center justify-center bg-white">
+          <div className="w-8 h-8 border-2 border-[#2563eb] border-t-transparent rounded-full animate-spin" />
+        </div>
+      </AuthContext.Provider>
+    );
+  }
 
   return (
     <AuthContext.Provider value={{ 

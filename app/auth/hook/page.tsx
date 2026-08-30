@@ -52,7 +52,7 @@ function HookContent() {
     { text: "Establishing secure connection...", icon: Globe },
     { text: "Synchronizing document intelligence...", icon: Cpu },
     { text: "Preparing your workspace...", icon: Zap },
-    { text: "Redirecting to dashboard...", icon: CheckCircle2 }
+    { text: "Preparing your workspace...", icon: CheckCircle2 }
   ];
 
   useEffect(() => {
@@ -69,11 +69,28 @@ function HookContent() {
   }, []);
 
   useEffect(() => {
-    if (isDone) {
-      setTimeout(() => {
-        router.push('/dashboard');
-      }, 800);
-    }
+    if (!isDone) return;
+
+    let cancelled = false;
+    (async () => {
+      let destination = '/dashboard';
+      try {
+        const res = await fetch('/api/auth/me');
+        const data = await res.json();
+        if (data?.success && data?.data?.onboardingCompleted === false) {
+          destination = '/onboarding';
+        }
+      } catch {
+        // fall through to dashboard; AuthProvider will re-gate if needed
+      }
+      if (!cancelled) {
+        setTimeout(() => router.push(destination), 400);
+      }
+    })();
+
+    return () => {
+      cancelled = true;
+    };
   }, [isDone, router]);
 
   const renderProviderIcon = () => {

@@ -20,12 +20,13 @@ export function proxy(request: NextRequest) {
 
   // 3. Logic for authenticated users
   if (token) {
-    // If user is logged in and tries to access /auth, redirect to dashboard
-    if (isAuthRoute) {
+    // Allow social login hook to finish; skip bounce for other /auth pages
+    const isAuthHook = pathname.startsWith('/auth/hook');
+    if (isAuthRoute && !isAuthHook) {
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }
     
-    // If user is on the root path, redirect to dashboard
+    // Root → dashboard (onboarding gate handled client-side)
     if (pathname === '/') {
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }
@@ -33,7 +34,7 @@ export function proxy(request: NextRequest) {
   
   // 4. Logic for unauthenticated users
   else {
-    // If user is NOT logged in and tries to access a protected route (non-auth), redirect to /auth
+    // Onboarding and app routes require a session
     if (!isAuthRoute) {
       return NextResponse.redirect(new URL('/auth', request.url));
     }

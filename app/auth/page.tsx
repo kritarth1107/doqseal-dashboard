@@ -24,7 +24,6 @@ function AuthContent() {
     const redirectURL = searchParams.get('redirectURL') || '/dashboard'
 
     const [email, setEmail] = useState('')
-    const [name, setName] = useState('')
     const [otp, setOtp] = useState(['', '', '', '', '', ''])
     const [isSubmitting, setIsSubmitting] = useState(false)
     const [showOTP, setShowOTP] = useState(false)
@@ -122,7 +121,6 @@ function AuthContent() {
                     otp: otpValue,
                     token,
                     email,
-                    name: userExists ? undefined : name
                 }),
             })
 
@@ -130,7 +128,10 @@ function AuthContent() {
 
             if (response.ok) {
                 toast.success("Authentication successful!")
-                window.location.href = redirectURL
+                const needsOnboarding =
+                    data.data?.isNewUser === true ||
+                    data.data?.onboardingCompleted === false
+                window.location.href = needsOnboarding ? '/onboarding' : redirectURL
             } else {
                 toast.error(data.error || "Verification failed. Please check your code.")
             }
@@ -161,7 +162,7 @@ function AuthContent() {
                                     ? `We've sent a 6-digit verification code to `
                                     : `Enter the 6-digit code sent to `}
                                 <span className="font-semibold text-zinc-900">{email}</span>
-                                {!userExists && " to finish setting up your account."}
+                                {!userExists && " to verify your email."}
                             </p>
                             <p className="text-xs opacity-80">
                                 Can't find it? Please check your <span className="text-zinc-900 font-medium">spam</span> or junk folder.
@@ -222,38 +223,17 @@ function AuthContent() {
                             </div>
                         </div>
 
-                        {/* Social Logins */}
+                        {/* Social Logins — hook page then AuthProvider gates to onboarding if needed */}
                         <div className="flex items-center justify-center gap-4 mb-8">
-                            <SocialButton icon={<GoogleIcon />} onClick={() => signIn('google', { callbackUrl: redirectURL })} />
-                            <SocialButton icon={<GithubIcon />} onClick={() => signIn('github', { callbackUrl: redirectURL })} />
-                            <SocialButton icon={<LinkedInIcon />} onClick={() => signIn('linkedin', { callbackUrl: redirectURL })} />
-                            <SocialButton icon={<XIcon />} onClick={() => signIn('twitter', { callbackUrl: redirectURL })} />
+                            <SocialButton icon={<GoogleIcon />} onClick={() => signIn('google', { callbackUrl: '/auth/hook?method=google' })} />
+                            <SocialButton icon={<GithubIcon />} onClick={() => signIn('github', { callbackUrl: '/auth/hook?method=github' })} />
+                            <SocialButton icon={<LinkedInIcon />} onClick={() => signIn('linkedin', { callbackUrl: '/auth/hook?method=linkedin' })} />
+                            <SocialButton icon={<XIcon />} onClick={() => signIn('twitter', { callbackUrl: '/auth/hook?method=twitter' })} />
                         </div>
                     </>
                 ) : (
                     <form onSubmit={handleVerifyOtp} className="space-y-6 mb-8">
-                        {!userExists && (
-                            <div className="space-y-2 animate-in fade-in slide-in-from-top-4 duration-500">
-                                <label className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest px-1">
-                                    Full Name
-                                </label>
-                                <div className="relative overflow-hidden rounded-xl bg-zinc-50 border border-zinc-200 focus-within:border-zinc-900 transition-colors">
-                                    <input
-                                        type="text"
-                                        value={name}
-                                        onChange={(e) => setName(e.target.value)}
-                                        placeholder="John Doe"
-                                        className="block w-full px-4 py-3 bg-transparent text-sm text-zinc-900 placeholder-zinc-400 focus:outline-none transition-all"
-                                    />
-                                </div>
-                            </div>
-                        )}
                         <div className="space-y-2">
-                            {!userExists && (
-                                <label className="text-[11px] font-bold text-zinc-400 uppercase tracking-widest px-1">
-                                    Verification Code
-                                </label>
-                            )}
                             <div className="flex justify-between gap-2">
                                 {otp.map((digit, idx) => (
                                     <input
