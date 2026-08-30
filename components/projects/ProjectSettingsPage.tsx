@@ -136,9 +136,12 @@ export default function ProjectSettingsPage() {
   const router = useRouter();
   const { activeOrgId } = useAuth();
   const projectId = String(params.projectId);
-  const tabArray = params.tab as string[] | undefined;
-  const activeTabId =
-    tabArray && tabArray.length > 0 ? tabArray[0] : "general";
+  const tabParam = params.tab;
+  const activeTabId = Array.isArray(tabParam)
+    ? tabParam[0] || "general"
+    : typeof tabParam === "string"
+      ? tabParam
+      : "general";
 
   const tabs = [
     { id: "general", label: "General", path: `/projects/${projectId}/settings` },
