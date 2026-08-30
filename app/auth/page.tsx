@@ -6,6 +6,7 @@ import { signIn } from 'next-auth/react'
 import { toast } from 'sonner'
 import { useSearchParams } from 'next/navigation'
 import { Suspense } from 'react'
+import { BrandLogo } from '@/components/BrandLogo'
 
 export default function AuthPage() {
     return (
@@ -151,7 +152,7 @@ function AuthContent() {
 
             <div className="w-full max-w-[26rem] bg-white/70 backdrop-blur-xl border border-zinc-200/50 rounded-[2rem] shadow-sm p-8 relative z-10 transition-all duration-500">
                 <div className="flex flex-col items-center mb-8">
-                    <img src="/doqseal_logo.svg" alt="DoqSeal Logo" className="w-48 h-10 shrink-0 mb-8" />
+                    <BrandLogo className="w-48 h-10 shrink-0 mb-8" />
                     <h1 className="text-2xl font-semibold text-zinc-900 mb-2 tracking-tight">
                         {showOTP ? (userExists ? "Verify it's you" : "Create your account") : "Welcome back"}
                     </h1>

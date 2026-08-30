@@ -39,9 +39,10 @@ export default function RootLayout({
       >
         <ThemeProvider
           attribute="class"
-          defaultTheme="light"
-          forcedTheme="light"
+          defaultTheme="system"
+          enableSystem
           disableTransitionOnChange
+          themes={["light", "dark", "system"]}
         >
           <FingerprintInitializer />
           <SessionManager />

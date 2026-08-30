@@ -126,7 +126,7 @@ function HookContent() {
 
           {/* DoqSeal Logo */}
           <div className="w-20 h-20 rounded-2xl bg-[#2563eb] shadow-lg shadow-[#2563eb]/20 flex items-center justify-center rotate-3 animate-pulse-slow">
-            <img src="/doqseal_logo.svg" alt="DoqSeal" className="w-10 h-10 brightness-0" />
+            <img src="/doqseal_logo_white.svg" alt="DoqSeal" className="w-10 h-10" />
           </div>
 
           {/* Particle Effects */}
@@ -142,7 +142,7 @@ function HookContent() {
              <div className={`transition-all duration-500 ${isDone ? 'text-emerald-500' : 'text-[#2563eb]'}`}>
                <CurrentIcon className="w-5 h-5 animate-in fade-in zoom-in duration-500" />
              </div>
-             <p className="text-base font-medium text-zinc-900 tracking-tight transition-all duration-500 animate-in slide-in-from-bottom-2">
+             <p className="text-base font-medium text-zinc-900 dark:text-slate-100 tracking-tight transition-all duration-500 animate-in slide-in-from-bottom-2">
                {statuses[statusIndex].text}
              </p>
           </div>

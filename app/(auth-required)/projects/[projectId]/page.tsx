@@ -42,7 +42,6 @@ export default function ProjectDetailPage() {
 
   const [project, setProject] = useState<Project | null>(null);
   const [uploadOpen, setUploadOpen] = useState(false);
-  const [uploading, setUploading] = useState(false);
   const [uploadedDocs, setUploadedDocs] = useState<ListedDocument[]>([]);
   const [deletingId, setDeletingId] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
@@ -92,30 +91,13 @@ export default function ProjectDetailPage() {
     load();
   }, [loadProject, loadUploadedDocs]);
 
-  const handleUpload = async (files: File[], consent: boolean) => {
-    if (!activeOrgId || files.length === 0 || !consent) return;
-
-    const file = files[0];
-    setUploading(true);
-
-    const formData = new FormData();
-    formData.append("file", file);
-    formData.append("consent", "true");
-
-    try {
-      const res = await fetch(
-        `/api/projects/${projectId}/upload`,
-        withOrgHeaders(activeOrgId, { method: "POST", body: formData })
-      );
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Upload failed");
-
-      toast.success("Upload queued — opening extraction…");
-      router.push(`/projects/${projectId}/documents/${data.documentId}`);
-    } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : "Upload failed");
-    } finally {
-      setUploading(false);
+  const handleUploadSuccess = (results: { documentId: string; filename: string }[]) => {
+    toast.success("Upload queued — opening extraction…");
+    const last = results[results.length - 1];
+    if (last) {
+      router.push(`/projects/${projectId}/documents/${last.documentId}`);
+    } else {
+      void loadUploadedDocs();
     }
   };
 
@@ -186,14 +168,9 @@ export default function ProjectDetailPage() {
                 <button
                   type="button"
                   onClick={() => setUploadOpen(true)}
-                  disabled={uploading}
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg disabled:opacity-50"
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg"
                 >
-                  {uploading ? (
-                    <Loader2 className="w-4 h-4 inline mr-2 -mt-0.5 animate-spin" />
-                  ) : (
-                    <Upload className="w-4 h-4 inline mr-2 -mt-0.5" />
-                  )}
+                  <Upload className="w-4 h-4 inline mr-2 -mt-0.5" />
                   Add documents
                 </button>
                 <Link
@@ -267,7 +244,10 @@ export default function ProjectDetailPage() {
       <UploadModal
         isOpen={uploadOpen}
         onClose={() => setUploadOpen(false)}
-        onUpload={handleUpload}
+        organisationId={activeOrgId}
+        projectId={projectId}
+        defaultSharedWithOrganisation={true}
+        onSuccess={handleUploadSuccess}
       />
     </div>
   );

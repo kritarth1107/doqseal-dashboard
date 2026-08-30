@@ -17,16 +17,21 @@ export function PageHeader({
   return (
     <div className="flex flex-col gap-4 mb-8">
       {breadcrumbs && breadcrumbs.length > 0 && (
-        <nav className="flex items-center gap-1.5 text-xs text-gray-500">
+        <nav className="flex items-center gap-1.5 text-xs text-gray-500 dark:text-slate-400">
           {breadcrumbs.map((crumb, i) => (
             <span key={crumb.label} className="flex items-center gap-1.5">
-              {i > 0 && <span className="text-gray-300">/</span>}
+              {i > 0 && <span className="text-gray-300 dark:text-zinc-600">/</span>}
               {crumb.href ? (
-                <Link href={crumb.href} className="hover:text-gray-900 transition-colors">
+                <Link
+                  href={crumb.href}
+                  className="hover:text-gray-900 dark:hover:text-white transition-colors"
+                >
                   {crumb.label}
                 </Link>
               ) : (
-                <span className="text-gray-700 font-medium">{crumb.label}</span>
+                <span className="text-gray-700 dark:text-slate-200 font-medium">
+                  {crumb.label}
+                </span>
               )}
             </span>
           ))}
@@ -34,12 +39,18 @@ export function PageHeader({
       )}
       <div className="flex flex-col sm:flex-row sm:items-start justify-between gap-4">
         <div>
-          <h1 className="text-2xl font-semibold text-gray-900 tracking-tight">{title}</h1>
+          <h1 className="text-2xl font-semibold text-gray-900 dark:text-slate-50 tracking-tight">
+            {title}
+          </h1>
           {description && (
-            <p className="text-sm text-gray-500 mt-1 max-w-2xl">{description}</p>
+            <p className="text-sm text-gray-500 dark:text-slate-400 mt-1 max-w-2xl">
+              {description}
+            </p>
           )}
         </div>
-        {actions && <div className="flex flex-wrap items-center gap-2 shrink-0">{actions}</div>}
+        {actions && (
+          <div className="flex flex-wrap items-center gap-2 shrink-0">{actions}</div>
+        )}
       </div>
     </div>
   );

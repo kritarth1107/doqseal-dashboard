@@ -128,7 +128,6 @@ const NewSearchPage = () => {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
-  const [uploading, setUploading] = useState(false);
 
   const isTyping = query.trim().length > 0;
   const inChat = messages.length > 0;
@@ -203,28 +202,14 @@ const NewSearchPage = () => {
     }
   };
 
-  const handleUpload = async (files: File[], consent: boolean) => {
-    if (!activeOrgId || files.length === 0 || !projectId || !consent) return;
-    setUploading(true);
-
-    const formData = new FormData();
-    formData.append("file", files[0]);
-    formData.append("consent", "true");
-
-    try {
-      const res = await fetch(
-        `/api/projects/${projectId}/upload`,
-        withOrgHeaders(activeOrgId, { method: "POST", body: formData })
-      );
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error || "Upload failed");
-
-      toast.success("Upload queued — opening extraction…");
-      router.push(`/projects/${projectId}/documents/${data.documentId}`);
-    } catch (error: unknown) {
-      toast.error(error instanceof Error ? error.message : "Upload failed");
-    } finally {
-      setUploading(false);
+  const handleUploadSuccess = (results: { documentId: string; projectId: string | null }[]) => {
+    const last = results[results.length - 1];
+    if (!last) return;
+    toast.success("Upload queued — opening extraction…");
+    if (last.projectId) {
+      router.push(`/projects/${last.projectId}/documents/${last.documentId}`);
+    } else {
+      router.push("/drive");
     }
   };
 
@@ -270,9 +255,9 @@ const NewSearchPage = () => {
             <div className="flex flex-col items-center gap-4 mb-10 text-center">
               <div className="bg-[#2563eb] rounded-xl p-2.5 shadow-sm">
                 <img
-                  src="/doqseal_logo.svg"
+                  src="/doqseal_logo_white.svg"
                   alt="DoqSeal Logo"
-                  className="w-8 h-8 brightness-0 shrink-0"
+                  className="w-8 h-8 shrink-0"
                 />
               </div>
               <h1
@@ -415,15 +400,11 @@ const NewSearchPage = () => {
               <button
                 type="button"
                 onClick={() => setIsUploadModalOpen(true)}
-                disabled={uploading}
-                title="Upload document"
+                disabled={!projectId}
+                title={projectId ? "Upload document" : "Open a project to upload"}
                 className="p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50"
               >
-                {uploading ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Upload className="w-4 h-4" />
-                )}
+                <Upload className="w-4 h-4" />
               </button>
               <div className="flex items-center gap-2">
                 <span className="text-[11px] font-medium text-gray-400 hidden sm:inline">
@@ -446,7 +427,9 @@ const NewSearchPage = () => {
       <UploadModal
         isOpen={isUploadModalOpen}
         onClose={() => setIsUploadModalOpen(false)}
-        onUpload={handleUpload}
+        organisationId={activeOrgId}
+        projectId={projectId || undefined}
+        onSuccess={handleUploadSuccess}
       />
     </div>
   );

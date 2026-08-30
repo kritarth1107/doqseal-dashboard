@@ -1,5 +1,6 @@
 "use client";
 import React, { useState } from "react";
+import { BrandLogo } from "@/components/BrandLogo";
 import {
   Search,
   Menu,
@@ -49,14 +50,14 @@ export function Sidebar() {
       (item.href !== "/dashboard" && pathname.startsWith(item.href + "/"));
     const content = (
       <>
-        <Icon className={`w-4 h-4 shrink-0 ${isActive ? "text-[#2563eb]" : "text-gray-500"}`} />
+        <Icon className={`w-4 h-4 shrink-0 ${isActive ? "text-[#2563eb]" : "text-gray-500 dark:text-slate-400"}`} />
         {!isCollapsed && <span className="flex-1 text-left truncate">{item.name}</span>}
       </>
     );
 
-    const className = `flex items-center gap-2 rounded-lg hover:bg-blue-50 py-2 text-sm font-medium transition-colors ${
+    const className = `flex items-center gap-2 rounded-lg hover:bg-blue-50 dark:hover:bg-blue-950/40 py-2 text-sm font-medium transition-colors ${
       isCollapsed ? "justify-center w-10 h-10 px-0" : "w-full px-2.5"
-    } ${isActive ? "bg-blue-50 text-[#2563eb]" : "text-gray-600 hover:text-black"}`;
+    } ${isActive ? "bg-blue-50 dark:bg-blue-950/50 text-[#2563eb]" : "text-gray-600 dark:text-slate-300 hover:text-black dark:hover:text-white"}`;
 
     if (item.onClick) {
       return (
@@ -76,21 +77,20 @@ export function Sidebar() {
   return (
     <>
       <aside
-        className={`${isCollapsed ? "w-16" : "w-64"} flex-shrink-0 bg-white text-[#333] border-r border-gray-100 flex-col hidden md:flex transition-all duration-300 font-sans relative`}
+        className={`${isCollapsed ? "w-16" : "w-64"} flex-shrink-0 bg-white dark:bg-[#111827] text-[#333] dark:text-slate-100 border-r border-gray-100 dark:border-zinc-800 flex-col hidden md:flex transition-all duration-300 font-sans relative`}
       >
         {/* Brand Logo & Collapse */}
         <div className={`px-4 py-4 flex items-center ${isCollapsed ? "justify-center" : "justify-between"}`}>
           {!isCollapsed && (
             <div className="flex items-center gap-2 overflow-hidden">
               <div className="rounded-lg">
-                <img src="/doqseal_logo.svg" alt="DoqSeal Logo" className="w-32 h-12 shrink-0" />
+                <BrandLogo className="w-32 h-12 shrink-0" />
               </div>
-            
             </div>
           )}
           <button
             onClick={() => setIsCollapsed(!isCollapsed)}
-            className="text-gray-400 hover:text-black transition-colors p-1 rounded-md hover:bg-gray-100"
+            className="text-gray-400 hover:text-black dark:hover:text-white transition-colors p-1 rounded-md hover:bg-gray-100 dark:hover:bg-zinc-800"
           >
             {isCollapsed ? (
               <Menu className="w-5 h-5" />
@@ -107,8 +107,8 @@ export function Sidebar() {
         <div className={`px-3 mb-4 relative ${isCollapsed ? 'flex justify-center' : ''}`}>
           <button
             onClick={() => setShowOrgSwitcher(!showOrgSwitcher)}
-            className={`flex items-center gap-2 rounded-lg hover:bg-gray-50 transition-all text-left group ${
-              isCollapsed ? "w-10 h-10 justify-center p-0" : "w-full p-2 px-2.5 border border-gray-100 shadow-sm"
+            className={`flex items-center gap-2 rounded-lg hover:bg-gray-50 dark:hover:bg-zinc-800 transition-all text-left group ${
+              isCollapsed ? "w-10 h-10 justify-center p-0" : "w-full p-2 px-2.5 border border-gray-100 dark:border-zinc-800 shadow-sm"
             }`}
           >
             <div className="w-6 h-6 rounded bg-[#2563eb] text-white flex items-center justify-center font-bold text-[10px] shrink-0 uppercase">
@@ -117,14 +117,14 @@ export function Sidebar() {
             {!isCollapsed && (
               <>
                 <div className="flex flex-col flex-1 min-w-0">
-                  <span className="text-xs font-semibold text-black truncate leading-tight">
+                  <span className="text-xs font-semibold text-black dark:text-slate-100 truncate leading-tight">
                     {activeOrg?.name || userData?.organisationName || 'Loading...'}
                   </span>
-                  <span className="text-[10px] text-gray-500 uppercase tracking-tighter">
+                  <span className="text-[10px] text-gray-500 dark:text-slate-400 uppercase tracking-tighter">
                     {activeOrg?.role || 'Member'}
                   </span>
                 </div>
-                <ChevronsUpDown className="w-3.5 h-3.5 text-gray-400 group-hover:text-black transition-colors" />
+                <ChevronsUpDown className="w-3.5 h-3.5 text-gray-400 group-hover:text-black dark:group-hover:text-white transition-colors" />
               </>
             )}
           </button>
@@ -136,8 +136,8 @@ export function Sidebar() {
                 className="fixed inset-0 z-40"
                 onClick={() => setShowOrgSwitcher(false)}
               />
-              <div className={`absolute ${isCollapsed ? 'left-14' : 'left-3 right-3'} top-full mt-2 bg-white border border-gray-200 rounded-xl shadow-lg z-50 overflow-hidden text-sm text-gray-700 transform origin-top transition-all min-w-[200px]`}>
-                <div className="px-3 py-2 border-b border-gray-100">
+              <div className={`absolute ${isCollapsed ? 'left-14' : 'left-3 right-3'} top-full mt-2 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-xl shadow-lg z-50 overflow-hidden text-sm text-gray-700 dark:text-slate-200 transform origin-top transition-all min-w-[200px]`}>
+                <div className="px-3 py-2 border-b border-gray-100 dark:border-zinc-800">
                   <span className="text-[10px] font-bold text-gray-400 uppercase tracking-widest">
                     Switch Organisation
                   </span>
@@ -151,10 +151,10 @@ export function Sidebar() {
                         setShowOrgSwitcher(false);
                         window.location.reload();
                       }}
-                      className={`flex w-full items-center justify-between gap-2 px-2.5 py-2 hover:bg-gray-100 rounded-lg transition-colors text-left ${activeOrgId === org.organisationId ? 'bg-blue-50' : ''}`}
+                      className={`flex w-full items-center justify-between gap-2 px-2.5 py-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg transition-colors text-left ${activeOrgId === org.organisationId ? 'bg-blue-50 dark:bg-blue-950/40' : ''}`}
                     >
                       <div className="flex flex-col truncate">
-                        <span className={`text-sm font-medium truncate ${activeOrgId === org.organisationId ? 'text-[#2563eb]' : 'text-gray-600'}`}>
+                        <span className={`text-sm font-medium truncate ${activeOrgId === org.organisationId ? 'text-[#2563eb]' : 'text-gray-600 dark:text-slate-300'}`}>
                           {org.name}
                         </span>
                         <span className="text-[10px] text-gray-400 uppercase tracking-tighter">
@@ -167,12 +167,12 @@ export function Sidebar() {
                     </button>
                   ))}
                   
-                  <div className="h-px bg-gray-100 my-1.5" />
+                  <div className="h-px bg-gray-100 dark:bg-zinc-800 my-1.5" />
                   
                   <Link 
                     href="/manage/create-organisation"
                     onClick={() => setShowOrgSwitcher(false)}
-                    className="flex w-full items-center gap-2 px-2.5 py-2 hover:bg-gray-100 rounded-lg transition-colors text-left text-gray-600"
+                    className="flex w-full items-center gap-2 px-2.5 py-2 hover:bg-gray-100 dark:hover:bg-zinc-800 rounded-lg transition-colors text-left text-gray-600 dark:text-slate-300"
                   >
                     <Plus className="w-4 h-4" />
                     <span className="text-sm">Create New</span>

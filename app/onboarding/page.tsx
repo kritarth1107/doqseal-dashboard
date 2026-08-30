@@ -1,5 +1,6 @@
 "use client";
 
+import { BrandLogo } from "@/components/BrandLogo";
 import React, { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { Loader2, ArrowRight, Check } from "lucide-react";
@@ -108,7 +109,7 @@ export default function OnboardingPage() {
   return (
     <div className="min-h-screen bg-[#f7f8fa] text-zinc-900 flex flex-col">
       <header className="flex items-center justify-between px-6 sm:px-10 py-5">
-        <img src="/doqseal_logo.svg" alt="DoqSeal" className="h-8 w-auto" />
+        <BrandLogo className="h-8 w-auto" />
         <div className="flex items-center gap-3">
           <div className="hidden sm:block text-sm text-zinc-600 truncate max-w-[12rem]">
             {userData?.email}

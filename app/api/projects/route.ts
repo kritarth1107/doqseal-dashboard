@@ -31,9 +31,36 @@ export async function POST(request: NextRequest) {
 
   try {
     const body = await request.json();
+    const organisationId =
+      request.headers.get("x-organisation-id") ||
+      (typeof body.organisationId === "string" ? body.organisationId : undefined);
+
+    if (!organisationId) {
+      return NextResponse.json(
+        { error: "Organisation context required" },
+        { status: 400 }
+      );
+    }
+
+    if (!body?.name || String(body.name).trim().length < 2) {
+      return NextResponse.json(
+        { error: "Project name must be at least 2 characters" },
+        { status: 400 }
+      );
+    }
+
     const response = await backendFetch(request, "projects", {
       method: "POST",
-      body: JSON.stringify(body),
+      body: JSON.stringify({
+        name: String(body.name).trim(),
+        description: body.description || undefined,
+        extractionHint: body.extractionHint || undefined,
+        organisationId,
+        sharedWithOrganisation:
+          typeof body.sharedWithOrganisation === "boolean"
+            ? body.sharedWithOrganisation
+            : true,
+      }),
     });
     const payload = await parseBackendJson(response);
     return NextResponse.json({ success: true, project: payload.data }, { status: 201 });

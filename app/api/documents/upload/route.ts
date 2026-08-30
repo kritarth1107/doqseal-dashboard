@@ -1,7 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
 import { backendFetch, parseBackendJson } from "@/lib/backend-client";
-import { mapBackendDocumentList } from "@/lib/document-api";
 
 const MAX_FILE_SIZE = 20 * 1024 * 1024;
 
@@ -10,16 +9,12 @@ async function requireSession() {
   return cookieStore.get("session_token")?.value ?? null;
 }
 
-export async function POST(
-  request: NextRequest,
-  { params }: { params: Promise<{ projectId: string }> }
-) {
+/** Org-level / Drive upload (project optional). */
+export async function POST(request: NextRequest) {
   const token = await requireSession();
   if (!token) {
     return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
   }
-
-  const { projectId } = await params;
 
   try {
     const formData = await request.formData();
@@ -35,18 +30,32 @@ export async function POST(
 
     const consent = formData.get("consent");
     if (consent !== "true") {
-      return NextResponse.json({ error: "Consent is required before upload" }, { status: 400 });
+      return NextResponse.json(
+        { error: "Consent is required before upload" },
+        { status: 400 }
+      );
     }
+
+    const projectIdRaw = formData.get("projectId");
+    const projectId =
+      typeof projectIdRaw === "string" && projectIdRaw.trim()
+        ? projectIdRaw.trim()
+        : null;
+
+    const sharedRaw = formData.get("sharedWithOrganisation");
+    const sharedWithOrganisation =
+      sharedRaw === "true" || sharedRaw === "1";
 
     const backendForm = new FormData();
     backendForm.append("file", file);
-    backendForm.append("projectId", projectId);
     backendForm.append("consent", "true");
-    const shared = formData.get("sharedWithOrganisation");
     backendForm.append(
       "sharedWithOrganisation",
-      shared === "false" || shared === "0" ? "false" : "true"
+      sharedWithOrganisation ? "true" : "false"
     );
+    if (projectId) {
+      backendForm.append("projectId", projectId);
+    }
 
     const response = await backendFetch(request, "documents/upload", {
       method: "POST",
@@ -58,6 +67,8 @@ export async function POST(
       jobId: string;
       status: string;
       message: string;
+      projectId?: string | null;
+      sharedWithOrganisation?: boolean;
     }>(response);
 
     return NextResponse.json({
@@ -65,37 +76,14 @@ export async function POST(
       documentId: payload.data.documentId,
       jobId: payload.data.jobId,
       status: payload.data.status,
+      projectId: payload.data.projectId ?? projectId,
+      sharedWithOrganisation:
+        payload.data.sharedWithOrganisation ?? sharedWithOrganisation,
       message: payload.data.message,
     });
   } catch (error: unknown) {
     const message = error instanceof Error ? error.message : "Upload failed";
     const status = message.includes("quota") ? 429 : 500;
     return NextResponse.json({ error: message }, { status });
-  }
-}
-
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ projectId: string }> }
-) {
-  const token = await requireSession();
-  if (!token) {
-    return NextResponse.json({ error: "Unauthorized" }, { status: 401 });
-  }
-
-  const { projectId } = await params;
-
-  try {
-    const response = await backendFetch(
-      request,
-      `documents?projectId=${encodeURIComponent(projectId)}`
-    );
-    const payload = await parseBackendJson(response);
-    const documents = mapBackendDocumentList(payload.data as any[]);
-
-    return NextResponse.json({ documents });
-  } catch (error: unknown) {
-    const message = error instanceof Error ? error.message : "Failed to list documents";
-    return NextResponse.json({ error: message }, { status: 500 });
   }
 }

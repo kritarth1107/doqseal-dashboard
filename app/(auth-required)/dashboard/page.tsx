@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
 import { withOrgHeaders } from "@/lib/client-api";
+import { pickDashboardGreeting } from "@/lib/dashboard-greetings";
 import {
   FileText,
   ShieldCheck,
@@ -62,6 +63,13 @@ export default function Dashboard() {
 
   const [statsData, setStatsData] = useState<OrgStats | null>(null);
   const [loading, setLoading] = useState(true);
+  const [greeting, setGreeting] = useState(() =>
+    pickDashboardGreeting(firstName)
+  );
+
+  useEffect(() => {
+    setGreeting(pickDashboardGreeting(firstName));
+  }, [firstName]);
 
   useEffect(() => {
     async function loadStats() {
@@ -125,10 +133,12 @@ export default function Dashboard() {
         {/* Welcome Header */}
         <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
           <div>
-            <h1 className="text-2xl font-semibold text-gray-900">Good morning, {firstName}</h1>
-            <p className="text-sm text-gray-500">
+            <h1 className="text-2xl font-semibold text-gray-900 dark:text-slate-50">
+              {greeting.title}
+            </h1>
+            <p className="text-sm text-gray-500 dark:text-slate-400 mt-1">
               {activeOrg?.name ? `${activeOrg.name} · ` : ""}
-              Document intelligence and compliance at a glance.
+              {greeting.subtitle}
             </p>
           </div>
           <div className="flex items-center gap-3">

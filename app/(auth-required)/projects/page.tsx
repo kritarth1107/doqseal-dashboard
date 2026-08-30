@@ -14,6 +14,7 @@ type Project = {
   description?: string;
   extractionHint?: string;
   status: string;
+  sharedWithOrganisation?: boolean;
   updatedAt?: string;
 };
 
@@ -25,6 +26,7 @@ export default function ProjectsPage() {
   const [creating, setCreating] = useState(false);
   const [newName, setNewName] = useState("");
   const [newDescription, setNewDescription] = useState("");
+  const [shareWithOrg, setShareWithOrg] = useState(true);
 
   const loadProjects = useCallback(async () => {
     if (!activeOrgId) return;
@@ -50,6 +52,7 @@ export default function ProjectsPage() {
     setShowCreateModal(false);
     setNewName("");
     setNewDescription("");
+    setShareWithOrg(true);
   };
 
   const handleCreateProject = async (e: React.FormEvent) => {
@@ -66,13 +69,18 @@ export default function ProjectsPage() {
           body: JSON.stringify({
             name: newName.trim(),
             description: newDescription.trim() || undefined,
+            sharedWithOrganisation: shareWithOrg,
           }),
         })
       );
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Failed to create project");
 
-      toast.success("Project created");
+      toast.success(
+        shareWithOrg
+          ? "Project created and shared with your organisation"
+          : "Private project created — only you can see it"
+      );
       resetModal();
       await loadProjects();
     } catch (error: unknown) {
@@ -131,9 +139,20 @@ export default function ProjectsPage() {
                   <div className="p-2.5 rounded-xl bg-[#2563eb]/10 text-[#2563eb]">
                     <FolderKanban className="w-5 h-5" />
                   </div>
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
-                    {project.status}
-                  </span>
+                  <div className="flex flex-col items-end gap-1">
+                    <span className="text-[10px] font-bold uppercase tracking-wider text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full">
+                      {project.status}
+                    </span>
+                    <span
+                      className={`text-[10px] font-semibold uppercase tracking-wider px-2 py-0.5 rounded-full ${
+                        project.sharedWithOrganisation !== false
+                          ? "text-[#2563eb] bg-[#2563eb]/10"
+                          : "text-amber-700 bg-amber-50"
+                      }`}
+                    >
+                      {project.sharedWithOrganisation !== false ? "Shared" : "Private"}
+                    </span>
+                  </div>
                 </div>
                 <h2 className="font-semibold text-gray-900 group-hover:text-[#2563eb] transition-colors">
                   {project.name}
@@ -214,6 +233,25 @@ export default function ProjectsPage() {
                     className="w-full px-4 py-3 bg-gray-50 border border-gray-200 rounded-xl text-sm focus:border-[#2563eb] outline-none transition-all resize-none"
                   />
                 </div>
+
+                <label className="flex items-start gap-3 p-3.5 bg-gray-50 rounded-xl border border-gray-200 cursor-pointer">
+                  <input
+                    type="checkbox"
+                    checked={shareWithOrg}
+                    onChange={(e) => setShareWithOrg(e.target.checked)}
+                    className="mt-0.5 w-4 h-4 rounded border-gray-300 accent-[#2563eb]"
+                  />
+                  <span className="flex flex-col gap-0.5">
+                    <span className="text-sm font-medium text-[#333]">
+                      Share with organisation
+                    </span>
+                    <span className="text-xs text-gray-500 leading-relaxed">
+                      {shareWithOrg
+                        ? "All org members can open this project and use its documents in AI context."
+                        : "Only you can see this project and its documents."}
+                    </span>
+                  </span>
+                </label>
 
                 <div className="flex gap-3 pt-2">
                   <button

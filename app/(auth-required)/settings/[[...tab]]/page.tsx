@@ -37,7 +37,7 @@ export default function SettingsPage() {
     const currentTheme = mounted ? theme : 'system';
 
     return (
-        <div className="flex-1 flex flex-col h-full bg-[#f9f9f9] overflow-hidden text-[#333] font-sans">
+        <div className="flex-1 flex flex-col h-full bg-[#f9f9f9] dark:bg-[#0b1220] overflow-hidden text-[#333] dark:text-slate-100 font-sans">
             <div className="flex-1 overflow-y-auto w-full">
                 <div className="max-w-[1000px] mx-auto px-6 py-12 flex flex-col md:flex-row gap-12">
 
@@ -52,8 +52,8 @@ export default function SettingsPage() {
                                         key={tab.id}
                                         href={tab.path}
                                         className={`px-3 py-2 rounded-lg text-sm font-medium transition-colors ${isActive
-                                            ? "bg-[#ececec] text-black"
-                                            : "text-gray-600 hover:bg-gray-200/50 hover:text-gray-900"
+                                            ? "bg-blue-50 dark:bg-blue-950/50 text-[#2563eb]"
+                                            : "text-gray-600 dark:text-slate-400 hover:bg-gray-200/50 dark:hover:bg-zinc-800/60 hover:text-gray-900 dark:hover:text-slate-100"
                                             }`}
                                     >
                                         {tab.label}
@@ -70,11 +70,11 @@ export default function SettingsPage() {
 
                                 {/* Profile Section */}
                                 <section className="flex flex-col gap-5">
-                                    <h2 className="text-base font-semibold text-black border-b border-gray-200 pb-2">Profile</h2>
+                                    <h2 className="text-base font-semibold text-black dark:text-slate-100 border-b border-gray-200 dark:border-zinc-800 pb-2">Profile</h2>
 
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                         <div className="flex flex-col gap-2">
-                                            <label className="text-sm font-medium text-gray-700">Full name</label>
+                                            <label className="text-sm font-medium text-gray-700 dark:text-slate-300">Full name</label>
                                             <div className="flex items-center gap-3">
                                                 <div className="w-10 h-10 rounded-full bg-[#e3d5c8] text-[#5c4a3d] flex items-center justify-center font-semibold shrink-0 overflow-hidden">
                                                     {userData?.avatar ? (
@@ -86,26 +86,26 @@ export default function SettingsPage() {
                                                 <input
                                                     type="text"
                                                     defaultValue={userData?.name}
-                                                    className="flex-1 bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 transition-shadow"
+                                                    className="flex-1 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 text-gray-900 dark:text-slate-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#2563eb] transition-shadow"
                                                 />
                                             </div>
                                         </div>
 
                                         <div className="flex flex-col gap-2">
-                                            <label className="text-sm font-medium text-gray-700">Email address</label>
+                                            <label className="text-sm font-medium text-gray-700 dark:text-slate-300">Email address</label>
                                             <input
                                                 type="text"
                                                 disabled
                                                 defaultValue={userData?.email}
-                                                className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 transition-shadow"
+                                                className="w-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 text-gray-900 dark:text-slate-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#2563eb] transition-shadow disabled:opacity-70"
                                             />
                                         </div>
                                     </div>
 
                                     <div className="flex flex-col gap-2 mt-2">
-                                        <label className="text-sm font-medium text-gray-700">What best describes your work?</label>
+                                        <label className="text-sm font-medium text-gray-700 dark:text-slate-300">What best describes your work?</label>
                                         <div className="relative">
-                                            <select className="w-full bg-white border border-gray-200 rounded-lg px-3 py-2.5 text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-gray-400 transition-shadow text-gray-500 cursor-pointer">
+                                            <select className="w-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2.5 text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-[#2563eb] transition-shadow text-gray-500 dark:text-slate-300 cursor-pointer">
                                                 <option value="" disabled selected>Select your work function</option>
                                                 <option value="engineering">Engineering</option>
                                                 <option value="product">Product Management</option>
@@ -120,30 +120,30 @@ export default function SettingsPage() {
                                     </div>
 
                                     <div className="flex flex-col gap-2 mt-2">
-                                        <label className="text-sm font-medium text-gray-700 flex flex-col gap-1">
+                                        <label className="text-sm font-medium text-gray-700 dark:text-slate-300 flex flex-col gap-1">
                                             <span>What <span className="underline decoration-dashed underline-offset-4 decoration-gray-400">personal preferences</span> should DoqSeal consider in responses?</span>
-                                            <span className="text-xs text-gray-500 font-normal">Your preferences will apply to all conversations, within <a href="#" className="underline">DoqSeal's guidelines</a>.</span>
+                                            <span className="text-xs text-gray-500 dark:text-slate-400 font-normal">Your preferences will apply to all conversations, within <a href="#" className="underline">DoqSeal&apos;s guidelines</a>.</span>
                                         </label>
                                         <textarea
                                             placeholder="e.g. when learning new concepts, I find analogies particularly helpful"
-                                            className="w-full bg-white border border-gray-200 rounded-lg px-3 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-gray-400 transition-shadow min-h-[100px] resize-y placeholder-gray-400"
+                                            className="w-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 text-gray-900 dark:text-slate-100 rounded-lg px-3 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#2563eb] transition-shadow min-h-[100px] resize-y placeholder-gray-400"
                                         />
                                     </div>
                                 </section>
 
                                 {/* Notifications Section */}
                                 <section className="flex flex-col gap-5">
-                                    <h2 className="text-base font-semibold text-black border-b border-gray-200 pb-2">Notifications</h2>
+                                    <h2 className="text-base font-semibold text-black dark:text-slate-100 border-b border-gray-200 dark:border-zinc-800 pb-2">Notifications</h2>
 
                                     <div className="flex items-center justify-between gap-4">
                                         <div className="flex flex-col gap-1">
-                                            <span className="text-sm font-medium text-black">Response completions</span>
-                                            <span className="text-[13px] text-gray-500">Get notified when DoqSeal has finished a response. Most useful for long-running tasks like tool calls and Research.</span>
+                                            <span className="text-sm font-medium text-black dark:text-slate-100">Response completions</span>
+                                            <span className="text-[13px] text-gray-500 dark:text-slate-400">Get notified when DoqSeal has finished a response. Most useful for long-running tasks like tool calls and Research.</span>
                                         </div>
                                         {/* Toggle Switch */}
                                         <button
                                             onClick={() => setResponseCompletions(!responseCompletions)}
-                                            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full outline-none transition-colors ${responseCompletions ? "bg-blue-500" : "bg-gray-300"}`}
+                                            className={`relative inline-flex h-5 w-9 shrink-0 cursor-pointer items-center justify-center rounded-full outline-none transition-colors ${responseCompletions ? "bg-blue-500" : "bg-gray-300 dark:bg-zinc-600"}`}
                                         >
                                             <span className="sr-only">Toggle response completions</span>
                                             <span
@@ -156,18 +156,23 @@ export default function SettingsPage() {
 
                                 {/* Appearance Section */}
                                 <section className="flex flex-col gap-5">
-                                    <h2 className="text-base font-semibold text-black border-b border-gray-200 pb-2">Appearance</h2>
+                                    <h2 className="text-base font-semibold text-black dark:text-slate-100 border-b border-gray-200 dark:border-zinc-800 pb-2">Appearance</h2>
 
                                     <div className="flex flex-col gap-3">
-                                        <span className="text-sm font-medium text-black">Color mode</span>
-                                        <div className="flex gap-4">
+                                        <span className="text-sm font-medium text-black dark:text-slate-100">Color mode</span>
+                                        <p className="text-[13px] text-gray-500 dark:text-slate-400 -mt-1">
+                                            Choose light, dark, or match your device setting.
+                                        </p>
+                                        <div className="flex flex-wrap gap-4">
 
-                                            {/* Light Mode Thumbnail */}
+                                            {/* Light Mode */}
                                             <button
+                                                type="button"
                                                 onClick={() => setTheme('light')}
-                                                className={`flex flex-col items-center gap-2 group`}
+                                                className="flex flex-col items-center gap-2 group"
+                                                aria-pressed={currentTheme === 'light'}
                                             >
-                                                <div className={`w-28 h-20 bg-[#f5f5f5] rounded-xl border-2 flex flex-col p-2 gap-2 overflow-hidden transition-colors ${currentTheme === "light" ? "border-blue-500" : "border-gray-200 hover:border-gray-300"}`}>
+                                                <div className={`w-28 h-20 bg-[#f5f5f5] rounded-xl border-2 flex flex-col p-2 gap-2 overflow-hidden transition-colors ${currentTheme === "light" ? "border-[#2563eb] ring-2 ring-[#2563eb]/20" : "border-gray-200 dark:border-zinc-700 hover:border-gray-300"}`}>
                                                     <div className="flex justify-end"><div className="w-4 h-1.5 rounded-full bg-gray-300" /></div>
                                                     <div className="flex flex-col gap-1">
                                                         <div className="w-10 h-1.5 rounded-full bg-gray-200" />
@@ -177,14 +182,19 @@ export default function SettingsPage() {
                                                         <div className="w-3 h-3 rounded-full bg-[#2563eb]" />
                                                     </div>
                                                 </div>
+                                                <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${currentTheme === 'light' ? 'text-[#2563eb]' : 'text-gray-600 dark:text-slate-400'}`}>
+                                                    <Sun className="w-3.5 h-3.5" /> Light
+                                                </span>
                                             </button>
 
-                                            {/* Dark Mode Thumbnail */}
+                                            {/* Dark Mode */}
                                             <button
+                                                type="button"
                                                 onClick={() => setTheme('dark')}
-                                                className={`flex flex-col items-center gap-2 group`}
+                                                className="flex flex-col items-center gap-2 group"
+                                                aria-pressed={currentTheme === 'dark'}
                                             >
-                                                <div className={`w-28 h-20 bg-[#232323] rounded-xl border-2 flex flex-col p-2 gap-2 overflow-hidden transition-colors ${currentTheme === "dark" ? "border-blue-500" : "border-gray-200 hover:border-gray-300"}`}>
+                                                <div className={`w-28 h-20 bg-[#232323] rounded-xl border-2 flex flex-col p-2 gap-2 overflow-hidden transition-colors ${currentTheme === "dark" ? "border-[#2563eb] ring-2 ring-[#2563eb]/20" : "border-gray-200 dark:border-zinc-700 hover:border-gray-300"}`}>
                                                     <div className="flex flex-col flex-1 bg-[#2c2c2c] rounded-md overflow-hidden p-1.5 gap-2 border border-white/5">
                                                         <div className="flex justify-end"><div className="w-4 h-1.5 rounded-full bg-white/20" /></div>
                                                         <div className="flex flex-col gap-1">
@@ -196,14 +206,19 @@ export default function SettingsPage() {
                                                         </div>
                                                     </div>
                                                 </div>
+                                                <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${currentTheme === 'dark' ? 'text-[#2563eb]' : 'text-gray-600 dark:text-slate-400'}`}>
+                                                    <Moon className="w-3.5 h-3.5" /> Dark
+                                                </span>
                                             </button>
 
-                                            {/* System Mode Thumbnail */}
+                                            {/* System Mode */}
                                             <button
+                                                type="button"
                                                 onClick={() => setTheme('system')}
-                                                className={`flex flex-col items-center gap-2 group`}
+                                                className="flex flex-col items-center gap-2 group"
+                                                aria-pressed={currentTheme === 'system'}
                                             >
-                                                <div className={`w-28 h-20 bg-[#232323] rounded-xl border-2 flex overflow-hidden transition-colors ${currentTheme === "system" ? "border-gray-500" : "border-gray-200 hover:border-gray-300"}`}>
+                                                <div className={`w-28 h-20 bg-[#232323] rounded-xl border-2 flex overflow-hidden transition-colors ${currentTheme === "system" ? "border-[#2563eb] ring-2 ring-[#2563eb]/20" : "border-gray-200 dark:border-zinc-700 hover:border-gray-300"}`}>
                                                     {/* Left Half (Light) */}
                                                     <div className="flex-1 bg-[#f5f5f5] h-full flex flex-col p-2 gap-1.5 relative border-r border-gray-300">
                                                         <div className="flex flex-col gap-1 mt-3">
@@ -221,6 +236,9 @@ export default function SettingsPage() {
                                                         </div>
                                                     </div>
                                                 </div>
+                                                <span className={`inline-flex items-center gap-1.5 text-xs font-medium ${currentTheme === 'system' ? 'text-[#2563eb]' : 'text-gray-600 dark:text-slate-400'}`}>
+                                                    <Monitor className="w-3.5 h-3.5" /> System
+                                                </span>
                                             </button>
 
                                         </div>
@@ -235,7 +253,7 @@ export default function SettingsPage() {
 
                                 {/* Account Section */}
                                 <section className="flex flex-col gap-6">
-                                    <h2 className="text-base font-semibold text-black border-b border-gray-200 pb-2">Account</h2>
+                                    <h2 className="text-base font-semibold text-black dark:text-slate-100 border-b border-gray-200 dark:border-zinc-800 pb-2">Account</h2>
 
                                     <div className="flex flex-col gap-1">
                                         <div className="flex items-center justify-between pb-6">
