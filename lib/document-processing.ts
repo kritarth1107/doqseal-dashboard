@@ -1,7 +1,5 @@
-import { getDemoConfidence, getDemoExtraction } from "@/lib/demo-extraction";
+import { getDemoConfidence, getDemoExtraction, DEMO_PROCESSING_MS } from "@/lib/demo-extraction";
 import { getDocument, updateDocument } from "@/lib/document-store";
-
-const DEMO_PROCESSING_MS = 45_000;
 
 export async function processDocumentRecord(documentId: string): Promise<void> {
   const doc = await getDocument(documentId);

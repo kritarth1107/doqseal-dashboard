@@ -15,6 +15,10 @@ import { toast } from "sonner";
 import { ExtractionFields } from "@/components/ExtractionFields";
 import { useAuth } from "@/components/AuthProvider";
 import { withOrgHeaders } from "@/lib/client-api";
+import {
+  DEMO_PROCESSING_MS,
+  DEMO_PROCESSING_STEPS,
+} from "@/lib/demo-extraction";
 import { StoredDocument } from "@/types/extraction";
 
 function StatusBadge({ status }: { status: string }) {
@@ -74,10 +78,12 @@ function derivePageTabs(
       .filter((tab): tab is PageTab => Boolean(tab));
   }
 
-  return [
-    { page: 1, title: "Page 1" },
-    { page: 2, title: "Page 2" },
-  ];
+  const pageCount =
+    typeof extracted?.page_count === "number" ? extracted.page_count : 2;
+  return Array.from({ length: Math.max(1, pageCount) }, (_, i) => ({
+    page: i + 1,
+    title: `Page ${i + 1}`,
+  }));
 }
 
 function asExtractionRecord(
@@ -85,6 +91,75 @@ function asExtractionRecord(
 ): Record<string, unknown> | null {
   if (!extracted || typeof extracted !== "object") return null;
   return extracted as Record<string, unknown>;
+}
+
+function DemoProcessingPanel({
+  uploadedAt,
+  demoRevealAt,
+}: {
+  uploadedAt: string;
+  demoRevealAt?: string | null;
+}) {
+  const [now, setNow] = useState(() => Date.now());
+
+  useEffect(() => {
+    const id = setInterval(() => setNow(Date.now()), 400);
+    return () => clearInterval(id);
+  }, []);
+
+  const endMs = demoRevealAt
+    ? new Date(demoRevealAt).getTime()
+    : new Date(uploadedAt).getTime() + DEMO_PROCESSING_MS;
+  const startMs = endMs - DEMO_PROCESSING_MS;
+  const elapsed = Math.max(0, now - startMs);
+  const total = Math.max(1, endMs - startMs);
+  const progress = Math.min(1, elapsed / total);
+
+  const activeIndex = DEMO_PROCESSING_STEPS.reduce((acc, step, index) => {
+    return elapsed >= step.atMs ? index : acc;
+  }, 0);
+
+  return (
+    <div className="mb-4 rounded-2xl border border-[#2563eb]/20 bg-[#2563eb]/5 px-4 py-4">
+      <div className="flex items-center gap-2 text-sm font-medium text-[#2563eb]">
+        <Loader2 className="h-4 w-4 animate-spin" />
+        Demo extraction in progress
+      </div>
+      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[#2563eb]/15">
+        <div
+          className="h-full rounded-full bg-[#2563eb] transition-[width] duration-300"
+          style={{ width: `${Math.round(progress * 100)}%` }}
+        />
+      </div>
+      <ul className="mt-3 space-y-1.5">
+        {DEMO_PROCESSING_STEPS.map((step, index) => {
+          const done = index < activeIndex || progress >= 1;
+          const active = index === activeIndex && progress < 1;
+          return (
+            <li
+              key={step.label}
+              className={`flex items-center gap-2 text-xs ${
+                done
+                  ? "text-emerald-700 dark:text-emerald-400"
+                  : active
+                    ? "text-[#2563eb]"
+                    : "text-gray-400 dark:text-slate-500"
+              }`}
+            >
+              {done ? (
+                <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
+              ) : active ? (
+                <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
+              ) : (
+                <span className="h-3.5 w-3.5 shrink-0 rounded-full border border-current opacity-40" />
+              )}
+              {step.label}
+            </li>
+          );
+        })}
+      </ul>
+    </div>
+  );
 }
 
 export default function ProjectDocumentPage() {
@@ -126,7 +201,7 @@ export default function ProjectDocumentPage() {
     if (!doc || doc.status !== "processing") return;
     const interval = setInterval(async () => {
       await loadDocument(true);
-    }, 2000);
+    }, 1500);
     return () => clearInterval(interval);
   }, [doc?.status, params.documentId, params.projectId, activeOrgId]);
 
@@ -161,7 +236,17 @@ export default function ProjectDocumentPage() {
       if (!res.ok) throw new Error(data.error || "Reprocess failed");
       toast.success("Re-extraction queued");
       setDoc((prev) =>
-        prev ? { ...prev, status: "processing", extractedJson: prev.extractedJson } : prev
+        prev
+          ? {
+              ...prev,
+              status: "processing",
+              extractedJson: null,
+              demoMode: true,
+              demoRevealAt: new Date(
+                Date.now() + DEMO_PROCESSING_MS
+              ).toISOString(),
+            }
+          : prev
       );
       await loadDocument(true);
     } catch (error: unknown) {
@@ -209,7 +294,9 @@ export default function ProjectDocumentPage() {
   if (!doc) {
     return (
       <div className="flex-1 flex flex-col items-center justify-center bg-[#f8fafc] gap-3">
-        <p className="text-sm text-gray-600 dark:text-slate-400">Document not found</p>
+        <p className="text-sm text-gray-600 dark:text-slate-400">
+          Document not found
+        </p>
         <Link
           href={`/projects/${params.projectId}`}
           className="text-sm text-[#2563eb] hover:underline"
@@ -224,14 +311,21 @@ export default function ProjectDocumentPage() {
   const documentType =
     typeof extracted?.suggested_title === "string"
       ? extracted.suggested_title
-      : typeof extracted?.summary === "string"
-        ? extracted.summary.split(".")[0]
-        : null;
+      : typeof extracted?.document_type === "string"
+        ? extracted.document_type
+        : typeof extracted?.summary === "string"
+          ? extracted.summary.split(".")[0]
+          : null;
   const hasFields =
     extracted &&
     Object.values(extracted).some(
       (value) => value !== null && value !== undefined && value !== ""
     );
+  const showDemoSteps =
+    doc.status === "processing" &&
+    (doc.demoMode ||
+      doc.extractionStrategy === "demo" ||
+      Boolean(doc.demoRevealAt));
 
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-[#f8fafc]">
@@ -245,12 +339,18 @@ export default function ProjectDocumentPage() {
             Back to project
           </Link>
 
-          {doc.status === "processing" && (
+          {showDemoSteps ? (
+            <DemoProcessingPanel
+              uploadedAt={doc.uploadedAt}
+              demoRevealAt={doc.demoRevealAt}
+            />
+          ) : doc.status === "processing" ? (
             <div className="mb-4 flex items-center gap-2 rounded-2xl border border-[#2563eb]/20 bg-[#2563eb]/5 px-4 py-3 text-sm text-[#2563eb]">
               <Loader2 className="h-4 w-4 animate-spin" />
-              Identifying document and extracting pointers — usually a few seconds…
+              Identifying document and extracting pointers — usually a few
+              seconds…
             </div>
-          )}
+          ) : null}
 
           <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
             <div>
@@ -277,11 +377,13 @@ export default function ProjectDocumentPage() {
                   <>
                     {" "}
                     ·{" "}
-                    {["backend", "hybrid", "ocr", "ocr_fallback"].includes(
-                      doc.extractionStrategy
-                    )
-                      ? "Real AI extraction"
-                      : doc.extractionStrategy}
+                    {doc.extractionStrategy === "demo"
+                      ? "Demo extraction"
+                      : ["backend", "hybrid", "ocr", "ocr_fallback"].includes(
+                            doc.extractionStrategy
+                          )
+                        ? "Real AI extraction"
+                        : doc.extractionStrategy}
                   </>
                 )}
               </p>
@@ -290,7 +392,9 @@ export default function ProjectDocumentPage() {
               <button
                 type="button"
                 onClick={handleReprocess}
-                disabled={reprocessing || deleting || doc.status === "processing"}
+                disabled={
+                  reprocessing || deleting || doc.status === "processing"
+                }
                 className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 dark:text-slate-200 bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 disabled:opacity-50"
               >
                 {reprocessing ? (
@@ -320,7 +424,9 @@ export default function ProjectDocumentPage() {
             <div className="lg:col-span-2">
               <div className="bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/10 rounded-2xl overflow-hidden sticky top-24">
                 <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/10 px-4 py-3 text-sm">
-                  <span className="text-gray-500 dark:text-slate-400">Preview</span>
+                  <span className="text-gray-500 dark:text-slate-400">
+                    Preview
+                  </span>
                   <a
                     href={fileUrl}
                     target="_blank"

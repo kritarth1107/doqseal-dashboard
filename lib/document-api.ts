@@ -19,6 +19,8 @@ type BackendDocumentPayload = {
     status: string;
     error?: string | null;
     completedAt?: string | null;
+    demoMode?: boolean;
+    demoRevealAt?: string | null;
   } | null;
   extraction?: {
     extractionId: string;
@@ -70,6 +72,8 @@ export function mapBackendDocument(
     processedAt: extraction?.approvedAt ?? undefined,
     processingError: job?.error ?? undefined,
     filePurgedAt: document.filePurgedAt || null,
+    demoMode: Boolean(job?.demoMode),
+    demoRevealAt: job?.demoRevealAt ?? null,
   };
 }
 

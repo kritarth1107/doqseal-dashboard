@@ -110,4 +110,6 @@ export type StoredDocument = {
   processedAt?: string;
   processingError?: string;
   filePurgedAt?: string | null;
+  demoMode?: boolean;
+  demoRevealAt?: string | null;
 };
