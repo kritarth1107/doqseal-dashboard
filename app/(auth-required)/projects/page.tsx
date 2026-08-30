@@ -81,7 +81,13 @@ export default function ProjectsPage() {
           ? "Project created and shared with your organisation"
           : "Private project created — only you can see it"
       );
+      const createdId = data.project?.projectId as string | undefined;
       resetModal();
+      if (createdId) {
+        // Send users straight to settings to configure extraction + webhook
+        window.location.href = `/projects/${createdId}/settings`;
+        return;
+      }
       await loadProjects();
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : "Failed to create project");
@@ -252,6 +258,10 @@ export default function ProjectsPage() {
                     </span>
                   </span>
                 </label>
+
+                <p className="text-xs text-gray-400 px-1">
+                  After create you&apos;ll set extraction context and webhook on the settings page.
+                </p>
 
                 <div className="flex gap-3 pt-2">
                   <button

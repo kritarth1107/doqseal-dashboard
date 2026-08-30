@@ -12,6 +12,7 @@ import {
   Settings,
   Loader2,
   Trash2,
+  Webhook,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/ui/PageHeader";
@@ -19,12 +20,15 @@ import { UploadModal } from "@/components/UploadModal";
 import { useAuth } from "@/components/AuthProvider";
 import { withOrgHeaders } from "@/lib/client-api";
 import { StoredDocument } from "@/types/extraction";
+import { ProjectWebhook } from "@/lib/webhook-events";
 
 type Project = {
   projectId: string;
   name: string;
   description?: string;
   extractionHint?: string;
+  webhooks?: ProjectWebhook[];
+  webhookUrls?: string[];
 };
 
 type ListedDocument = {
@@ -93,7 +97,9 @@ export default function ProjectDetailPage() {
     load();
   }, [loadProject, loadUploadedDocs]);
 
-  const handleUploadSuccess = (results: { documentId: string; filename: string }[]) => {
+  const handleUploadSuccess = (
+    results: { documentId: string; filename: string }[]
+  ) => {
     toast.success("Upload queued — opening extraction…");
     const last = results[results.length - 1];
     if (last) {
@@ -105,7 +111,12 @@ export default function ProjectDetailPage() {
 
   const handleDelete = async (documentId: string, name: string) => {
     if (!activeOrgId) return;
-    if (!confirm(`Remove "${name}" from this project?\n\nThe original file will be deleted from storage. Extracted context stays available for AI chat.`)) return;
+    if (
+      !confirm(
+        `Remove "${name}" from this project?\n\nThe original file will be deleted from storage. Extracted context stays available for AI chat.`
+      )
+    )
+      return;
 
     setDeletingId(documentId);
     try {
@@ -144,6 +155,10 @@ export default function ProjectDetailPage() {
     );
   }
 
+  const webhookUrl =
+    project.webhooks?.[0]?.url || project.webhookUrls?.[0] || "";
+  const webhookEvents = project.webhooks?.[0]?.events || [];
+
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-[#f8fafc]">
       <div className="flex-1 overflow-y-auto p-4 sm:p-8 pt-16 sm:pt-20">
@@ -160,13 +175,13 @@ export default function ProjectDetailPage() {
             description={project.description || ""}
             actions={
               <>
-                <button
-                  type="button"
-                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg"
+                <Link
+                  href={`/projects/${projectId}/settings`}
+                  className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50"
                 >
                   <Settings className="w-4 h-4 inline mr-2 -mt-0.5" />
                   Settings
-                </button>
+                </Link>
                 <button
                   type="button"
                   onClick={() => setUploadOpen(true)}
@@ -186,17 +201,40 @@ export default function ProjectDetailPage() {
             }
           />
 
-          <div className="bg-[#2563eb]/5 border border-[#2563eb]/20 rounded-2xl p-4 mb-8 flex gap-3">
-            <Sparkles className="w-5 h-5 text-[#2563eb] shrink-0" />
-            <div>
-              <p className="text-sm font-medium text-gray-900">Shared AI context active</p>
-              <p className="text-sm text-gray-600 mt-0.5">
-                {project.extractionHint || "Project-specific extraction schema"}
-              </p>
-              <p className="text-xs text-gray-500 mt-2">
-                {uploadedDocs.length} documents uploaded · Real backend extraction pipeline
-              </p>
-            </div>
+          <div className="grid gap-4 sm:grid-cols-2 mb-8">
+            <Link
+              href={`/projects/${projectId}/settings`}
+              className="bg-[#2563eb]/5 border border-[#2563eb]/20 rounded-2xl p-4 flex gap-3 hover:border-[#2563eb]/40 transition-colors"
+            >
+              <Sparkles className="w-5 h-5 text-[#2563eb] shrink-0" />
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-gray-900">
+                  Extraction context
+                </p>
+                <p className="text-sm text-gray-600 mt-0.5 whitespace-pre-wrap line-clamp-4">
+                  {project.extractionHint?.trim() ||
+                    "No extraction instructions yet — open Settings to tell AI what to extract."}
+                </p>
+              </div>
+            </Link>
+            <Link
+              href={`/projects/${projectId}/settings`}
+              className="bg-white border border-gray-200 rounded-2xl p-4 flex gap-3 hover:border-[#2563eb]/40 transition-colors"
+            >
+              <Webhook className="w-5 h-5 text-[#2563eb] shrink-0" />
+              <div className="min-w-0">
+                <p className="text-sm font-medium text-gray-900">Webhook</p>
+                <p className="text-sm text-gray-600 mt-0.5 truncate">
+                  {webhookUrl ||
+                    "No webhook configured — set a URL and events in Settings."}
+                </p>
+                {webhookUrl && webhookEvents.length > 0 && (
+                  <p className="text-[11px] text-gray-400 mt-1">
+                    Events: {webhookEvents.join(", ")}
+                  </p>
+                )}
+              </div>
+            </Link>
           </div>
 
           <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100 mb-3">

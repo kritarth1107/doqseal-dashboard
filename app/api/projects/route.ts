@@ -55,6 +55,10 @@ export async function POST(request: NextRequest) {
         name: String(body.name).trim(),
         description: body.description || undefined,
         extractionHint: body.extractionHint || undefined,
+        webhooks: Array.isArray(body.webhooks) ? body.webhooks : undefined,
+        webhookUrls: Array.isArray(body.webhookUrls)
+          ? body.webhookUrls.filter((u: unknown) => typeof u === "string")
+          : undefined,
         organisationId,
         sharedWithOrganisation:
           typeof body.sharedWithOrganisation === "boolean"
