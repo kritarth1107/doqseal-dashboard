@@ -1,0 +1,59 @@
+# Deploys dashboard to Azure App Service via OIDC (AZURE_* repo secrets).
+name: Deploy to Azure Web App
+
+on:
+  push:
+    branches: [master]
+  workflow_dispatch:
+
+permissions:
+  id-token: write
+  contents: read
+
+env:
+  AZURE_CLIENT_ID: ${{ secrets.AZURE_CLIENT_ID }}
+  AZURE_TENANT_ID: ${{ secrets.AZURE_TENANT_ID }}
+  AZURE_SUBSCRIPTION_ID: ${{ secrets.AZURE_SUBSCRIPTION_ID }}
+  ACR_NAME: doqsealprodacr
+  RESOURCE_GROUP: doqseal-prod-rg
+  WEBAPP_NAME: doqseal-prod-dashboard
+  IMAGE_NAME: doqseal-dashboard
+  NEXT_PUBLIC_API_URL: https://doqseal-prod-backend.graybush-3e61ef54.centralindia.azurecontainerapps.io/api/v1
+  NEXT_PUBLIC_ESIGN_ENABLED: "false"
+
+jobs:
+  build-and-deploy:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Azure login (OIDC)
+        uses: azure/login@v2
+        with:
+          client-id: ${{ env.AZURE_CLIENT_ID }}
+          tenant-id: ${{ env.AZURE_TENANT_ID }}
+          subscription-id: ${{ env.AZURE_SUBSCRIPTION_ID }}
+
+      - name: Build and push image to ACR
+        run: |
+          az acr build \
+            --registry "$ACR_NAME" \
+            --resource-group "$RESOURCE_GROUP" \
+            --image "${IMAGE_NAME}:${GITHUB_SHA}" \
+            --image "${IMAGE_NAME}:latest" \
+            --file Dockerfile \
+            --build-arg "NEXT_PUBLIC_API_URL=${NEXT_PUBLIC_API_URL}" \
+            --build-arg "NEXT_PUBLIC_ESIGN_ENABLED=${NEXT_PUBLIC_ESIGN_ENABLED}" \
+            .
+
+      - name: Deploy Web App container
+        run: |
+          az webapp config container set \
+            --name "$WEBAPP_NAME" \
+            --resource-group "$RESOURCE_GROUP" \
+            --container-image-name "${ACR_NAME}.azurecr.io/${IMAGE_NAME}:${GITHUB_SHA}" \
+            --container-registry-url "https://${ACR_NAME}.azurecr.io"
+          az webapp restart \
+            --name "$WEBAPP_NAME" \
+            --resource-group "$RESOURCE_GROUP"

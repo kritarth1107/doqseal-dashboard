@@ -108,7 +108,7 @@ export default function DrivePage() {
       <div className="max-w-6xl mx-auto">
         <PageHeader
           title="Document Drive"
-          description="Central storage for contracts, uploads, and signed PDFs. Files in a project share AI context automatically."
+          description="Central storage for uploads and project documents. Files in a project share AI context automatically."
           actions={
             <>
               <button

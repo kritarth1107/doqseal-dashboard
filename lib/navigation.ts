@@ -1,11 +1,8 @@
-import {
+﻿import {
   LayoutDashboard,
   HardDrive,
   Brain,
   FolderKanban,
-  PenLine,
-  FileSignature,
-  Send,
   BarChart3,
   History,
   ShieldCheck,
@@ -40,14 +37,6 @@ export const navGroups: NavGroup[] = [
       { name: "Document Drive", icon: HardDrive, href: "/drive" },
       { name: "AI Intelligence", icon: Brain, href: "/intelligence" },
       { name: "Projects", icon: FolderKanban, href: "/projects" },
-    ],
-  },
-  {
-    label: "E-Sign",
-    items: [
-      { name: "Envelopes", icon: FileSignature, href: "/sign" },
-      { name: "Create envelope", icon: PenLine, href: "/sign/new" },
-      { name: "Collect documents", icon: Send, href: "/sign/request" },
     ],
   },
   {

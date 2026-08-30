@@ -1,13 +1,13 @@
 ﻿import { redirect } from "next/navigation";
 import { features } from "@/lib/features";
 
-export default function PublicSignLayout({
+export default function SignSectionLayout({
   children,
 }: {
   children: React.ReactNode;
 }) {
   if (!features.esignEnabled) {
-    redirect("/auth");
+    redirect("/dashboard");
   }
   return children;
 }

@@ -104,7 +104,7 @@ export default function AnalyticsUsagePage() {
       <div className="max-w-6xl mx-auto">
         <PageHeader
           title="Usage analytics"
-          description="Track document intelligence, e-sign, and API consumption for your organisation."
+          description="Track document intelligence and API consumption for your organisation."
         />
 
         {loading ? (

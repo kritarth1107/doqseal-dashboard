@@ -37,7 +37,7 @@ type OrgStats = {
 const DEFAULT_STATS = [
   { label: "Documents in Drive", value: "—", icon: FileText, trend: "—", trendUp: true, color: "blue" as const },
   { label: "AI extractions", value: "—", icon: Cpu, trend: "—", trendUp: true, color: "lime" as const },
-  { label: "Envelopes pending", value: "—", icon: ShieldCheck, trend: "—", trendUp: false, color: "green" as const },
+  { label: "Jobs pending", value: "—", icon: ShieldCheck, trend: "—", trendUp: false, color: "green" as const },
   { label: "Active projects", value: "—", icon: Clock, trend: "Shared context", trendUp: true, color: "purple" as const },
 ];
 
@@ -128,16 +128,13 @@ export default function Dashboard() {
             <h1 className="text-2xl font-semibold text-gray-900">Good morning, {firstName}</h1>
             <p className="text-sm text-gray-500">
               {activeOrg?.name ? `${activeOrg.name} · ` : ""}
-              Document intelligence, e-sign, and compliance at a glance.
+              Document intelligence and compliance at a glance.
             </p>
           </div>
           <div className="flex items-center gap-3">
             <button className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors">
               Export Report
             </button>
-            <Link href="/sign/new" className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 flex items-center gap-2">
-              New envelope
-            </Link>
             <Link href="/intelligence" className="px-4 py-2 text-sm font-medium text-white bg-[#2563eb] rounded-lg hover:bg-[#1d4ed8] flex items-center gap-2 shadow-sm">
               <Zap className="w-4 h-4" />
               Ask AI
