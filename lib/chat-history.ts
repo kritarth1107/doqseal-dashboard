@@ -16,6 +16,7 @@ export type StoredChatMessage = {
 export type StoredChatSession = {
   id: string;
   title: string;
+  preview?: string;
   updatedAt: string;
   projectId?: string;
   messages: StoredChatMessage[];

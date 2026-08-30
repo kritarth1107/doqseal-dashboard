@@ -20,8 +20,11 @@ import {
 import Link from "next/link";
 
 type OrgStats = {
+  documentCount?: number;
   documentsCount?: number;
+  extractionCount?: number;
   extractionsCount?: number;
+  pendingJobs?: number;
   pendingEnvelopes?: number;
   activeProjects?: number;
   trends?: { day: string; count: number }[];
@@ -100,22 +103,38 @@ export default function Dashboard() {
     loadStats();
   }, [activeOrgId]);
 
+  const documentsCount =
+    statsData?.documentsCount ?? statsData?.documentCount;
+  const extractionsCount =
+    statsData?.extractionsCount ?? statsData?.extractionCount;
+  const pendingJobs =
+    statsData?.pendingJobs ?? statsData?.pendingEnvelopes;
+  const activeProjects = statsData?.activeProjects;
+
   const stats = [
     {
       ...DEFAULT_STATS[0],
-      value: formatCount(statsData?.documentsCount),
+      value: formatCount(documentsCount),
+      trend: documentsCount != null ? "Live" : "—",
+      trendUp: true,
     },
     {
       ...DEFAULT_STATS[1],
-      value: formatCount(statsData?.extractionsCount),
+      value: formatCount(extractionsCount),
+      trend: extractionsCount != null ? "Live" : "—",
+      trendUp: true,
     },
     {
       ...DEFAULT_STATS[2],
-      value: formatCount(statsData?.pendingEnvelopes),
+      value: formatCount(pendingJobs),
+      trend: pendingJobs && pendingJobs > 0 ? "In queue" : "Clear",
+      trendUp: !(pendingJobs && pendingJobs > 0),
     },
     {
       ...DEFAULT_STATS[3],
-      value: formatCount(statsData?.activeProjects),
+      value: formatCount(activeProjects),
+      trend: "Shared context",
+      trendUp: true,
     },
   ];
 

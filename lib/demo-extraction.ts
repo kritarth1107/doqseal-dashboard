@@ -105,7 +105,7 @@ export function isPrescriptionExtraction(extracted: ExtractedDocument): boolean 
 }
 
 export const DEMO_EMAIL = "demo@doqseal.com";
-export const DEMO_PROCESSING_MS = 10_000;
+export const DEMO_PROCESSING_MS = 8_000;
 
 export function isDemoUserEmail(email?: string | null): boolean {
   return (email || "").trim().toLowerCase() === DEMO_EMAIL;
@@ -113,8 +113,8 @@ export function isDemoUserEmail(email?: string | null): boolean {
 
 export const DEMO_PROCESSING_STEPS = [
   { atMs: 0, label: "Reading document pages…" },
-  { atMs: 2000, label: "Detecting document type (radiology TRF + billing)…" },
-  { atMs: 4000, label: "Extracting patient, visit, and referral fields…" },
-  { atMs: 6000, label: "Checking stamps & signatures against project checklist…" },
-  { atMs: 8000, label: "Finalizing structured extraction…" },
+  { atMs: 1600, label: "Detecting document type (radiology TRF + billing)…" },
+  { atMs: 3200, label: "Extracting patient, visit, and referral fields…" },
+  { atMs: 4800, label: "Checking stamps & signatures against project checklist…" },
+  { atMs: 6400, label: "Finalizing structured extraction…" },
 ] as const;
