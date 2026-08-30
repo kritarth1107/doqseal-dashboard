@@ -1,10 +1,9 @@
 import { NextResponse } from "next/server";
-import { cookies } from "next/headers";
 import { getHeadersFromRequest } from "@/lib/header-utils";
+import { backendUrl } from "@/lib/backend-client";
 
 export async function POST(request: Request) {
   try {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
     const headers = getHeadersFromRequest(request);
 
     const { name, website, logoUrl } = await request.json();
@@ -16,21 +15,23 @@ export async function POST(request: Request) {
       );
     }
 
-    // 1. Notify backend to create the API key
     try {
-      const response = await fetch(`${apiUrl}user/organisations`, {
+      const response = await fetch(backendUrl("user/organisations"), {
         method: "POST",
         headers,
         body: JSON.stringify({
           name,
           website,
-          logoUrl
+          logoUrl,
         }),
       });
       const data = await response.json();
-      
+
       if (!response.ok) {
-        return NextResponse.json({ error: data.message || "Failed to create Organisation" }, { status: response.status });
+        return NextResponse.json(
+          { error: data.message || "Failed to create Organisation" },
+          { status: response.status }
+        );
       }
 
       return NextResponse.json(data);
@@ -38,8 +39,11 @@ export async function POST(request: Request) {
       console.error("Backend Organisation creation failed:", backendError);
       return NextResponse.json({ error: "Internal server error" }, { status: 500 });
     }
-    } catch (error) {
+  } catch (error) {
     console.error("Organisation creation error:", error);
-    return NextResponse.json({ error: "Failed to create Organisation" }, { status: 500 });
+    return NextResponse.json(
+      { error: "Failed to create Organisation" },
+      { status: 500 }
+    );
   }
 }

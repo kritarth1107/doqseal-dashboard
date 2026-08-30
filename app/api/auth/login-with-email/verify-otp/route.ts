@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import { cookies } from "next/headers";
+import { backendUrl } from "@/lib/backend-client";
 
 export async function POST(request: NextRequest) {
   try {
@@ -12,25 +13,17 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-    if (!apiUrl) {
-      return NextResponse.json(
-        { error: "API URL not configured" },
-        { status: 500 }
-      );
-    }
-
     const { getHeadersFromRequest } = await import("@/lib/header-utils");
     const headers = getHeadersFromRequest(request);
 
-    const response = await fetch(`${apiUrl}kingdom/login-request/verify-otp`, {
+    const response = await fetch(backendUrl("kingdom/login-request/verify-otp"), {
       method: "POST",
       headers,
-      body: JSON.stringify({ 
-        otp, 
-        token, 
-        name: name || undefined, 
-        email
+      body: JSON.stringify({
+        otp,
+        token,
+        name: name || undefined,
+        email,
       }),
     });
 
@@ -43,7 +36,6 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    // Set session cookie
     if (data.success && data.data?.token) {
       const cookieStore = await cookies();
       cookieStore.set("session_token", data.data.token, {
@@ -51,7 +43,7 @@ export async function POST(request: NextRequest) {
         secure: process.env.NODE_ENV === "production",
         sameSite: "lax",
         path: "/",
-        maxAge: 60 * 60 * 24 * 7, // 1 week
+        maxAge: 60 * 60 * 24 * 7,
       });
     }
 

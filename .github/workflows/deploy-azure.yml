@@ -18,7 +18,7 @@ env:
   RESOURCE_GROUP: doqseal-prod-rg
   WEBAPP_NAME: doqseal-prod-dashboard
   IMAGE_NAME: doqseal-dashboard
-  NEXT_PUBLIC_API_URL: https://doqseal-prod-backend.graybush-3e61ef54.centralindia.azurecontainerapps.io/api/v1
+  NEXT_PUBLIC_API_URL: https://doqseal-prod-backend.graybush-3e61ef54.centralindia.azurecontainerapps.io/api/v1/
   NEXT_PUBLIC_ESIGN_ENABLED: "false"
 
 jobs:

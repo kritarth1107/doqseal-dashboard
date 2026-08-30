@@ -1,12 +1,20 @@
 import { getHeadersFromRequest } from "@/lib/header-utils";
 
-const API_URL = process.env.NEXT_PUBLIC_API_URL;
-
+/**
+ * Backend API base URL, always with a trailing slash.
+ * Call sites append paths like `kingdom/login-request` (no leading slash).
+ */
 export function getApiUrl(): string {
-  if (!API_URL) {
+  const raw = process.env.NEXT_PUBLIC_API_URL?.trim();
+  if (!raw) {
     throw new Error("NEXT_PUBLIC_API_URL is not configured");
   }
-  return API_URL;
+  return raw.endsWith("/") ? raw : `${raw}/`;
+}
+
+/** Join API base + relative path safely (handles missing/extra slashes). */
+export function backendUrl(path: string): string {
+  return `${getApiUrl()}${path.replace(/^\/+/, "")}`;
 }
 
 export async function backendFetch(
@@ -23,7 +31,7 @@ export async function backendFetch(
     delete headers["Content-Type"];
   }
 
-  return fetch(`${getApiUrl()}${path}`, {
+  return fetch(backendUrl(path), {
     ...init,
     headers,
   });

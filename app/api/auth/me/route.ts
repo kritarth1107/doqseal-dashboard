@@ -1,18 +1,10 @@
 import { NextRequest, NextResponse } from "next/server";
-import { cookies, headers as nextHeaders } from "next/headers";
+import { cookies } from "next/headers";
 import { getHeadersFromRequest } from "@/lib/header-utils";
+import { backendUrl } from "@/lib/backend-client";
 
 export async function GET(request: NextRequest) {
   try {
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
-    if (!apiUrl) {
-      return NextResponse.json(
-        { error: "API URL not configured" },
-        { status: 500 }
-      );
-    }
-
-    // Validate session token early
     const cookieStore = await cookies();
     const token = cookieStore.get("session_token")?.value;
     if (!token) {
@@ -22,10 +14,9 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Use the utility to extract all context (token, fingerprint, user-agent, etc.)
     const headers = getHeadersFromRequest(request);
 
-    const response = await fetch(`${apiUrl}user/me`, {
+    const response = await fetch(backendUrl("user/me"), {
       method: "GET",
       headers,
     });

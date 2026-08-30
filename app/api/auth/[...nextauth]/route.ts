@@ -38,7 +38,8 @@ const handler = NextAuth({
           const fingerprint = await getFingerprint();
           const reqHeaders = await nextHeaders();
           
-          const apiUrl = process.env.NEXT_PUBLIC_API_URL;
+          const { backendUrl } = await import("@/lib/backend-client");
+          const socialUrl = backendUrl("kingdom/social");
           const payload = {
             provider: account.provider,
             access_token: account.access_token,
@@ -51,9 +52,9 @@ const handler = NextAuth({
             }
           };
 
-          console.log("Attempting social login sync with backend:", `${apiUrl}kingdom/social`);
+          console.log("Attempting social login sync with backend:", socialUrl);
           
-          const response = await fetch(`${apiUrl}kingdom/social`, {
+          const response = await fetch(socialUrl, {
             method: 'POST',
             headers: createJsonHeaders({ 
               fingerprint,

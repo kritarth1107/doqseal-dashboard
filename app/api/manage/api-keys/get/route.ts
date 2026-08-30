@@ -1,5 +1,6 @@
 import { NextResponse } from "next/server";
 import { getHeadersFromRequest } from "@/lib/header-utils";
+import { backendUrl } from "@/lib/backend-client";
 
 /**
  * GET /api/manage/api-keys/get
@@ -17,11 +18,9 @@ export async function GET(request: Request) {
       );
     }
 
-    const apiUrl = process.env.NEXT_PUBLIC_API_URL;
     const headers = getHeadersFromRequest(request);
 
-    // Fetch keys from backend api-wickets service
-    const response = await fetch(`${apiUrl}api-wickets/${organisationId}`, {
+    const response = await fetch(backendUrl(`api-wickets/${organisationId}`), {
       method: "GET",
       headers,
     });
