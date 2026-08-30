@@ -27,7 +27,14 @@ export async function backendFetch(
     ...(init.headers as Record<string, string> | undefined),
   };
 
-  if (init.body instanceof FormData) {
+  const hasBody =
+    init.body !== undefined &&
+    init.body !== null &&
+    !(typeof init.body === "string" && init.body.length === 0);
+
+  // Fastify/undici reject empty bodies when Content-Type is application/json
+  // (common on DELETE/GET). Multipart must not force a Content-Type either.
+  if (init.body instanceof FormData || !hasBody) {
     delete headers["Content-Type"];
   }
 

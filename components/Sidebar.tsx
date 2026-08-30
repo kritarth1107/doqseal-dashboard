@@ -1,5 +1,5 @@
 "use client";
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import { BrandLogo } from "@/components/BrandLogo";
 import {
   Search,
@@ -17,13 +17,21 @@ import { signOut } from "next-auth/react";
 import { navGroups } from "@/lib/navigation";
 
 export function Sidebar() {
-  const [isCollapsed, setIsCollapsed] = useState(false);
+  const pathname = usePathname();
+  const [isCollapsed, setIsCollapsed] = useState(() =>
+    pathname?.startsWith("/intelligence") ?? false
+  );
   const [showProfileMenu, setShowProfileMenu] = useState(false);
   const [showOrgSwitcher, setShowOrgSwitcher] = useState(false);
   const [showSearchModal, setShowSearchModal] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
-  const pathname = usePathname();
   const { userData, activeOrg, activeOrgId, setActiveOrgId } = useAuth();
+
+  useEffect(() => {
+    if (pathname?.startsWith("/intelligence")) {
+      setIsCollapsed(true);
+    }
+  }, [pathname]);
 
   const handleLogout = async () => {
     try {

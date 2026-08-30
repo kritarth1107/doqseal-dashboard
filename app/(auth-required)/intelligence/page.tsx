@@ -20,9 +20,20 @@ import {
   TypingIndicator,
   UserMessage,
 } from "@/components/intelligence/ChatMessage";
+import {
+  ChatHistorySidebar,
+  type ChatHistoryItem,
+} from "@/components/intelligence/ChatHistorySidebar";
 import { useAuth } from "@/components/AuthProvider";
 import { withOrgHeaders } from "@/lib/client-api";
 import { isPrescriptionProject } from "@/lib/project-config";
+import {
+  loadChatSessions,
+  saveChatSessions,
+  titleFromMessages,
+  type StoredChatSession,
+  type StoredChatMessage,
+} from "@/lib/chat-history";
 
 type Highlight = {
   word: string;
@@ -39,18 +50,7 @@ type Greeting = {
   highlights: Highlight[];
 };
 
-type Message = {
-  id: string;
-  role: "user" | "assistant";
-  content: string;
-  documents?: {
-    id: string;
-    patientName: string;
-    filename: string;
-    status: string;
-    href: string;
-  }[];
-};
+type Message = StoredChatMessage;
 
 const renderGreetingText = (greeting: Greeting) => {
   let parts: React.ReactNode[] = [greeting.text];
@@ -128,6 +128,9 @@ const NewSearchPage = () => {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
+  const [sessions, setSessions] = useState<StoredChatSession[]>([]);
+  const [activeChatId, setActiveChatId] = useState<string | null>(null);
+  const [historyCollapsed, setHistoryCollapsed] = useState(false);
 
   const isTyping = query.trim().length > 0;
   const inChat = messages.length > 0;
@@ -138,6 +141,14 @@ const NewSearchPage = () => {
     setGreeting(randomGreeting);
     setIsMounted(true);
   }, []);
+
+  useEffect(() => {
+    if (!activeOrgId) {
+      setSessions([]);
+      return;
+    }
+    setSessions(loadChatSessions(activeOrgId));
+  }, [activeOrgId]);
 
   useEffect(() => {
     async function loadProject() {
@@ -164,6 +175,66 @@ const NewSearchPage = () => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, loading]);
 
+  const persistSessions = (next: StoredChatSession[]) => {
+    setSessions(next);
+    if (activeOrgId) saveChatSessions(activeOrgId, next);
+  };
+
+  const upsertActiveSession = (nextMessages: Message[]) => {
+    if (!activeOrgId || nextMessages.length === 0) return;
+
+    const now = new Date().toISOString();
+    const title = titleFromMessages(nextMessages);
+    const preview =
+      nextMessages.filter((m) => m.role === "assistant").at(-1)?.content.slice(0, 60) ||
+      undefined;
+    const chatId = activeChatId ?? crypto.randomUUID();
+    if (!activeChatId) setActiveChatId(chatId);
+
+    setSessions((prev) => {
+      const existing = prev.find((s) => s.id === chatId);
+      const nextSession: StoredChatSession = {
+        id: chatId,
+        title,
+        preview,
+        updatedAt: now,
+        projectId: projectId || existing?.projectId,
+        messages: nextMessages,
+      };
+      const next = existing
+        ? prev.map((s) => (s.id === chatId ? nextSession : s))
+        : [nextSession, ...prev];
+
+      if (activeOrgId) saveChatSessions(activeOrgId, next);
+      return next;
+    });
+  };
+
+  const startNewChat = () => {
+    setActiveChatId(null);
+    setMessages([]);
+    setQuery("");
+  };
+
+  const selectChat = (id: string) => {
+    const session = sessions.find((s) => s.id === id);
+    if (!session) return;
+    setActiveChatId(id);
+    setMessages(session.messages);
+    setQuery("");
+    if (session.projectId && session.projectId !== projectId) {
+      router.push(`/intelligence?project=${session.projectId}`);
+    }
+  };
+
+  const deleteChat = (id: string) => {
+    const next = sessions.filter((s) => s.id !== id);
+    persistSessions(next);
+    if (activeChatId === id) {
+      startNewChat();
+    }
+  };
+
   const sendMessage = async (text: string) => {
     const trimmed = text.trim();
     if (!trimmed || loading) return;
@@ -171,6 +242,7 @@ const NewSearchPage = () => {
     const userMsg: Message = { id: crypto.randomUUID(), role: "user", content: trimmed };
     const history = [...messages, userMsg];
     setMessages(history);
+    upsertActiveSession(history);
     setQuery("");
     setLoading(true);
 
@@ -186,15 +258,17 @@ const NewSearchPage = () => {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error);
 
-      setMessages((prev) => [
-        ...prev,
+      const withAssistant: Message[] = [
+        ...history,
         {
           id: crypto.randomUUID(),
           role: "assistant",
           content: data.reply,
           documents: data.documents,
         },
-      ]);
+      ];
+      setMessages(withAssistant);
+      upsertActiveSession(withAssistant);
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : "Failed to get response");
     } finally {
@@ -220,224 +294,243 @@ const NewSearchPage = () => {
     }
   };
 
-  return (
-    <div className="flex-1 flex flex-col h-full bg-[#f4f4f5] relative">
-      {project && (
-        <div className="shrink-0 border-b border-gray-200 bg-white px-4 sm:px-6 py-3">
-          <div className="max-w-3xl mx-auto flex items-center gap-3">
-            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#2563eb]/10">
-              <Sparkles className="w-4 h-4 text-[#2563eb]" />
-            </div>
-            <div className="min-w-0 flex-1">
-              <p className="text-sm font-medium text-gray-900 truncate">{project.name}</p>
-              <p className="text-xs text-gray-500 truncate">{project.extractionHint}</p>
-            </div>
-            <Link
-              href={`/projects/${projectId}`}
-              className="text-xs font-medium text-[#2563eb] hover:underline shrink-0"
-            >
-              Documents
-            </Link>
-          </div>
-        </div>
-      )}
+  const historyItems: ChatHistoryItem[] = sessions.map((s) => ({
+    id: s.id,
+    title: s.title,
+    updatedAt: s.updatedAt,
+    preview: s.preview,
+    projectId: s.projectId,
+  }));
 
-      <div
-        ref={scrollRef}
-        className="flex-1 overflow-y-auto w-full"
-      >
-        <div
-          className={`max-w-3xl mx-auto w-full px-4 sm:px-6 py-6 ${
-            inChat ? "pb-4" : "min-h-full flex flex-col items-center justify-center pb-32"
-          }`}
-        >
-          {!inChat && (
-            <div className="flex flex-col items-center gap-4 mb-10 text-center">
-              <div className="bg-[#2563eb] rounded-xl p-2.5 shadow-sm">
-                <img
-                  src="/doqseal_logo_white.svg"
-                  alt="DoqSeal Logo"
-                  className="w-8 h-8 shrink-0"
-                />
+  return (
+    <div className="flex-1 flex h-full min-h-0 bg-[#f4f4f5] dark:bg-[#0b1220]">
+      <ChatHistorySidebar
+        items={historyItems}
+        activeId={activeChatId}
+        collapsed={historyCollapsed}
+        onToggleCollapsed={() => setHistoryCollapsed((v) => !v)}
+        onNewChat={startNewChat}
+        onSelect={selectChat}
+        onDelete={deleteChat}
+      />
+
+      <div className="flex-1 flex flex-col h-full min-w-0 relative">
+        {project && (
+          <div className="shrink-0 border-b border-gray-200 dark:border-white/10 bg-white dark:bg-[#111827] px-4 sm:px-6 py-3">
+            <div className="max-w-3xl mx-auto flex items-center gap-3">
+              <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-[#2563eb]/10">
+                <Sparkles className="w-4 h-4 text-[#2563eb]" />
               </div>
-              <h1
-                className={`text-3xl sm:text-[2rem] font-serif text-[#333] tracking-tight leading-snug max-w-[90%] transition-all duration-700 ${
-                  isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+              <div className="min-w-0 flex-1">
+                <p className="text-sm font-medium text-gray-900 dark:text-slate-100 truncate">
+                  {project.name}
+                </p>
+                <p className="text-xs text-gray-500 dark:text-slate-400 truncate">
+                  {project.extractionHint}
+                </p>
+              </div>
+              <Link
+                href={`/projects/${projectId}`}
+                className="text-xs font-medium text-[#2563eb] hover:underline shrink-0"
+              >
+                Documents
+              </Link>
+            </div>
+          </div>
+        )}
+
+        <div ref={scrollRef} className="flex-1 overflow-y-auto w-full">
+          <div
+            className={`max-w-3xl mx-auto w-full px-4 sm:px-6 py-6 ${
+              inChat ? "pb-4" : "min-h-full flex flex-col items-center justify-center pb-32"
+            }`}
+          >
+            {!inChat && (
+              <div className="flex flex-col items-center gap-4 mb-10 text-center">
+                <div className="bg-[#2563eb] rounded-xl p-2.5 shadow-sm">
+                  <img
+                    src="/doqseal_logo_white.svg"
+                    alt="DoqSeal Logo"
+                    className="w-8 h-8 shrink-0"
+                  />
+                </div>
+                <h1
+                  className={`text-3xl sm:text-[2rem] font-serif text-[#333] dark:text-slate-100 tracking-tight leading-snug max-w-[90%] transition-all duration-700 ${
+                    isMounted ? "opacity-100 translate-y-0" : "opacity-0 translate-y-4"
+                  }`}
+                >
+                  {greeting && renderGreetingText(greeting)}
+                </h1>
+              </div>
+            )}
+
+            {inChat && (
+              <div className="space-y-6">
+                {messages.map((message) =>
+                  message.role === "user" ? (
+                    <UserMessage key={message.id} content={message.content} />
+                  ) : (
+                    <AssistantMessage
+                      key={message.id}
+                      content={message.content}
+                      documents={message.documents}
+                    />
+                  )
+                )}
+                {loading && <TypingIndicator />}
+              </div>
+            )}
+
+            {!inChat && (
+              <div
+                className={`flex flex-wrap items-center justify-center gap-2 mt-2 transition-opacity duration-300 ${
+                  isTyping ? "opacity-0 pointer-events-none" : "opacity-100"
                 }`}
               >
-                {greeting && renderGreetingText(greeting)}
-              </h1>
-            </div>
-          )}
-
-          {inChat && (
-            <div className="space-y-6">
-              {messages.map((message) =>
-                message.role === "user" ? (
-                  <UserMessage key={message.id} content={message.content} />
+                {isPrescriptionProject(projectId) ? (
+                  <>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        sendMessage("Show me the prescription of Afsana Pinjari")
+                      }
+                      className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors shadow-sm cursor-pointer"
+                    >
+                      <Search className="w-4 h-4" />
+                      Afsana prescription
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        sendMessage("List medications and dosages for Afsana Pinjari")
+                      }
+                      className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors shadow-sm cursor-pointer"
+                    >
+                      <Folder className="w-4 h-4 text-[#2563eb]" />
+                      Medication summary
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        sendMessage(
+                          "What is the diagnosis and prescriber on Afsana Pinjari's prescription?"
+                        )
+                      }
+                      className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors shadow-sm cursor-pointer"
+                    >
+                      <Clock className="w-4 h-4 text-amber-600" />
+                      Diagnosis & prescriber
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsUploadModalOpen(true)}
+                      className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors shadow-sm cursor-pointer"
+                    >
+                      <Upload className="w-4 h-4" />
+                      Upload prescription
+                    </button>
+                  </>
                 ) : (
-                  <AssistantMessage
-                    key={message.id}
-                    content={message.content}
-                    documents={message.documents}
-                  />
-                )
-              )}
-              {loading && <TypingIndicator />}
-            </div>
-          )}
-
-          {!inChat && (
-            <div
-              className={`flex flex-wrap items-center justify-center gap-2 mt-2 transition-opacity duration-300 ${
-                isTyping ? "opacity-0 pointer-events-none" : "opacity-100"
-              }`}
-            >
-              {isPrescriptionProject(projectId) ? (
-                <>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      sendMessage("Show me the prescription of Afsana Pinjari")
-                    }
-                    className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors shadow-sm cursor-pointer"
-                  >
-                    <Search className="w-4 h-4" />
-                    Afsana prescription
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      sendMessage("List medications and dosages for Afsana Pinjari")
-                    }
-                    className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors shadow-sm cursor-pointer"
-                  >
-                    <Folder className="w-4 h-4 text-[#2563eb]" />
-                    Medication summary
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      sendMessage("What is the diagnosis and prescriber on Afsana Pinjari's prescription?")
-                    }
-                    className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors shadow-sm cursor-pointer"
-                  >
-                    <Clock className="w-4 h-4 text-amber-600" />
-                    Diagnosis & prescriber
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsUploadModalOpen(true)}
-                    className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors shadow-sm cursor-pointer"
-                  >
-                    <Upload className="w-4 h-4" />
-                    Upload prescription
-                  </button>
-                </>
-              ) : (
-                <>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      sendMessage("Show me the report of Afsana Pinjari from the Test Request Form project")
-                    }
-                    className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors shadow-sm cursor-pointer"
-                  >
-                    <Search className="w-4 h-4" />
-                    Extract from project
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() =>
-                      sendMessage("List requested tests and clinical history from uploaded TRFs")
-                    }
-                    className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors shadow-sm cursor-pointer"
-                  >
-                    <Folder className="w-4 h-4 text-[#2563eb]" />
-                    TRF test summary
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => sendMessage("Verify centre stamp and officer signatures on TRFs")}
-                    className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors shadow-sm cursor-pointer"
-                  >
-                    <Clock className="w-4 h-4 text-amber-600" />
-                    Stamp verification
-                  </button>
-                  <button
-                    type="button"
-                    onClick={() => setIsUploadModalOpen(true)}
-                    className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors shadow-sm cursor-pointer"
-                  >
-                    <Upload className="w-4 h-4" />
-                    Upload TRF
-                  </button>
-                </>
-              )}
-            </div>
-          )}
+                  <>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        sendMessage(
+                          "Summarize the most recent documents in this organisation"
+                        )
+                      }
+                      className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors shadow-sm cursor-pointer"
+                    >
+                      <Search className="w-4 h-4" />
+                      Recent documents
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() =>
+                        sendMessage(
+                          "What key entities and pointers were extracted from my latest uploads?"
+                        )
+                      }
+                      className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors shadow-sm cursor-pointer"
+                    >
+                      <Folder className="w-4 h-4 text-[#2563eb]" />
+                      Extraction pointers
+                    </button>
+                    <button
+                      type="button"
+                      onClick={() => setIsUploadModalOpen(true)}
+                      className="flex items-center gap-2 px-3 py-1.5 text-xs font-medium text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors shadow-sm cursor-pointer"
+                    >
+                      <Upload className="w-4 h-4" />
+                      Upload document
+                    </button>
+                  </>
+                )}
+              </div>
+            )}
+          </div>
         </div>
-      </div>
 
-      <div className="shrink-0 border-t border-gray-200 bg-white px-4 sm:px-6 py-4">
-        <div className="max-w-3xl mx-auto">
-          <div className="rounded-2xl border border-gray-200 bg-white shadow-sm overflow-hidden focus-within:border-[#2563eb]/40 focus-within:ring-2 focus-within:ring-[#2563eb]/10 transition-all">
-            <textarea
-              value={query}
-              onChange={(e) => setQuery(e.target.value)}
-              onKeyDown={handleKeyDown}
-              rows={inChat ? 2 : 3}
-              className="w-full bg-transparent border-none focus:ring-0 text-gray-900 px-4 py-3 outline-none text-[15px] placeholder-gray-400 resize-none"
-              placeholder={
-                project
-                  ? isPrescriptionProject(projectId)
-                    ? "Ask about prescriptions, medications, dosages for Afsana Pinjari…"
-                    : "Ask about TRF reports, tests, billing, stamps for Afsana Pinjari…"
-                  : "Ask across your organisation documents, projects, or envelopes…"
-              }
-            />
-            <div className="flex items-center justify-between px-3 py-2 border-t border-gray-100 bg-gray-50/60">
-              <button
-                type="button"
-                onClick={() => setIsUploadModalOpen(true)}
-                disabled={!projectId}
-                title={projectId ? "Upload document" : "Open a project to upload"}
-                className="p-2 text-gray-500 hover:text-gray-900 hover:bg-gray-200 rounded-lg transition-colors disabled:opacity-50"
-              >
-                <Upload className="w-4 h-4" />
-              </button>
-              <div className="flex items-center gap-2">
-                <span className="text-[11px] font-medium text-gray-400 hidden sm:inline">
-                  DoqSeal AI
-                </span>
+        <div className="shrink-0 border-t border-gray-200 dark:border-white/10 bg-white dark:bg-[#111827] px-4 sm:px-6 py-4">
+          <div className="max-w-3xl mx-auto">
+            <div className="rounded-2xl border border-gray-200 dark:border-white/10 bg-white dark:bg-[#111827] shadow-sm overflow-hidden focus-within:border-[#2563eb]/40 focus-within:ring-2 focus-within:ring-[#2563eb]/10 transition-all">
+              <textarea
+                value={query}
+                onChange={(e) => setQuery(e.target.value)}
+                onKeyDown={handleKeyDown}
+                rows={inChat ? 2 : 3}
+                className="w-full bg-transparent border-none focus:ring-0 text-gray-900 dark:text-slate-100 px-4 py-3 outline-none text-[15px] placeholder-gray-400 resize-none"
+                placeholder={
+                  project
+                    ? isPrescriptionProject(projectId)
+                      ? "Ask about prescriptions, medications, dosages…"
+                      : "Ask about documents in this project…"
+                    : "Ask across your organisation documents and projects…"
+                }
+              />
+              <div className="flex items-center justify-between px-3 py-2 border-t border-gray-100 dark:border-white/10 bg-gray-50/60 dark:bg-slate-900/40">
                 <button
                   type="button"
-                  onClick={() => sendMessage(query)}
-                  disabled={!isTyping || loading}
-                  className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#2563eb] text-white hover:bg-[#1d4ed8] disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm"
+                  onClick={() => setIsUploadModalOpen(true)}
+                  disabled={!projectId}
+                  title={projectId ? "Upload document" : "Open a project to upload"}
+                  className="p-2 text-gray-500 hover:text-gray-900 dark:hover:text-white hover:bg-gray-200 dark:hover:bg-slate-800 rounded-lg transition-colors disabled:opacity-50"
                 >
-                  <ArrowUp className="w-4 h-4" />
+                  <Upload className="w-4 h-4" />
                 </button>
+                <div className="flex items-center gap-2">
+                  <span className="text-[11px] font-medium text-gray-400 hidden sm:inline">
+                    DoqSeal AI
+                  </span>
+                  <button
+                    type="button"
+                    onClick={() => sendMessage(query)}
+                    disabled={!isTyping || loading}
+                    className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#2563eb] text-white hover:bg-[#1d4ed8] disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm"
+                  >
+                    <ArrowUp className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
             </div>
           </div>
         </div>
-      </div>
 
-      <UploadModal
-        isOpen={isUploadModalOpen}
-        onClose={() => setIsUploadModalOpen(false)}
-        organisationId={activeOrgId}
-        projectId={projectId || undefined}
-        onSuccess={handleUploadSuccess}
-      />
+        <UploadModal
+          isOpen={isUploadModalOpen}
+          onClose={() => setIsUploadModalOpen(false)}
+          organisationId={activeOrgId}
+          projectId={projectId || undefined}
+          onSuccess={handleUploadSuccess}
+        />
+      </div>
     </div>
   );
 };
 
 function IntelligenceFallback() {
   return (
-    <div className="flex-1 flex items-center justify-center bg-[#f9f9f9]">
+    <div className="flex-1 flex items-center justify-center bg-[#f9f9f9] dark:bg-[#0b1220]">
       <Loader2 className="w-6 h-6 animate-spin text-[#2563eb]" />
     </div>
   );
