@@ -1,17 +1,12 @@
-"use client";
+import { redirect } from "next/navigation";
 
-import { useParams } from "next/navigation";
-import { DocumentDetailView } from "@/components/documents/DocumentDetailView";
+type Props = {
+  params: Promise<{ documentId: string }>;
+};
 
-export default function DocumentPage() {
-  const params = useParams<{ documentId: string }>();
-  const documentId = String(params.documentId || "");
-
-  return (
-    <DocumentDetailView
-      documentId={documentId}
-      backHref="/drive"
-      backLabel="Back to Drive"
-    />
-  );
+/** Old /documents/:id links → /view/:id */
+export default async function DocumentsIdRedirect({ params }: Props) {
+  const { documentId } = await params;
+  if (!documentId) redirect("/drive");
+  redirect(`/view/${documentId}`);
 }

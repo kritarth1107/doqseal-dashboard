@@ -168,9 +168,9 @@ export function documentHref(doc: {
 }) {
   const documentId = doc.documentId || doc.id;
   if (!documentId) return "/drive";
-  // Drive / no-project docs use the shared document viewer
+  // Drive / no-project docs — dedicated viewer (avoids /documents redirect conflict)
   if (!doc.projectId) {
-    return `/documents/${documentId}`;
+    return `/view/${documentId}`;
   }
   return `/projects/${doc.projectId}/documents/${documentId}`;
 }

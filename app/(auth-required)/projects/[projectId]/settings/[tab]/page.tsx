@@ -1,1 +1,1 @@
-export { default } from "@/components/projects/ProjectSettingsPage";
+export { default } from "@/components/projects/ProjectSettingsPage"; 
