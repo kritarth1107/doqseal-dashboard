@@ -7,7 +7,7 @@ export async function processDocumentRecord(documentId: string): Promise<void> {
 
   await new Promise((resolve) => setTimeout(resolve, DEMO_PROCESSING_MS));
 
-  const extractedJson = getDemoExtraction(doc.projectId);
+  const extractedJson = getDemoExtraction(doc.projectId, doc.originalFilename);
   const confidence = getDemoConfidence(extractedJson);
 
   await updateDocument(documentId, {
