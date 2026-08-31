@@ -18,8 +18,10 @@ import { toast } from "sonner";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { UploadModal, type UploadProjectOption } from "@/components/UploadModal";
 import { useAuth } from "@/components/AuthProvider";
+import { documentHref } from "@/components/documents/DocumentDetailView";
 import { withOrgHeaders } from "@/lib/client-api";
 import type { UploadResult } from "@/lib/upload-document";
+import { useRouter } from "next/navigation";
 
 type DriveDocument = {
   documentId: string;
@@ -103,6 +105,7 @@ function DocMeta({ item }: { item: DriveDocument }) {
 
 export default function DrivePage() {
   const { activeOrgId } = useAuth();
+  const router = useRouter();
   const [view, setView] = useState<"grid" | "list">("list");
   const [uploadOpen, setUploadOpen] = useState(false);
   const [documents, setDocuments] = useState<DriveDocument[]>([]);
@@ -173,6 +176,16 @@ export default function DrivePage() {
         ? `"${results[0].filename}" uploaded`
         : `${count} documents uploaded`
     );
+    const last = results[results.length - 1];
+    if (last?.documentId) {
+      router.push(
+        documentHref({
+          documentId: last.documentId,
+          projectId: last.projectId ?? null,
+        })
+      );
+      return;
+    }
     void loadDocuments();
   };
 
@@ -286,6 +299,10 @@ export default function DrivePage() {
           <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3">
             {filtered.map((item) => {
               const type = mimeToType(item.mimeType);
+              const href = documentHref({
+                documentId: item.documentId,
+                projectId: item.projectId || null,
+              });
               return (
                 <div
                   key={item.documentId}
@@ -293,23 +310,32 @@ export default function DrivePage() {
                 >
                   <button
                     type="button"
-                    onClick={() => handleDelete(item)}
-                    className="absolute top-2 right-2 p-1.5 text-gray-400 opacity-0 group-hover:opacity-100 hover:text-red-500 rounded-md transition-opacity"
+                    onClick={(e) => {
+                      e.preventDefault();
+                      e.stopPropagation();
+                      void handleDelete(item);
+                    }}
+                    className="absolute top-2 right-2 z-10 p-1.5 text-gray-400 opacity-0 group-hover:opacity-100 hover:text-red-500 rounded-md transition-opacity"
                     aria-label="Delete file"
                   >
                     <Trash2 className="w-4 h-4" />
                   </button>
-                  <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-gray-50 dark:bg-slate-800/80">
-                    {typeIcon(type, "w-6 h-6")}
-                  </div>
-                  <p className="text-sm font-medium text-gray-900 dark:text-slate-100 truncate pr-6" title={item.originalFilename}>
-                    {docTitle(item)}
-                  </p>
-                  <DocMeta item={item} />
-                  <div className="mt-auto pt-3 flex items-center justify-between text-[11px] text-gray-400 dark:text-slate-500">
-                    <span>{formatModified(item.updatedAt)}</span>
-                    <span>{formatSize(item.size)}</span>
-                  </div>
+                  <Link href={href} className="flex flex-col flex-1 min-h-0 outline-none">
+                    <div className="mb-3 flex h-12 w-12 items-center justify-center rounded-xl bg-gray-50 dark:bg-slate-800/80">
+                      {typeIcon(type, "w-6 h-6")}
+                    </div>
+                    <p
+                      className="text-sm font-medium text-gray-900 dark:text-slate-100 truncate pr-6 group-hover:text-[#2563eb]"
+                      title={item.originalFilename}
+                    >
+                      {docTitle(item)}
+                    </p>
+                    <DocMeta item={item} />
+                    <div className="mt-auto pt-3 flex items-center justify-between text-[11px] text-gray-400 dark:text-slate-500">
+                      <span>{formatModified(item.updatedAt)}</span>
+                      <span>{formatSize(item.size)}</span>
+                    </div>
+                  </Link>
                 </div>
               );
             })}
@@ -325,17 +351,33 @@ export default function DrivePage() {
 
             {filtered.map((item) => {
               const type = mimeToType(item.mimeType);
+              const href = documentHref({
+                documentId: item.documentId,
+                projectId: item.projectId || null,
+              });
               return (
                 <div
                   key={item.documentId}
-                  className="grid grid-cols-12 gap-4 px-4 py-3 items-center border-b border-gray-100 dark:border-white/5 last:border-0 hover:bg-gray-50/80 dark:hover:bg-white/[0.03] text-sm transition-colors"
+                  role="link"
+                  tabIndex={0}
+                  onClick={() => router.push(href)}
+                  onKeyDown={(e) => {
+                    if (e.key === "Enter" || e.key === " ") {
+                      e.preventDefault();
+                      router.push(href);
+                    }
+                  }}
+                  className="grid grid-cols-12 gap-4 px-4 py-3 items-center border-b border-gray-100 dark:border-white/5 last:border-0 hover:bg-gray-50/80 dark:hover:bg-white/[0.03] text-sm transition-colors cursor-pointer"
                 >
                   <div className="col-span-10 sm:col-span-5 flex items-center gap-3 min-w-0">
                     <div className="p-2 rounded-lg bg-gray-50 dark:bg-slate-800/60 shrink-0">
                       {typeIcon(type)}
                     </div>
                     <div className="min-w-0">
-                      <p className="font-medium text-gray-900 dark:text-slate-100 truncate" title={item.originalFilename}>
+                      <p
+                        className="font-medium text-gray-900 dark:text-slate-100 truncate group-hover:text-[#2563eb]"
+                        title={item.originalFilename}
+                      >
                         {docTitle(item)}
                       </p>
                       <DocMeta item={item} />
@@ -350,7 +392,10 @@ export default function DrivePage() {
                   <div className="col-span-2 sm:col-span-1 flex justify-end">
                     <button
                       type="button"
-                      onClick={() => handleDelete(item)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        void handleDelete(item);
+                      }}
                       className="p-1.5 text-gray-400 hover:text-red-500 rounded-md"
                       aria-label="Delete file"
                     >

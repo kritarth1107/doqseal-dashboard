@@ -94,7 +94,7 @@ export type DocumentStatus =
 
 export type StoredDocument = {
   id: string;
-  projectId: string;
+  projectId: string | null;
   jobId?: string;
   originalFilename: string;
   displayTitle?: string | null;

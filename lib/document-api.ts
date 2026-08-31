@@ -3,7 +3,7 @@ import { DocumentStatus, StoredDocument } from "@/types/extraction";
 type BackendDocumentPayload = {
   document: {
     documentId: string;
-    projectId: string;
+    projectId: string | null;
     originalFilename: string;
     displayTitle?: string | null;
     mimeType: string;
@@ -56,7 +56,7 @@ export function mapBackendDocument(
 
   return {
     id: document.documentId,
-    projectId: document.projectId,
+    projectId: document.projectId ?? null,
     jobId: job?.jobId,
     originalFilename: document.originalFilename,
     displayTitle: document.displayTitle || null,
@@ -80,7 +80,7 @@ export function mapBackendDocument(
 export function mapBackendDocumentList(
   documents: Array<{
     documentId: string;
-    projectId: string;
+    projectId: string | null;
     originalFilename: string;
     displayTitle?: string | null;
     mimeType: string;
@@ -92,7 +92,7 @@ export function mapBackendDocumentList(
 ): StoredDocument[] {
   return documents.map((document) => ({
     id: document.documentId,
-    projectId: document.projectId,
+    projectId: document.projectId ?? null,
     originalFilename: document.originalFilename,
     displayTitle: document.displayTitle || null,
     storedFilename: document.documentId,
