@@ -15,10 +15,6 @@ import { toast } from "sonner";
 import { ExtractionFields } from "@/components/ExtractionFields";
 import { useAuth } from "@/components/AuthProvider";
 import { withOrgHeaders } from "@/lib/client-api";
-import {
-  DEMO_PROCESSING_MS,
-  DEMO_PROCESSING_STEPS,
-} from "@/lib/demo-extraction";
 import { StoredDocument } from "@/types/extraction";
 
 function StatusBadge({ status }: { status: string }) {
@@ -90,75 +86,6 @@ function asExtractionRecord(
 ): Record<string, unknown> | null {
   if (!extracted || typeof extracted !== "object") return null;
   return extracted as Record<string, unknown>;
-}
-
-function DemoProcessingPanel({
-  uploadedAt,
-  demoRevealAt,
-}: {
-  uploadedAt: string;
-  demoRevealAt?: string | null;
-}) {
-  const [now, setNow] = useState(() => Date.now());
-
-  useEffect(() => {
-    const id = setInterval(() => setNow(Date.now()), 400);
-    return () => clearInterval(id);
-  }, []);
-
-  const endMs = demoRevealAt
-    ? new Date(demoRevealAt).getTime()
-    : new Date(uploadedAt).getTime() + DEMO_PROCESSING_MS;
-  const startMs = endMs - DEMO_PROCESSING_MS;
-  const elapsed = Math.max(0, now - startMs);
-  const total = Math.max(1, endMs - startMs);
-  const progress = Math.min(1, elapsed / total);
-
-  const activeIndex = DEMO_PROCESSING_STEPS.reduce((acc, step, index) => {
-    return elapsed >= step.atMs ? index : acc;
-  }, 0);
-
-  return (
-    <div className="mb-4 rounded-2xl border border-[#2563eb]/20 bg-[#2563eb]/5 px-4 py-4">
-      <div className="flex items-center gap-2 text-sm font-medium text-[#2563eb]">
-        <Loader2 className="h-4 w-4 animate-spin" />
-        Demo extraction in progress
-      </div>
-      <div className="mt-3 h-1.5 overflow-hidden rounded-full bg-[#2563eb]/15">
-        <div
-          className="h-full rounded-full bg-[#2563eb] transition-[width] duration-300"
-          style={{ width: `${Math.round(progress * 100)}%` }}
-        />
-      </div>
-      <ul className="mt-3 space-y-1.5">
-        {DEMO_PROCESSING_STEPS.map((step, index) => {
-          const done = index < activeIndex || progress >= 1;
-          const active = index === activeIndex && progress < 1;
-          return (
-            <li
-              key={step.label}
-              className={`flex items-center gap-2 text-xs ${
-                done
-                  ? "text-emerald-700 dark:text-emerald-400"
-                  : active
-                    ? "text-[#2563eb]"
-                    : "text-gray-400 dark:text-slate-500"
-              }`}
-            >
-              {done ? (
-                <CheckCircle2 className="h-3.5 w-3.5 shrink-0" />
-              ) : active ? (
-                <Loader2 className="h-3.5 w-3.5 shrink-0 animate-spin" />
-              ) : (
-                <span className="h-3.5 w-3.5 shrink-0 rounded-full border border-current opacity-40" />
-              )}
-              {step.label}
-            </li>
-          );
-        })}
-      </ul>
-    </div>
-  );
 }
 
 export function documentHref(doc: {
@@ -352,11 +279,6 @@ export function DocumentDetailView({
     Object.values(extracted).some(
       (value) => value !== null && value !== undefined && value !== ""
     );
-  const showDemoSteps =
-    doc.status === "processing" &&
-    (doc.demoMode ||
-      doc.extractionStrategy === "demo" ||
-      Boolean(doc.demoRevealAt));
 
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-[#f8fafc]">
@@ -370,12 +292,7 @@ export function DocumentDetailView({
             {backLabel}
           </Link>
 
-          {showDemoSteps ? (
-            <DemoProcessingPanel
-              uploadedAt={doc.uploadedAt}
-              demoRevealAt={doc.demoRevealAt}
-            />
-          ) : doc.status === "processing" ? (
+          {doc.status === "processing" ? (
             <div className="mb-4 flex items-center gap-2 rounded-2xl border border-[#2563eb]/20 bg-[#2563eb]/5 px-4 py-3 text-sm text-[#2563eb]">
               <Loader2 className="h-4 w-4 animate-spin" />
               Identifying document and extracting pointers — usually a few
@@ -404,17 +321,16 @@ export function DocumentDetailView({
                 {doc.confidence > 0 && (
                   <> · {(doc.confidence * 100).toFixed(0)}% confidence</>
                 )}
-                {doc.extractionStrategy && (
+                {doc.extractionStrategy &&
+                  doc.extractionStrategy !== "demo" && (
                   <>
                     {" "}
                     ·{" "}
-                    {doc.extractionStrategy === "demo"
-                      ? "Demo extraction"
-                      : ["backend", "hybrid", "ocr", "ocr_fallback", "pdf_text"].includes(
-                            doc.extractionStrategy
-                          )
-                        ? "Real AI extraction"
-                        : doc.extractionStrategy}
+                    {["backend", "hybrid", "ocr", "ocr_fallback", "pdf_text", "ollama"].some(
+                      (s) => doc.extractionStrategy!.startsWith(s) || doc.extractionStrategy === s
+                    )
+                      ? "AI extraction"
+                      : doc.extractionStrategy}
                   </>
                 )}
               </p>
