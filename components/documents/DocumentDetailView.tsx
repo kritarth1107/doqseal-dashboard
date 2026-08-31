@@ -202,10 +202,6 @@ export function DocumentDetailView({
               ...prev,
               status: "processing",
               extractedJson: null,
-              demoMode: true,
-              demoRevealAt: new Date(
-                Date.now() + DEMO_PROCESSING_MS
-              ).toISOString(),
             }
           : prev
       );
