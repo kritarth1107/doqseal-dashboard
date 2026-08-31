@@ -14,6 +14,37 @@ const ALLOWED_MIME = new Set([
   "image/png",
   "image/jpeg",
   "image/jpg",
+  "image/webp",
+  "image/gif",
+  "image/bmp",
+  "image/tiff",
+  "application/msword",
+  "application/vnd.openxmlformats-officedocument.wordprocessingml.document",
+  "application/vnd.ms-excel",
+  "application/vnd.openxmlformats-officedocument.spreadsheetml.sheet",
+  "text/csv",
+  "application/csv",
+  "text/plain",
+  "text/markdown",
+]);
+
+const ALLOWED_EXT = new Set([
+  "pdf",
+  "png",
+  "jpg",
+  "jpeg",
+  "webp",
+  "gif",
+  "bmp",
+  "tif",
+  "tiff",
+  "doc",
+  "docx",
+  "xls",
+  "xlsx",
+  "csv",
+  "txt",
+  "md",
 ]);
 
 export const MAX_UPLOAD_BYTES = 20 * 1024 * 1024;
@@ -25,9 +56,9 @@ export function validateUploadFile(file: File): string | null {
   const mime = file.type || "";
   const ext = file.name.split(".").pop()?.toLowerCase();
   const okByMime = ALLOWED_MIME.has(mime);
-  const okByExt = ["pdf", "png", "jpg", "jpeg"].includes(ext || "");
+  const okByExt = ALLOWED_EXT.has(ext || "");
   if (!okByMime && !okByExt) {
-    return `${file.name}: only PDF, PNG, or JPG are supported`;
+    return `${file.name}: use PDF, image, Word, Excel, CSV, or TXT`;
   }
   return null;
 }
