@@ -26,7 +26,10 @@ const BASE = {
   page_count: 1,
   project_context:
     "TRF checklist: Patient Name, Age, Gender, Client Code, Test Requirements",
-  pages: [{ page: 1, title: "Test Requisition Form" }],
+  pages: [{ page: 1, title: "Test Requisition Form" }] as Array<{
+    page: number;
+    title: string;
+  }>,
   lab_name: "Lupin Diagnostics",
   confidence_scores: {
     patient_name: 0.96,
@@ -34,8 +37,8 @@ const BASE = {
     patient_gender: 0.97,
     client_code: 0.94,
     tests_requested: 0.95,
-  },
-} as const;
+  } as Record<string, number>,
+};
 
 const VARIANTS: Array<DemoTrfExtraction & { match: string[] }> = [
   {
