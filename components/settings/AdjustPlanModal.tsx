@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { ArrowLeft, Check, Loader2, Sparkles, X } from "lucide-react";
 import { toast } from "sonner";
+import { useAuth } from "@/components/AuthProvider";
 import {
   formatPlanPrice,
   type BillingInterval,
@@ -135,6 +136,7 @@ export function AdjustPlanModal({
   const [phone, setPhone] = useState("");
   const [billingInterval, setBillingInterval] =
     useState<BillingInterval>("monthly");
+  const { userData } = useAuth();
 
   const displayPlans = plans.filter(isCheckoutPlan);
   const annualAvailable = checkoutProvider === "razorpay";
@@ -180,11 +182,6 @@ export function AdjustPlanModal({
       setPhoneModalPlan(null);
       setPhone("");
 
-      if (data.paymentUrl) {
-        window.location.href = data.paymentUrl;
-        return;
-      }
-
       if (
         data.paymentProvider === "razorpay" ||
         data.razorpaySubscriptionId
@@ -205,6 +202,10 @@ export function AdjustPlanModal({
               billingInterval === "yearly" ? "annual" : "monthly"
             } plan`,
             theme: { color: "#2563eb" },
+            prefill: {
+              name: userData?.name || undefined,
+              email: userData?.email || undefined,
+            },
             handler: () => {
               if (data.returnUrl) {
                 window.location.href = data.returnUrl;
@@ -218,6 +219,11 @@ export function AdjustPlanModal({
           });
           rzp.open();
         });
+        return;
+      }
+
+      if (data.paymentUrl) {
+        window.location.href = data.paymentUrl;
         return;
       }
 
