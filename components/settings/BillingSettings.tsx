@@ -14,14 +14,13 @@ import { toast } from "sonner";
 import { useAuth } from "@/components/AuthProvider";
 import { withOrgHeaders } from "@/lib/client-api";
 import { AdjustPlanModal, type UpgradePlan } from "./AdjustPlanModal";
+import {
+  brandLabel,
+  formatPaymentMethodLabel,
+  type PaymentMethodSummary,
+} from "@/lib/payment-method";
 
-type PaymentMethod = {
-  type?: string;
-  brand: string;
-  last4: string;
-  expiryMonth?: number | null;
-  expiryYear?: number | null;
-};
+type PaymentMethod = PaymentMethodSummary;
 
 type BillingInvoice = {
   invoiceId: string;
@@ -42,6 +41,7 @@ type BillingData = {
     subscriptionStatus?: string | null;
   };
   paymentMethod: PaymentMethod | null;
+  paymentMethods?: PaymentMethod[];
   invoices: BillingInvoice[];
   plans: UpgradePlan[];
   checkoutAvailable?: boolean;
@@ -74,15 +74,6 @@ function formatRenewal(iso: string | null) {
   } catch {
     return iso;
   }
-}
-
-function brandLabel(brand: string) {
-  const b = brand.toLowerCase();
-  if (b === "visa") return "Visa";
-  if (b === "mastercard") return "Mastercard";
-  if (b === "rupay") return "RuPay";
-  if (b === "upi") return "UPI";
-  return brand.charAt(0).toUpperCase() + brand.slice(1);
 }
 
 function Row({
@@ -219,6 +210,18 @@ export function BillingSettings() {
 
   const plan = billing?.plan;
   const renewal = formatRenewal(plan?.renewsAt ?? null);
+  const paymentMethods =
+    billing?.paymentMethods?.length
+      ? billing.paymentMethods
+      : billing?.paymentMethod
+        ? [billing.paymentMethod]
+        : [];
+  const providerLabel =
+    billing?.checkoutProvider === "razorpay"
+      ? "Razorpay autopay"
+      : billing?.checkoutProvider === "cashfree"
+        ? "Cashfree autopay"
+        : "Autopay";
 
   return (
     <>
@@ -240,7 +243,7 @@ export function BillingSettings() {
                 {plan?.name || "Free"} plan
               </p>
               <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-0.5">
-                {plan?.isFree ? "Free tier" : "Monthly · Cashfree autopay"}
+                {plan?.isFree ? "Free tier" : `Monthly · ${providerLabel}`}
               </p>
               {plan?.isFree ? (
                 <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-2">
@@ -260,20 +263,23 @@ export function BillingSettings() {
           label="Payment"
           action={
             <GhostButton onClick={() => setShowPlans(true)}>
-              {billing?.paymentMethod ? "Update" : "Add"}
+              {paymentMethods.length > 0 ? "Update" : "Add"}
             </GhostButton>
           }
         >
-          {billing?.paymentMethod ? (
-            <div className="flex items-center gap-3">
-              <div className="w-10 h-7 rounded bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-[10px] font-bold text-zinc-600 dark:text-zinc-300 uppercase">
-                {(billing.paymentMethod.brand || "CARD").slice(0, 4)}
-              </div>
-              <span className="text-sm text-zinc-700 dark:text-zinc-300">
-                {brandLabel(billing.paymentMethod.brand || "Card")} ••••{" "}
-                {billing.paymentMethod.last4}
-              </span>
-            </div>
+          {paymentMethods.length > 0 ? (
+            <ul className="space-y-3">
+              {paymentMethods.map((method, idx) => (
+                <li key={`${method.brand}-${method.last4}-${idx}`} className="flex items-center gap-3">
+                  <div className="w-10 h-7 rounded bg-zinc-100 dark:bg-zinc-800 border border-zinc-200 dark:border-zinc-700 flex items-center justify-center text-[10px] font-bold text-zinc-600 dark:text-zinc-300 uppercase">
+                    {(method.brand || method.type || "CARD").slice(0, 4)}
+                  </div>
+                  <span className="text-sm text-zinc-700 dark:text-zinc-300">
+                    {formatPaymentMethodLabel(method)}
+                  </span>
+                </li>
+              ))}
+            </ul>
           ) : (
             <div className="flex items-center gap-3 text-sm text-zinc-500 dark:text-zinc-400">
               <CreditCard className="w-5 h-5 shrink-0 opacity-60" />

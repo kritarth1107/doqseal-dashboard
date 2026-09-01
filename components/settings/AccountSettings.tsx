@@ -2,9 +2,15 @@
 
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
-import { Copy, Check, Loader2, MoreVertical } from "lucide-react";
+import Link from "next/link";
+import { Copy, Check, Loader2, MoreVertical, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/components/AuthProvider";
+import { withOrgHeaders } from "@/lib/client-api";
+import {
+  formatPaymentMethodLabel,
+  type PaymentMethodSummary,
+} from "@/lib/payment-method";
 
 type SessionRow = {
   fingerprint: string;
@@ -39,6 +45,8 @@ export function AccountSettings() {
   const [revokingId, setRevokingId] = useState<string | null>(null);
   const [menuOpen, setMenuOpen] = useState<string | null>(null);
   const [copiedOrg, setCopiedOrg] = useState(false);
+  const [paymentMethods, setPaymentMethods] = useState<PaymentMethodSummary[]>([]);
+  const [billingLoading, setBillingLoading] = useState(false);
 
   const loadSessions = useCallback(async () => {
     setLoading(true);
@@ -60,6 +68,38 @@ export function AccountSettings() {
   useEffect(() => {
     void loadSessions();
   }, [loadSessions]);
+
+  const loadPaymentMethods = useCallback(async () => {
+    if (!activeOrgId) {
+      setPaymentMethods([]);
+      return;
+    }
+    setBillingLoading(true);
+    try {
+      const res = await fetch(
+        `/api/organisations/${activeOrgId}/billing`,
+        withOrgHeaders(activeOrgId)
+      );
+      const data = await res.json();
+      if (res.ok && data.billing) {
+        const methods =
+          data.billing.paymentMethods?.length
+            ? data.billing.paymentMethods
+            : data.billing.paymentMethod
+              ? [data.billing.paymentMethod]
+              : [];
+        setPaymentMethods(methods);
+      }
+    } catch {
+      setPaymentMethods([]);
+    } finally {
+      setBillingLoading(false);
+    }
+  }, [activeOrgId]);
+
+  useEffect(() => {
+    void loadPaymentMethods();
+  }, [loadPaymentMethods]);
 
   const logoutAll = async () => {
     if (
@@ -246,6 +286,59 @@ export function AccountSettings() {
             </div>
           )}
         </div>
+      </section>
+
+      <section className="flex flex-col gap-4">
+        <div className="flex items-center justify-between border-b border-gray-200 dark:border-zinc-800 pb-2 gap-4">
+          <h2 className="text-base font-semibold text-black dark:text-slate-100">
+            Payment methods
+          </h2>
+          <Link
+            href="/settings/billing"
+            className="text-sm text-[#2563eb] hover:underline shrink-0"
+          >
+            Manage billing
+          </Link>
+        </div>
+
+        {billingLoading ? (
+          <div className="flex justify-center py-8">
+            <Loader2 className="w-5 h-5 animate-spin text-[#2563eb]" />
+          </div>
+        ) : paymentMethods.length > 0 ? (
+          <ul className="divide-y divide-gray-100 dark:divide-zinc-800 rounded-xl border border-gray-200 dark:border-zinc-800">
+            {paymentMethods.map((method, idx) => (
+              <li
+                key={`${method.brand}-${method.last4}-${idx}`}
+                className="flex items-center gap-3 px-4 py-3.5"
+              >
+                <div className="w-10 h-7 rounded bg-gray-100 dark:bg-zinc-800 border border-gray-200 dark:border-zinc-700 flex items-center justify-center text-[10px] font-bold text-gray-600 dark:text-zinc-300 uppercase shrink-0">
+                  {(method.brand || method.type || "CARD").slice(0, 4)}
+                </div>
+                <div className="min-w-0">
+                  <p className="text-sm text-gray-800 dark:text-slate-200">
+                    {formatPaymentMethodLabel(method)}
+                  </p>
+                  {activeOrg && (
+                    <p className="text-xs text-gray-500 dark:text-slate-400 mt-0.5">
+                      {activeOrg.name}
+                    </p>
+                  )}
+                </div>
+              </li>
+            ))}
+          </ul>
+        ) : (
+          <div className="flex items-center gap-3 rounded-xl border border-dashed border-gray-200 dark:border-zinc-800 px-4 py-8 text-sm text-gray-500 dark:text-slate-400">
+            <CreditCard className="w-5 h-5 shrink-0 opacity-60" />
+            <span>
+              No saved payment methods.{" "}
+              <Link href="/settings/billing" className="text-[#2563eb] hover:underline">
+                Add one when upgrading
+              </Link>
+            </span>
+          </div>
+        )}
       </section>
 
       <section className="flex flex-col gap-4">
