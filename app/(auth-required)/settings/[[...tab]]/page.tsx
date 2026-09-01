@@ -7,6 +7,7 @@ import { useTheme } from 'next-themes';
 import { useAuth } from '@/components/AuthProvider';
 import { BillingSettings } from '@/components/settings/BillingSettings';
 import { AccountSettings } from '@/components/settings/AccountSettings';
+import { ProfileSettings } from '@/components/settings/ProfileSettings';
 
 const SETTINGS_TABS = [
     { id: 'general', label: 'General', path: '/settings' },
@@ -69,69 +70,7 @@ export default function SettingsPage() {
                     <div className="flex-1 w-full max-w-3xl min-w-0 pb-20">
                         {activeTabId === 'general' && (
                             <div className="flex flex-col gap-12 animate-in fade-in duration-300">
-
-                                {/* Profile Section */}
-                                <section className="flex flex-col gap-5">
-                                    <h2 className="text-base font-semibold text-black dark:text-slate-100 border-b border-gray-200 dark:border-zinc-800 pb-2">Profile</h2>
-
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                        <div className="flex flex-col gap-2">
-                                            <label className="text-sm font-medium text-gray-700 dark:text-slate-300">Full name</label>
-                                            <div className="flex items-center gap-3">
-                                                <div className="w-10 h-10 rounded-full bg-[#e3d5c8] text-[#5c4a3d] flex items-center justify-center font-semibold shrink-0 overflow-hidden">
-                                                    {userData?.avatar ? (
-                                                        <img src={userData.avatar} alt={userData.name} className="w-full h-full object-cover" />
-                                                    ) : (
-                                                        userData?.name?.split(' ').map(n => n[0]).join('').slice(0, 2) || '??'
-                                                    )}
-                                                </div>
-                                                <input
-                                                    type="text"
-                                                    defaultValue={userData?.name}
-                                                    className="flex-1 bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 text-gray-900 dark:text-slate-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#2563eb] transition-shadow"
-                                                />
-                                            </div>
-                                        </div>
-
-                                        <div className="flex flex-col gap-2">
-                                            <label className="text-sm font-medium text-gray-700 dark:text-slate-300">Email address</label>
-                                            <input
-                                                type="text"
-                                                disabled
-                                                defaultValue={userData?.email}
-                                                className="w-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 text-gray-900 dark:text-slate-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#2563eb] transition-shadow disabled:opacity-70"
-                                            />
-                                        </div>
-                                    </div>
-
-                                    <div className="flex flex-col gap-2 mt-2">
-                                        <label className="text-sm font-medium text-gray-700 dark:text-slate-300">What best describes your work?</label>
-                                        <div className="relative">
-                                            <select className="w-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 rounded-lg px-3 py-2.5 text-sm appearance-none focus:outline-none focus:ring-1 focus:ring-[#2563eb] transition-shadow text-gray-500 dark:text-slate-300 cursor-pointer">
-                                                <option value="" disabled selected>Select your work function</option>
-                                                <option value="engineering">Engineering</option>
-                                                <option value="product">Product Management</option>
-                                                <option value="design">Design</option>
-                                                <option value="marketing">Marketing</option>
-                                                <option value="other">Other</option>
-                                            </select>
-                                            <div className="absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none">
-                                                <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-gray-400"><polyline points="6 9 12 15 18 9"></polyline></svg>
-                                            </div>
-                                        </div>
-                                    </div>
-
-                                    <div className="flex flex-col gap-2 mt-2">
-                                        <label className="text-sm font-medium text-gray-700 dark:text-slate-300 flex flex-col gap-1">
-                                            <span>What <span className="underline decoration-dashed underline-offset-4 decoration-gray-400">personal preferences</span> should DoqSeal consider in responses?</span>
-                                            <span className="text-xs text-gray-500 dark:text-slate-400 font-normal">Your preferences will apply to all conversations, within <a href="#" className="underline">DoqSeal&apos;s guidelines</a>.</span>
-                                        </label>
-                                        <textarea
-                                            placeholder="e.g. when learning new concepts, I find analogies particularly helpful"
-                                            className="w-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 text-gray-900 dark:text-slate-100 rounded-lg px-3 py-3 text-sm focus:outline-none focus:ring-1 focus:ring-[#2563eb] transition-shadow min-h-[100px] resize-y placeholder-gray-400"
-                                        />
-                                    </div>
-                                </section>
+                                <ProfileSettings />
 
                                 {/* Notifications Section */}
                                 <section className="flex flex-col gap-5">

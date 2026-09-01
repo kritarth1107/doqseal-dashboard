@@ -1,13 +1,11 @@
 "use client";
 
 import Link from "next/link";
-import { useAuth } from "@/components/AuthProvider";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { Building2, Users, Key, Shield, Plus } from "lucide-react";
+import { OrganisationProfileForm } from "@/components/manage/OrganisationProfileForm";
+import { Users, Key, Shield, Plus } from "lucide-react";
 
 export default function OrganisationPage() {
-  const { userData, activeOrg, activeOrgId } = useAuth();
-
   const cards = [
     {
       title: "Members & roles",
@@ -46,25 +44,7 @@ export default function OrganisationPage() {
           }
         />
 
-        <div className="bg-white border border-gray-200 rounded-2xl p-6 mb-8 shadow-sm">
-          <div className="flex items-start gap-4">
-            <div className="w-12 h-12 rounded-xl bg-[#2563eb] text-white flex items-center justify-center font-bold text-lg uppercase">
-              {activeOrg?.name?.[0] || "O"}
-            </div>
-            <div className="flex-1 min-w-0">
-              <h2 className="text-lg font-semibold text-gray-900">
-                {activeOrg?.name || userData?.organisationName || "Workspace"}
-              </h2>
-              <p className="text-sm text-gray-500 mt-1">
-                Your role: <span className="font-medium text-gray-700">{activeOrg?.role || "Member"}</span>
-              </p>
-              <p className="text-xs text-gray-400 font-mono mt-2 truncate">
-                Organisation ID: {activeOrgId || "—"}
-              </p>
-            </div>
-            <Building2 className="w-5 h-5 text-gray-300 shrink-0" />
-          </div>
-        </div>
+        <OrganisationProfileForm />
 
         <div className="grid gap-4 sm:grid-cols-3">
           {cards.map((card) => (

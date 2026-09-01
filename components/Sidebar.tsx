@@ -1,5 +1,6 @@
 "use client";
 import React, { useEffect, useState } from "react";
+import { resolveMediaUrl } from "@/lib/media-url";
 import { BrandLogo } from "@/components/BrandLogo";
 import {
   Search,
@@ -267,8 +268,8 @@ export function Sidebar() {
         >
           <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'gap-3 overflow-hidden flex-1'}`}>
             <div className="w-8 h-8 rounded-full bg-[#e3d5c8] text-[#5c4a3d] flex items-center justify-center font-semibold text-sm shrink-0">
-              {userData?.avatar ? (
-                <img src={userData.avatar} alt={userData.name} className="w-full h-full rounded-full object-cover" />
+              {resolveMediaUrl(userData?.avatar) ? (
+                <img src={resolveMediaUrl(userData?.avatar)!} alt={userData.name} className="w-full h-full rounded-full object-cover" />
               ) : (
                 userData?.name?.split(' ').map(n => n[0]).join('').slice(0, 2) || '??'
               )}
