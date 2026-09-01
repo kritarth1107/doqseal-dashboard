@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import {
   CreditCard,
   ExternalLink,
@@ -8,17 +9,26 @@ import {
   Loader2,
   Sparkles,
 } from "lucide-react";
-import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { useAuth } from "@/components/AuthProvider";
 import { withOrgHeaders } from "@/lib/client-api";
-import { AdjustPlanModal, type UpgradePlan } from "./AdjustPlanModal";
 import {
   brandLabel,
   formatPaymentMethodLabel,
   type PaymentMethodSummary,
 } from "@/lib/payment-method";
+
+type UpgradePlan = {
+  id: string;
+  name: string;
+  priceInrMonthly: number | null;
+  priceInrYearly?: number | null;
+  yearlyDiscountPercent?: number;
+  contactSales?: boolean;
+  highlighted?: boolean;
+  features?: string[];
+};
 
 type PaymentMethod = PaymentMethodSummary;
 
@@ -136,7 +146,6 @@ export function BillingSettings() {
   const searchParams = useSearchParams();
   const [loading, setLoading] = useState(true);
   const [billing, setBilling] = useState<BillingData | null>(null);
-  const [showPlans, setShowPlans] = useState(false);
 
   const loadBilling = async () => {
     if (!activeOrgId) {
@@ -228,12 +237,11 @@ export function BillingSettings() {
     plan?.billingInterval === "yearly" ? "Annual" : "Monthly";
 
   return (
-    <>
-      <div className="flex flex-col animate-in fade-in duration-300 max-w-2xl">
+    <div className="flex flex-col animate-in fade-in duration-300 max-w-2xl">
         <Row
           label=""
           action={
-            <GhostButton onClick={() => setShowPlans(true)}>
+            <GhostButton href="/settings/billing/upgrade">
               Adjust plan
             </GhostButton>
           }
@@ -268,7 +276,7 @@ export function BillingSettings() {
         <Row
           label="Payment"
           action={
-            <GhostButton onClick={() => setShowPlans(true)}>
+            <GhostButton href="/settings/billing/upgrade">
               {paymentMethods.length > 0 ? "Update" : "Add"}
             </GhostButton>
           }
@@ -358,20 +366,6 @@ export function BillingSettings() {
             View limits & usage
           </Link>
         </p>
-      </div>
-
-      <AdjustPlanModal
-        open={showPlans}
-        onClose={() => setShowPlans(false)}
-        currentPlanId={plan?.id || "free"}
-        plans={billing?.plans || []}
-        organisationId={activeOrgId}
-        checkoutAvailable={Boolean(billing?.checkoutAvailable)}
-        checkoutMode={billing?.checkoutMode || "sandbox"}
-        checkoutProvider={billing?.checkoutProvider || "razorpay"}
-        yearlyDiscountPercent={billing?.yearlyDiscountPercent ?? 10}
-        onCheckoutStarted={() => setShowPlans(false)}
-      />
-    </>
+    </div>
   );
 }
