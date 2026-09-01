@@ -30,6 +30,10 @@ declare global {
         redirectTarget?: string;
       }) => Promise<unknown>;
     };
+    Razorpay?: new (options: Record<string, unknown>) => {
+      open: () => void;
+      on: (event: string, handler: (response: unknown) => void) => void;
+    };
   }
 }
 
@@ -83,6 +87,27 @@ async function loadCashfreeSdk() {
   });
 }
 
+async function loadRazorpaySdk() {
+  if (window.Razorpay) return;
+  await new Promise<void>((resolve, reject) => {
+    const existing = document.querySelector('script[data-razorpay-sdk="true"]');
+    if (existing) {
+      existing.addEventListener("load", () => resolve());
+      existing.addEventListener("error", () =>
+        reject(new Error("Failed to load Razorpay SDK"))
+      );
+      return;
+    }
+    const script = document.createElement("script");
+    script.src = "https://checkout.razorpay.com/v1/checkout.js";
+    script.async = true;
+    script.dataset.razorpaySdk = "true";
+    script.onload = () => resolve();
+    script.onerror = () => reject(new Error("Failed to load Razorpay SDK"));
+    document.body.appendChild(script);
+  });
+}
+
 export function AdjustPlanModal({
   open,
   onClose,
@@ -91,6 +116,7 @@ export function AdjustPlanModal({
   organisationId,
   checkoutAvailable,
   checkoutMode = "sandbox",
+  checkoutProvider = "razorpay",
   onCheckoutStarted,
 }: {
   open: boolean;
@@ -100,6 +126,7 @@ export function AdjustPlanModal({
   organisationId: string | null;
   checkoutAvailable?: boolean;
   checkoutMode?: "sandbox" | "production";
+  checkoutProvider?: "cashfree" | "razorpay" | null;
   onCheckoutStarted?: () => void;
 }) {
   const [phone, setPhone] = useState("");
@@ -163,10 +190,45 @@ export function AdjustPlanModal({
         return;
       }
 
+      if (
+        data.paymentProvider === "razorpay" ||
+        data.razorpaySubscriptionId
+      ) {
+        if (!data.razorpayKeyId || !data.razorpaySubscriptionId) {
+          throw new Error("Incomplete Razorpay checkout session");
+        }
+        await loadRazorpaySdk();
+        if (!window.Razorpay) {
+          throw new Error("Razorpay SDK unavailable");
+        }
+        await new Promise<void>((resolve, reject) => {
+          const rzp = new window.Razorpay!({
+            key: data.razorpayKeyId,
+            subscription_id: data.razorpaySubscriptionId,
+            name: "DoqSeal",
+            description: `${plan.name} monthly plan`,
+            prefill: { contact: cleaned },
+            theme: { color: "#2563eb" },
+            handler: () => {
+              if (data.returnUrl) {
+                window.location.href = data.returnUrl;
+              } else {
+                resolve();
+              }
+            },
+            modal: {
+              ondismiss: () => reject(new Error("Checkout cancelled")),
+            },
+          });
+          rzp.open();
+        });
+        return;
+      }
+
       const sessionId =
         data.paymentSessionId || data.subscriptionSessionId || null;
       if (!sessionId) {
-        throw new Error("No payment session returned from Cashfree");
+        throw new Error("No payment session returned from gateway");
       }
 
       await loadCashfreeSdk();
@@ -220,8 +282,9 @@ export function AdjustPlanModal({
             Plans that grow with you
           </h1>
           <p className="text-center text-sm text-zinc-500 mt-3 max-w-lg mx-auto">
-            Monthly autopay via Cashfree. Card, UPI Autopay, or eNACH — cancel
-            anytime.
+            Monthly autopay via{" "}
+            {checkoutProvider === "cashfree" ? "Cashfree" : "Razorpay"}. Card,
+            UPI Autopay, or eNACH — cancel anytime.
           </p>
 
           <div className="mt-8 max-w-md mx-auto">

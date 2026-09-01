@@ -46,6 +46,7 @@ type BillingData = {
   plans: UpgradePlan[];
   checkoutAvailable?: boolean;
   checkoutMode?: "sandbox" | "production";
+  checkoutProvider?: "cashfree" | "razorpay" | null;
 };
 
 function formatInvoiceDate(iso: string) {
@@ -355,6 +356,7 @@ export function BillingSettings() {
         organisationId={activeOrgId}
         checkoutAvailable={Boolean(billing?.checkoutAvailable)}
         checkoutMode={billing?.checkoutMode || "sandbox"}
+        checkoutProvider={billing?.checkoutProvider || "razorpay"}
         onCheckoutStarted={() => setShowPlans(false)}
       />
     </>
