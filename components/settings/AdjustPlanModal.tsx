@@ -129,36 +129,25 @@ export function AdjustPlanModal({
   checkoutProvider?: "cashfree" | "razorpay" | null;
   onCheckoutStarted?: () => void;
 }) {
-  const [phone, setPhone] = useState("");
   const [checkingOutPlanId, setCheckingOutPlanId] = useState<string | null>(
     null
   );
+  const [phoneModalPlan, setPhoneModalPlan] = useState<UpgradePlan | null>(null);
+  const [phone, setPhone] = useState("");
 
   if (!open) return null;
 
-  const startCheckout = async (plan: UpgradePlan) => {
+  const runCheckout = async (plan: UpgradePlan, customerPhone?: string) => {
     if (!organisationId) {
       toast.error("Organisation not selected");
-      return;
-    }
-    if (!checkoutAvailable) {
-      toast.error("Payments are not configured yet");
-      return;
-    }
-    if (plan.contactSales || plan.priceInrMonthly == null) {
-      window.location.href = `mailto:hello@doqseal.com?subject=Custom%20DoqSeal%20plan`;
-      return;
-    }
-    if (plan.id === "free" || plan.id === currentPlanId) return;
-
-    const cleaned = phone.replace(/\D/g, "").slice(-10);
-    if (cleaned.length !== 10) {
-      toast.error("Enter a valid 10-digit mobile number for autopay");
       return;
     }
 
     setCheckingOutPlanId(plan.id);
     try {
+      const body: Record<string, string> = { planId: plan.id };
+      if (customerPhone) body.customerPhone = customerPhone;
+
       const res = await fetch(
         `/api/organisations/${organisationId}/billing/subscribe`,
         {
@@ -167,10 +156,7 @@ export function AdjustPlanModal({
             "Content-Type": "application/json",
             "x-organisation-id": organisationId,
           },
-          body: JSON.stringify({
-            planId: plan.id,
-            customerPhone: cleaned,
-          }),
+          body: JSON.stringify(body),
         }
       );
       const data = await res.json();
@@ -184,6 +170,8 @@ export function AdjustPlanModal({
       }
 
       onCheckoutStarted?.();
+      setPhoneModalPlan(null);
+      setPhone("");
 
       if (data.paymentUrl) {
         window.location.href = data.paymentUrl;
@@ -207,7 +195,6 @@ export function AdjustPlanModal({
             subscription_id: data.razorpaySubscriptionId,
             name: "DoqSeal",
             description: `${plan.name} monthly plan`,
-            prefill: { contact: cleaned },
             theme: { color: "#2563eb" },
             handler: () => {
               if (data.returnUrl) {
@@ -255,6 +242,35 @@ export function AdjustPlanModal({
     }
   };
 
+  const startCheckout = (plan: UpgradePlan) => {
+    if (!checkoutAvailable) {
+      toast.error("Payments are not configured yet");
+      return;
+    }
+    if (plan.contactSales || plan.priceInrMonthly == null) {
+      window.location.href = `mailto:hello@doqseal.com?subject=Custom%20DoqSeal%20plan`;
+      return;
+    }
+    if (plan.id === "free" || plan.id === currentPlanId) return;
+
+    if (checkoutProvider === "cashfree") {
+      setPhoneModalPlan(plan);
+      return;
+    }
+
+    void runCheckout(plan);
+  };
+
+  const submitPhoneModal = () => {
+    if (!phoneModalPlan) return;
+    const cleaned = phone.replace(/\D/g, "").slice(-10);
+    if (cleaned.length !== 10) {
+      toast.error("Enter a valid 10-digit mobile number");
+      return;
+    }
+    void runCheckout(phoneModalPlan, cleaned);
+  };
+
   return (
     <div className="fixed inset-0 z-[100] flex flex-col bg-[#0a0a0a] text-zinc-100 animate-in fade-in duration-200">
       <div className="flex items-center justify-between px-4 sm:px-8 py-4 border-b border-zinc-800/80">
@@ -284,22 +300,8 @@ export function AdjustPlanModal({
           <p className="text-center text-sm text-zinc-500 mt-3 max-w-lg mx-auto">
             Monthly autopay via{" "}
             {checkoutProvider === "cashfree" ? "Cashfree" : "Razorpay"}. Card,
-            UPI Autopay, or eNACH — cancel anytime.
+            UPI Autopay, or eNACH — payment details are collected at checkout.
           </p>
-
-          <div className="mt-8 max-w-md mx-auto">
-            <label className="block text-xs font-medium text-zinc-500 mb-1.5">
-              Mobile number for autopay mandate
-            </label>
-            <input
-              type="tel"
-              inputMode="numeric"
-              placeholder="10-digit mobile"
-              value={phone}
-              onChange={(e) => setPhone(e.target.value)}
-              className="w-full rounded-xl border border-zinc-700 bg-zinc-900 px-3 py-2.5 text-sm text-zinc-100 outline-none focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb]"
-            />
-          </div>
 
           {plans.length === 0 ? (
             <p className="text-center text-sm text-zinc-500 mt-16">
@@ -387,7 +389,7 @@ export function AdjustPlanModal({
                           plan.id === "free" ||
                           Boolean(checkingOutPlanId)
                         }
-                        onClick={() => void startCheckout(plan)}
+                        onClick={() => startCheckout(plan)}
                         className={`mt-6 w-full py-3 rounded-xl text-sm font-medium transition-colors disabled:opacity-40 disabled:cursor-not-allowed inline-flex items-center justify-center gap-2 ${
                           isHighlighted && !isCurrent
                             ? "bg-white text-black hover:bg-zinc-200"
@@ -417,6 +419,46 @@ export function AdjustPlanModal({
           )}
         </div>
       </div>
+
+      {phoneModalPlan && (
+        <div className="fixed inset-0 z-[110] flex items-center justify-center p-4 bg-black/60">
+          <div className="w-full max-w-sm rounded-2xl border border-zinc-700 bg-zinc-900 p-6 shadow-2xl">
+            <h3 className="text-lg font-semibold text-white">Mobile number</h3>
+            <p className="text-sm text-zinc-400 mt-1">
+              Cashfree requires a 10-digit mobile number for autopay mandate.
+            </p>
+            <input
+              type="tel"
+              inputMode="numeric"
+              autoFocus
+              placeholder="10-digit mobile"
+              value={phone}
+              onChange={(e) => setPhone(e.target.value)}
+              className="mt-4 w-full rounded-xl border border-zinc-700 bg-zinc-950 px-3 py-2.5 text-sm text-zinc-100 outline-none focus:border-[#2563eb]"
+            />
+            <div className="mt-5 flex gap-3">
+              <button
+                type="button"
+                onClick={() => {
+                  setPhoneModalPlan(null);
+                  setPhone("");
+                }}
+                className="flex-1 py-2.5 rounded-xl text-sm font-medium border border-zinc-700 text-zinc-300 hover:bg-zinc-800"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={checkingOutPlanId === phoneModalPlan.id}
+                onClick={submitPhoneModal}
+                className="flex-1 py-2.5 rounded-xl text-sm font-medium bg-white text-black hover:bg-zinc-200 disabled:opacity-50"
+              >
+                Continue
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

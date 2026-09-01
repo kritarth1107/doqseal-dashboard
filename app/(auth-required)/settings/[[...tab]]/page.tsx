@@ -6,6 +6,7 @@ import { Settings as SettingsIcon, Monitor, Sun, Moon, Loader2 } from 'lucide-re
 import { useTheme } from 'next-themes';
 import { useAuth } from '@/components/AuthProvider';
 import { BillingSettings } from '@/components/settings/BillingSettings';
+import { AccountSettings } from '@/components/settings/AccountSettings';
 
 const SETTINGS_TABS = [
     { id: 'general', label: 'General', path: '/settings' },
@@ -27,7 +28,7 @@ export default function SettingsPage() {
     const { theme, setTheme } = useTheme();
     const [mounted, setMounted] = useState(false);
 
-    const { userData, activeOrgId, activeOrg } = useAuth();
+    const { userData } = useAuth();
 
     // Wait for mount to avoid hydration mismatch
     React.useEffect(() => {
@@ -249,149 +250,7 @@ export default function SettingsPage() {
                             </div>
                         )}
 
-                        {activeTabId === 'account' && (
-                            <div className="flex flex-col gap-12 animate-in fade-in duration-300">
-
-                                {/* Account Section */}
-                                <section className="flex flex-col gap-6">
-                                    <h2 className="text-base font-semibold text-black dark:text-slate-100 border-b border-gray-200 dark:border-zinc-800 pb-2">Account</h2>
-
-                                    <div className="flex flex-col gap-1">
-                                        <div className="flex items-center justify-between pb-6">
-                                            <span className="text-sm font-medium text-black">Log out of all devices</span>
-                                            <button className="px-4 py-2 text-sm font-medium text-black bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-colors shadow-sm">
-                                                Log out
-                                            </button>
-                                        </div>
-
-                                        <div className="flex items-center justify-between pb-6 ">
-                                            <span className="text-sm font-medium text-black">Delete your account</span>
-                                            <button className="px-4 py-2 text-sm font-medium text-red-600 bg-white border border-gray-200 rounded-lg hover:bg-red-50 transition-colors shadow-sm">
-                                                Delete account
-                                            </button>
-                                        </div>
-
-                                        <div className="flex items-center justify-between pb-6 border-b border-gray-100">
-                                            <span className="text-sm font-medium text-black">Organization ID</span>
-                                            <div className="flex items-center gap-2 bg-[#f5f5f5] px-3 py-1.5 rounded-lg border border-gray-200">
-                                                <span className="text-xs font-mono text-gray-500">
-                                                    {activeOrgId || "—"}
-                                                </span>
-                                                {activeOrgId && (
-                                                    <button
-                                                        type="button"
-                                                        onClick={() => navigator.clipboard.writeText(activeOrgId)}
-                                                        className="p-1 text-gray-400 hover:text-black transition-colors"
-                                                        title="Copy ID"
-                                                    >
-                                                        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><rect x="9" y="9" width="13" height="13" rx="2" ry="2"></rect><path d="M5 15H4a2 2 0 0 1-2-2V4a2 2 0 0 1 2-2h9a2 2 0 0 1 2 2v1"></path></svg>
-                                                    </button>
-                                                )}
-                                            </div>
-                                        </div>
-                                        {activeOrg && (
-                                            <div className="flex items-center justify-between pb-6 border-b border-gray-100">
-                                                <span className="text-sm font-medium text-black">Organisation</span>
-                                                <span className="text-sm text-gray-600">
-                                                    {activeOrg.name} · {activeOrg.role}
-                                                </span>
-                                            </div>
-                                        )}
-                                        {userData?.userId && (
-                                            <div className="flex items-center justify-between pb-6 border-b border-gray-100">
-                                                <span className="text-sm font-medium text-black">User ID</span>
-                                                <span className="text-xs font-mono text-gray-500">{userData.userId}</span>
-                                            </div>
-                                        )}
-                                    </div>
-                                </section>
-
-                                {/* Active Sessions Section */}
-                                <section className="flex flex-col gap-4">
-                                    <h2 className="text-base font-semibold text-black pb-2">Active sessions</h2>
-
-                                    <div className="overflow-x-auto">
-                                        <table className="w-full text-left border-collapse">
-                                            <thead className="text-[13px] font-medium text-black dark:text-slate-200 border-b border-gray-200 dark:border-white/10 bg-transparent">
-                                                <tr>
-                                                    <th className="py-3 pr-4 font-medium">Device</th>
-                                                    <th className="py-3 px-4 font-medium">Location</th>
-                                                    <th className="py-3 px-4 font-medium">Created</th>
-                                                    <th className="py-3 pl-4 font-medium">Updated</th>
-                                                    <th className="py-3 w-12"></th>
-                                                </tr>
-                                            </thead>
-                                            <tbody className="text-[13px] text-gray-600 divide-y divide-gray-100">
-                                                <tr className="group">
-                                                    <td className="py-4 pr-4">Claude Desktop (Windows)</td>
-                                                    <td className="py-4 px-4 text-gray-500">Bilaspur, Chhattisgarh, IN</td>
-                                                    <td className="py-4 px-4 text-gray-500">Mar 3, 2026, 5:47 PM</td>
-                                                    <td className="py-4 pl-4 text-gray-500">Mar 10, 2026, 1:01 PM</td>
-                                                    <td className="py-4 pl-2 text-right">
-                                                        <button className="p-1 rounded text-gray-400 hover:text-black hover:bg-gray-100 transition-colors">
-                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                                <tr className="group">
-                                                    <td className="py-4 pr-4">Claude Desktop (Windows)</td>
-                                                    <td className="py-4 px-4 text-gray-500">Bilaspur, Chhattisgarh, IN</td>
-                                                    <td className="py-4 px-4 text-gray-500">Mar 3, 2026, 5:47 PM</td>
-                                                    <td className="py-4 pl-4 text-gray-500">Mar 3, 2026, 5:47 PM</td>
-                                                    <td className="py-4 pl-2 text-right">
-                                                        <div className="relative inline-block text-left">
-                                                            <button className="p-1 rounded text-gray-400 hover:text-black hover:bg-gray-100 transition-colors bg-gray-100">
-                                                                <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>
-                                                            </button>
-                                                            <div className="absolute right-0 top-full mt-1 w-32 bg-white border border-gray-200 rounded-lg shadow-lg py-1 z-10">
-                                                                <button className="w-full text-left px-3 py-1.5 text-[13px] text-gray-700 hover:bg-gray-100 transition-colors">Terminate</button>
-                                                            </div>
-                                                        </div>
-                                                    </td>
-                                                </tr>
-                                                <tr className="group">
-                                                    <td className="py-4 pr-4 flex items-center gap-2 font-medium text-black">
-                                                        Chrome (Windows)
-                                                        <span className="px-1.5 py-0.5 rounded text-[10px] font-medium bg-gray-100 text-gray-600 tracking-wide uppercase">Current</span>
-                                                    </td>
-                                                    <td className="py-4 px-4 text-gray-500">Bilaspur, Chhattisgarh, IN</td>
-                                                    <td className="py-4 px-4 text-gray-500">Mar 3, 2026, 1:40 PM</td>
-                                                    <td className="py-4 pl-4 text-gray-500">Mar 10, 2026, 1:05 PM</td>
-                                                    <td className="py-4 pl-2 text-right">
-                                                        <button className="p-1 rounded text-gray-400 hover:text-black hover:bg-gray-100 transition-colors">
-                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                                <tr className="group">
-                                                    <td className="py-4 pr-4">Chrome (Linux)</td>
-                                                    <td className="py-4 px-4 text-gray-500">Gurugram, Haryana, IN</td>
-                                                    <td className="py-4 px-4 text-gray-500">Feb 16, 2026, 7:53 PM</td>
-                                                    <td className="py-4 pl-4 text-gray-500">Feb 23, 2026, 9:00 PM</td>
-                                                    <td className="py-4 pl-2 text-right">
-                                                        <button className="p-1 rounded text-gray-400 hover:text-black hover:bg-gray-100 transition-colors">
-                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                                <tr className="group">
-                                                    <td className="py-4 pr-4">Chrome (Linux)</td>
-                                                    <td className="py-4 px-4 text-gray-500">Gurugram, Haryana, IN</td>
-                                                    <td className="py-4 px-4 text-gray-500">Feb 16, 2026, 7:53 PM</td>
-                                                    <td className="py-4 pl-4 text-gray-500">Feb 16, 2026, 7:53 PM</td>
-                                                    <td className="py-4 pl-2 text-right">
-                                                        <button className="p-1 rounded text-gray-400 hover:text-black hover:bg-gray-100 transition-colors">
-                                                            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round"><circle cx="12" cy="12" r="1"></circle><circle cx="19" cy="12" r="1"></circle><circle cx="5" cy="12" r="1"></circle></svg>
-                                                        </button>
-                                                    </td>
-                                                </tr>
-                                            </tbody>
-                                        </table>
-                                    </div>
-                                </section>
-
-                            </div>
-                        )}
+                        {activeTabId === 'account' && <AccountSettings />}
 
                         {activeTabId === 'billing' && (
                             <Suspense
