@@ -6,9 +6,13 @@ import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
   CheckCircle2,
+  Clock,
+  FileText,
+  Globe,
   Loader2,
   RefreshCw,
   Trash2,
+  Webhook,
   XCircle,
 } from "lucide-react";
 import { toast } from "sonner";
@@ -47,6 +51,61 @@ function StatusBadge({ status }: { status: string }) {
       {status.replace("_", " ")}
     </span>
   );
+}
+
+type DetailTab = "extraction" | "activity";
+
+type TimelineEvent = {
+  action: string;
+  actorId: string;
+  resourceType: string;
+  metadata?: Record<string, unknown> | null;
+  timestamp: string;
+};
+
+function formatBytes(size: number): string {
+  if (size < 1024) return `${size} B`;
+  if (size < 1024 * 1024) return `${(size / 1024).toFixed(1)} KB`;
+  return `${(size / (1024 * 1024)).toFixed(1)} MB`;
+}
+
+function formatTimelineAction(action: string): string {
+  const labels: Record<string, string> = {
+    "document.upload": "Document uploaded",
+    "document.delete": "File removed from storage",
+    "document.reprocess": "Re-extraction queued",
+    "document.file_ttl_purge": "File purged (TTL expired)",
+    "extraction.fields_corrected": "Extraction fields corrected",
+    "webhook.dispatched": "Webhook delivered",
+    "webhook.failed": "Webhook delivery failed",
+  };
+  return labels[action] || action.replace(/\./g, " ");
+}
+
+function describeTimelineEvent(event: TimelineEvent): string | null {
+  const meta = event.metadata || {};
+  if (event.action === "webhook.dispatched" || event.action === "webhook.failed") {
+    const url = typeof meta.url === "string" ? meta.url : "endpoint";
+    const evt = typeof meta.event === "string" ? meta.event : "event";
+    const code =
+      typeof meta.statusCode === "number" ? ` · HTTP ${meta.statusCode}` : "";
+    const err = typeof meta.error === "string" ? ` · ${meta.error}` : "";
+    return `${evt} → ${url}${code}${err}`;
+  }
+  if (event.action === "document.upload") {
+    const days =
+      typeof meta.retentionDays === "number"
+        ? `${meta.retentionDays} day retention`
+        : meta.keepForever
+          ? "Keep forever"
+          : null;
+    return days;
+  }
+  if (event.action === "document.reprocess" && meta.hasUserContext) {
+    return "Included user context";
+  }
+  if (typeof meta.error === "string") return meta.error;
+  return null;
 }
 
 type PageTab = { page: number; title: string };
@@ -125,6 +184,9 @@ export function DocumentDetailView({
   const [showReprocessModal, setShowReprocessModal] = useState(false);
   const [reprocessContext, setReprocessContext] = useState("");
   const [pdfPage, setPdfPage] = useState(1);
+  const [activeTab, setActiveTab] = useState<DetailTab>("extraction");
+  const [timeline, setTimeline] = useState<TimelineEvent[]>([]);
+  const [timelineLoading, setTimelineLoading] = useState(false);
 
   async function loadDocument(silent = false) {
     if (!activeOrgId) return null;
@@ -186,6 +248,31 @@ export function DocumentDetailView({
       setPdfPage(pageTabs[0]?.page ?? 1);
     }
   }, [pageTabs, pdfPage]);
+
+  const loadTimeline = async () => {
+    if (!activeOrgId || !documentId) return;
+    setTimelineLoading(true);
+    try {
+      const res = await fetch(
+        `/api/documents/${documentId}/timeline`,
+        withOrgHeaders(activeOrgId)
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to load timeline");
+      setTimeline(Array.isArray(data.events) ? data.events : []);
+    } catch {
+      setTimeline([]);
+    } finally {
+      setTimelineLoading(false);
+    }
+  };
+
+  useEffect(() => {
+    if (activeTab === "activity" && activeOrgId && documentId) {
+      void loadTimeline();
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeTab, documentId, activeOrgId]);
 
   const handleReprocess = async () => {
     if (!doc || !activeOrgId) return;
@@ -272,14 +359,6 @@ export function DocumentDetailView({
   }
 
   const fileUrl = `/api/documents/${doc.id}/file`;
-  const documentType =
-    typeof extracted?.suggested_title === "string"
-      ? extracted.suggested_title
-      : typeof extracted?.document_type === "string"
-        ? extracted.document_type
-        : typeof extracted?.summary === "string"
-          ? extracted.summary.split(".")[0]
-          : null;
   const hasFields =
     extracted &&
     Object.values(extracted).some(
@@ -287,61 +366,34 @@ export function DocumentDetailView({
     );
 
   return (
-    <div className="flex-1 flex flex-col min-h-0 bg-[#f8fafc]">
-      <div className="flex-1 overflow-y-auto p-4 sm:p-8 pt-16 sm:pt-20">
+    <div className="flex-1 flex flex-col min-h-0 bg-white">
+      {/* Header */}
+      <div className="border-b border-gray-200 px-4 sm:px-6 py-3 pt-16 sm:pt-20 shrink-0">
         <div className="max-w-6xl mx-auto">
           <Link
             href={backHref}
-            className="inline-flex items-center gap-1 text-sm text-gray-500 dark:text-slate-400 hover:text-gray-900 dark:hover:text-white mb-4"
+            className="inline-flex items-center gap-1 text-xs text-gray-500 hover:text-gray-900 mb-2"
           >
-            <ArrowLeft className="w-4 h-4" />
+            <ArrowLeft className="w-3.5 h-3.5" />
             {backLabel}
           </Link>
 
-          {doc.status === "processing" ? (
-            <div className="mb-4 flex items-center gap-2 rounded-2xl border border-[#2563eb]/20 bg-[#2563eb]/5 px-4 py-3 text-sm text-[#2563eb]">
-              <Loader2 className="h-4 w-4 animate-spin" />
-              Identifying document and extracting pointers — usually a few
-              seconds…
-            </div>
-          ) : null}
-
-          <div className="mb-6 flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
-            <div>
+          <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <div className="min-w-0">
               <div className="flex flex-wrap items-center gap-2">
-                <h1 className="text-xl sm:text-2xl font-semibold text-gray-900 dark:text-slate-50">
+                <h1 className="text-lg font-semibold text-gray-900 truncate">
                   {doc.displayTitle?.trim() || doc.originalFilename}
                 </h1>
                 <StatusBadge status={doc.status} />
               </div>
-              <p className="mt-1 text-sm text-gray-500 dark:text-slate-400">
-                {doc.displayTitle?.trim() &&
-                doc.displayTitle.trim() !== doc.originalFilename ? (
-                  <>
-                    Original file: {doc.originalFilename}
-                    {" · "}
-                  </>
-                ) : null}
-                Uploaded {new Date(doc.uploadedAt).toLocaleString()}
-                {documentType && <> · {documentType}</>}
-                {doc.confidence > 0 && (
-                  <> · {(doc.confidence * 100).toFixed(0)}% confidence</>
+              {doc.displayTitle?.trim() &&
+                doc.displayTitle.trim() !== doc.originalFilename && (
+                  <p className="text-xs text-gray-500 mt-0.5 truncate">
+                    {doc.originalFilename}
+                  </p>
                 )}
-                {doc.extractionStrategy &&
-                  doc.extractionStrategy !== "demo" && (
-                  <>
-                    {" "}
-                    ·{" "}
-                    {["backend", "hybrid", "ocr", "ocr_fallback", "pdf_text", "ollama"].some(
-                      (s) => doc.extractionStrategy!.startsWith(s) || doc.extractionStrategy === s
-                    )
-                      ? "AI extraction"
-                      : doc.extractionStrategy}
-                  </>
-                )}
-              </p>
             </div>
-            <div className="flex items-center gap-2">
+            <div className="flex items-center gap-2 shrink-0">
               <button
                 type="button"
                 onClick={() => setShowReprocessModal(true)}
@@ -351,83 +403,111 @@ export function DocumentDetailView({
                   doc.status === "processing" ||
                   Boolean(doc.filePurgedAt)
                 }
-                title={
-                  doc.filePurgedAt
-                    ? "Original file was purged — reprocessing unavailable"
-                    : undefined
-                }
-                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 dark:text-slate-200 bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-50"
               >
                 {reprocessing ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 ) : (
-                  <RefreshCw className="w-4 h-4" />
+                  <RefreshCw className="w-3.5 h-3.5" />
                 )}
-                Re-run extraction
+                Re-run
               </button>
               <button
                 type="button"
                 onClick={handleDelete}
                 disabled={deleting || reprocessing}
-                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-red-600 bg-white dark:bg-[#111827] border border-red-200 dark:border-red-500/30 rounded-lg hover:bg-red-50 dark:hover:bg-red-500/10 disabled:opacity-50"
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-red-600 border border-red-200 rounded-lg hover:bg-red-50 disabled:opacity-50"
               >
                 {deleting ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
+                  <Loader2 className="w-3.5 h-3.5 animate-spin" />
                 ) : (
-                  <Trash2 className="w-4 h-4" />
+                  <Trash2 className="w-3.5 h-3.5" />
                 )}
                 Delete
               </button>
             </div>
           </div>
 
-          <div className="grid grid-cols-1 lg:grid-cols-5 gap-6">
-            <div className="lg:col-span-2">
-              <div className="bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/10 rounded-2xl overflow-hidden sticky top-24">
-                <div className="flex items-center justify-between border-b border-gray-100 dark:border-white/10 px-4 py-3 text-sm">
-                  <span className="text-gray-500 dark:text-slate-400">
-                    Preview
-                  </span>
+          {doc.status === "processing" && (
+            <div className="mt-3 flex items-center gap-2 text-xs text-blue-700 bg-blue-50 border border-blue-100 rounded-lg px-3 py-2">
+              <Loader2 className="h-3.5 w-3.5 animate-spin shrink-0" />
+              Extracting fields…
+            </div>
+          )}
+
+          <div className="mt-4 flex gap-1 border-b border-gray-100 -mb-px">
+            {(
+              [
+                { id: "extraction" as const, label: "Extraction", icon: FileText },
+                { id: "activity" as const, label: "Activity", icon: Clock },
+              ] as const
+            ).map((tab) => {
+              const Icon = tab.icon;
+              return (
+                <button
+                  key={tab.id}
+                  type="button"
+                  onClick={() => setActiveTab(tab.id)}
+                  className={`inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium border-b-2 -mb-px transition-colors ${
+                    activeTab === tab.id
+                      ? "border-gray-900 text-gray-900"
+                      : "border-transparent text-gray-500 hover:text-gray-700"
+                  }`}
+                >
+                  <Icon className="w-3.5 h-3.5" />
+                  {tab.label}
+                </button>
+              );
+            })}
+          </div>
+        </div>
+      </div>
+
+      {/* Body */}
+      <div className="flex-1 overflow-y-auto px-4 sm:px-6 py-5">
+        <div className="max-w-6xl mx-auto">
+          {activeTab === "extraction" ? (
+            <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
+              <div className="border border-gray-200 rounded-xl overflow-hidden bg-gray-50">
+                <div className="flex items-center justify-between px-3 py-2 border-b border-gray-200 bg-white text-xs">
+                  <span className="text-gray-500">Preview</span>
                   <a
                     href={fileUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-[#2563eb] hover:underline"
+                    className="text-gray-900 hover:underline"
                   >
-                    Open in new tab
+                    Open file
                   </a>
                 </div>
-                {doc.mimeType.includes("pdf") && (
-                  <div className="flex flex-wrap gap-1 border-b border-gray-100 dark:border-white/10 px-4 py-2">
+                {doc.mimeType.includes("pdf") && pageTabs.length > 1 && (
+                  <div className="flex flex-wrap gap-1 px-3 py-2 border-b border-gray-200 bg-white">
                     {pageTabs.map((tab) => (
                       <button
                         key={`${tab.page}-${tab.title}`}
                         type="button"
                         onClick={() => setPdfPage(tab.page)}
-                        className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors ${
+                        className={`px-2 py-1 rounded text-[11px] font-medium ${
                           pdfPage === tab.page
-                            ? "bg-[#2563eb] text-white"
-                            : "text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800"
+                            ? "bg-gray-900 text-white"
+                            : "text-gray-600 hover:bg-gray-100"
                         }`}
                       >
-                        Page {tab.page}
-                        {tab.title && tab.title !== `Page ${tab.page}`
-                          ? ` · ${tab.title}`
-                          : ""}
+                        {tab.page}
                       </button>
                     ))}
                   </div>
                 )}
-                <div className="p-4">
+                <div className="p-3">
                   {doc.mimeType.includes("pdf") ? (
                     <div
-                      className="overflow-hidden rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-slate-900"
-                      style={{ height: "480px" }}
+                      className="overflow-hidden rounded-lg border border-gray-200 bg-white"
+                      style={{ height: "420px" }}
                     >
                       <iframe
                         src={`${fileUrl}#page=${pdfPage}&view=FitH`}
                         className="h-full w-full"
-                        title={`PDF preview page ${pdfPage}`}
+                        title={`PDF page ${pdfPage}`}
                         key={pdfPage}
                       />
                     </div>
@@ -435,48 +515,207 @@ export function DocumentDetailView({
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
                       src={fileUrl}
-                      alt="Document preview"
-                      className="w-full rounded-xl border border-gray-200 dark:border-white/10"
+                      alt="Preview"
+                      className="w-full rounded-lg border border-gray-200"
                     />
                   )}
                 </div>
               </div>
-            </div>
 
-            <div className="lg:col-span-3 space-y-4">
-              {hasFields ? (
-                <ExtractionFields
-                  data={extracted!}
-                  fieldConfidence={doc.fieldConfidence}
-                  documentId={doc.id}
-                  organisationId={activeOrgId}
-                  onSaved={(next) => {
-                    setDoc((prev) =>
-                      prev
-                        ? {
-                            ...prev,
-                            extractedJson: next as StoredDocument["extractedJson"],
-                            displayTitle:
-                              typeof next.suggested_title === "string"
-                                ? next.suggested_title
-                                : prev.displayTitle,
-                          }
-                        : prev
-                    );
-                    toast.success("Corrections saved");
-                  }}
-                />
-              ) : (
-                <div className="bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/10 rounded-2xl p-8 text-center text-sm text-gray-500 dark:text-slate-400">
-                  {doc.status === "processing"
-                    ? "Extraction in progress…"
-                    : doc.status === "failed"
-                      ? doc.processingError || "Extraction failed."
-                      : "No extracted data available. Re-upload or re-run extraction after the worker is updated."}
-                </div>
-              )}
+              <div>
+                {hasFields ? (
+                  <ExtractionFields
+                    data={extracted!}
+                    fieldConfidence={doc.fieldConfidence}
+                    documentId={doc.id}
+                    organisationId={activeOrgId}
+                    onSaved={(next) => {
+                      setDoc((prev) =>
+                        prev
+                          ? {
+                              ...prev,
+                              extractedJson: next as StoredDocument["extractedJson"],
+                              displayTitle:
+                                typeof next.suggested_title === "string"
+                                  ? next.suggested_title
+                                  : prev.displayTitle,
+                            }
+                          : prev
+                      );
+                      toast.success("Corrections saved");
+                      void loadTimeline();
+                    }}
+                  />
+                ) : (
+                  <div className="border border-gray-200 rounded-xl p-8 text-center text-sm text-gray-500">
+                    {doc.status === "processing"
+                      ? "Extraction in progress…"
+                      : doc.status === "failed"
+                        ? doc.processingError || "Extraction failed."
+                        : "No extracted data yet."}
+                  </div>
+                )}
+              </div>
             </div>
-          </div>
+          ) : (
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+              <div className="lg:col-span-1 space-y-4">
+                <div className="border border-gray-200 rounded-xl p-4">
+                  <h3 className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-3">
+                    File metadata
+                  </h3>
+                  <dl className="space-y-2.5 text-xs">
+                    {[
+                      ["Type", doc.mimeType],
+                      ["Size", formatBytes(doc.size)],
+                      [
+                        "Uploaded",
+                        new Date(doc.uploadedAt).toLocaleString(),
+                      ],
+                      doc.processedAt
+                        ? ["Processed", new Date(doc.processedAt).toLocaleString()]
+                        : null,
+                      doc.confidence > 0
+                        ? ["Confidence", `${(doc.confidence * 100).toFixed(0)}%`]
+                        : null,
+                      doc.extractionStrategy &&
+                      doc.extractionStrategy !== "demo" &&
+                      doc.extractionStrategy !== "pending"
+                        ? ["Strategy", doc.extractionStrategy]
+                        : null,
+                      doc.projectId ? ["Project", doc.projectId] : null,
+                      doc.uploadedBy ? ["Uploaded by", doc.uploadedBy] : null,
+                      doc.contentHash
+                        ? ["Content hash", doc.contentHash.slice(0, 16) + "…"]
+                        : null,
+                    ]
+                      .filter(Boolean)
+                      .map((row) => (
+                        <div key={row![0]} className="flex justify-between gap-3">
+                          <dt className="text-gray-500 shrink-0">{row![0]}</dt>
+                          <dd className="text-gray-900 text-right break-all font-mono">
+                            {row![1]}
+                          </dd>
+                        </div>
+                      ))}
+                  </dl>
+                </div>
+
+                <div className="border border-gray-200 rounded-xl p-4">
+                  <h3 className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-3">
+                    Retention
+                  </h3>
+                  <dl className="space-y-2.5 text-xs">
+                    {[
+                      doc.keepForever
+                        ? ["Policy", "Keep forever"]
+                        : doc.retentionDays
+                          ? ["Retention", `${doc.retentionDays} days`]
+                          : ["Policy", "Default (15 days)"],
+                      doc.fileExpiresAt && !doc.filePurgedAt
+                        ? [
+                            "File expires",
+                            new Date(doc.fileExpiresAt).toLocaleString(),
+                          ]
+                        : null,
+                      doc.filePurgedAt
+                        ? [
+                            "File purged",
+                            new Date(doc.filePurgedAt).toLocaleString(),
+                          ]
+                        : null,
+                      [
+                        "Context",
+                        doc.filePurgedAt
+                          ? "Retained (AI/search)"
+                          : "File + context active",
+                      ],
+                    ]
+                      .filter(Boolean)
+                      .map((row) => (
+                        <div key={row![0]} className="flex justify-between gap-3">
+                          <dt className="text-gray-500">{row![0]}</dt>
+                          <dd className="text-gray-900 text-right">{row![1]}</dd>
+                        </div>
+                      ))}
+                  </dl>
+                </div>
+              </div>
+
+              <div className="lg:col-span-2 border border-gray-200 rounded-xl">
+                <div className="px-4 py-3 border-b border-gray-100">
+                  <h3 className="text-sm font-medium text-gray-900">Timeline</h3>
+                  <p className="text-xs text-gray-500 mt-0.5">
+                    Uploads, extractions, webhooks, and retention events
+                  </p>
+                </div>
+                <div className="p-4">
+                  {timelineLoading ? (
+                    <div className="flex items-center gap-2 py-8 text-sm text-gray-500 justify-center">
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      Loading…
+                    </div>
+                  ) : timeline.length === 0 ? (
+                    <p className="text-sm text-gray-500 py-8 text-center">
+                      No activity recorded yet.
+                    </p>
+                  ) : (
+                    <ul className="space-y-0">
+                      {timeline.map((event, index) => {
+                        const detail = describeTimelineEvent(event);
+                        const isWebhook = event.action.startsWith("webhook.");
+                        return (
+                          <li
+                            key={`${event.timestamp}-${event.action}-${index}`}
+                            className="flex gap-3 pb-4 last:pb-0"
+                          >
+                            <div className="flex flex-col items-center">
+                              <div
+                                className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${
+                                  isWebhook
+                                    ? event.action === "webhook.failed"
+                                      ? "bg-red-50 text-red-600"
+                                      : "bg-violet-50 text-violet-600"
+                                    : "bg-gray-100 text-gray-600"
+                                }`}
+                              >
+                                {isWebhook ? (
+                                  <Webhook className="w-3.5 h-3.5" />
+                                ) : (
+                                  <Globe className="w-3.5 h-3.5" />
+                                )}
+                              </div>
+                              {index < timeline.length - 1 && (
+                                <div className="w-px flex-1 bg-gray-200 mt-1 min-h-[12px]" />
+                              )}
+                            </div>
+                            <div className="flex-1 min-w-0 pt-0.5">
+                              <p className="text-sm font-medium text-gray-900">
+                                {formatTimelineAction(event.action)}
+                              </p>
+                              {detail && (
+                                <p className="text-xs text-gray-500 mt-0.5 break-all">
+                                  {detail}
+                                </p>
+                              )}
+                              <p className="text-[11px] text-gray-400 mt-1">
+                                {new Date(event.timestamp).toLocaleString()}
+                                {event.actorId && event.actorId !== "system:webhook"
+                                  ? ` · ${event.actorId.slice(0, 8)}…`
+                                  : event.actorId === "system:webhook"
+                                    ? " · system"
+                                    : ""}
+                              </p>
+                            </div>
+                          </li>
+                        );
+                      })}
+                    </ul>
+                  )}
+                </div>
+              </div>
+            </div>
+          )}
         </div>
       </div>
 

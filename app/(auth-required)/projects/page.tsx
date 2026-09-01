@@ -84,7 +84,7 @@ export default function ProjectsPage() {
       const createdId = data.project?.projectId as string | undefined;
       resetModal();
       if (createdId) {
-        // Send users straight to settings to configure extraction + webhook
+        // Send users straight to settings to configure extraction context
         window.location.href = `/projects/${createdId}/settings`;
         return;
       }
@@ -260,7 +260,7 @@ export default function ProjectsPage() {
                 </label>
 
                 <p className="text-xs text-gray-400 px-1">
-                  After create you&apos;ll set extraction context and webhook on the settings page.
+                  After create you&apos;ll set extraction context on the settings page.
                 </p>
 
                 <div className="flex gap-3 pt-2">

@@ -16,12 +16,6 @@ import {
 import { toast } from "sonner";
 import { useAuth } from "@/components/AuthProvider";
 import { withOrgHeaders } from "@/lib/client-api";
-import {
-  ProjectWebhook,
-  WEBHOOK_EVENT_META,
-  WEBHOOK_EVENTS,
-  WebhookEvent,
-} from "@/lib/webhook-events";
 
 type Project = {
   projectId: string;
@@ -29,40 +23,12 @@ type Project = {
   name: string;
   description?: string;
   extractionHint?: string;
-  webhooks?: ProjectWebhook[];
-  webhookUrls?: string[];
   sharedWithOrganisation?: boolean;
   status?: string;
   createdAt?: string;
   updatedAt?: string;
   createdBy?: string;
 };
-
-function webhookFromProject(project: Project): {
-  url: string;
-  events: WebhookEvent[];
-  enabled: boolean;
-} {
-  const first = project.webhooks?.[0];
-  if (first?.url) {
-    return {
-      url: first.url,
-      events: (first.events?.length
-        ? first.events
-        : ["document.processed"]) as WebhookEvent[],
-      enabled: first.enabled !== false,
-    };
-  }
-  const legacy = project.webhookUrls?.[0];
-  if (legacy) {
-    return {
-      url: legacy,
-      events: ["document.processed"],
-      enabled: true,
-    };
-  }
-  return { url: "", events: ["document.processed"], enabled: true };
-}
 
 function Toggle({
   checked,
@@ -151,11 +117,6 @@ export default function ProjectSettingsPage() {
       path: `/projects/${projectId}/settings/extraction`,
     },
     {
-      id: "automations",
-      label: "Automations",
-      path: `/projects/${projectId}/settings/automations`,
-    },
-    {
       id: "access",
       label: "Access",
       path: `/projects/${projectId}/settings/access`,
@@ -175,11 +136,6 @@ export default function ProjectSettingsPage() {
   const [description, setDescription] = useState("");
   const [extractionHint, setExtractionHint] = useState("");
   const [shareWithOrg, setShareWithOrg] = useState(true);
-  const [webhookUrl, setWebhookUrl] = useState("");
-  const [webhookEvents, setWebhookEvents] = useState<WebhookEvent[]>([
-    "document.processed",
-  ]);
-  const [webhookEnabled, setWebhookEnabled] = useState(true);
   const [copied, setCopied] = useState(false);
 
   const applyProject = (p: Project) => {
@@ -188,10 +144,6 @@ export default function ProjectSettingsPage() {
     setDescription(p.description || "");
     setExtractionHint(p.extractionHint || "");
     setShareWithOrg(p.sharedWithOrganisation !== false);
-    const hook = webhookFromProject(p);
-    setWebhookUrl(hook.url);
-    setWebhookEvents(hook.events);
-    setWebhookEnabled(hook.enabled);
   };
 
   const load = useCallback(async () => {
@@ -260,38 +212,11 @@ export default function ProjectSettingsPage() {
     );
   };
 
-  const saveAutomations = () => {
-    const url = webhookUrl.trim();
-    if (url && !webhookEvents.length) {
-      toast.error("Select at least one webhook event");
-      return;
-    }
-    void patchProject(
-      {
-        webhooks: url
-          ? [{ url, events: webhookEvents, enabled: webhookEnabled }]
-          : [],
-      },
-      "Automations saved"
-    );
-  };
-
   const saveAccess = () => {
     void patchProject(
       { sharedWithOrganisation: shareWithOrg },
       "Access settings saved"
     );
-  };
-
-  const toggleEvent = (event: WebhookEvent) => {
-    setWebhookEvents((prev) => {
-      const has = prev.includes(event);
-      if (has) {
-        const next = prev.filter((e) => e !== event);
-        return next.length ? next : prev;
-      }
-      return [...prev, event];
-    });
   };
 
   const copyId = async () => {
@@ -519,107 +444,6 @@ export default function ProjectSettingsPage() {
               </div>
             )}
 
-            {activeTabId === "automations" && (
-              <div className="flex flex-col gap-12 animate-in fade-in duration-300">
-                <section className="flex flex-col gap-5">
-                  <SectionTitle>Webhook</SectionTitle>
-                  <p className="text-[13px] text-gray-500 dark:text-slate-400 -mt-2">
-                    One HTTPS endpoint per project. DoqSeal POSTs a JSON payload
-                    when selected lifecycle events fire.
-                  </p>
-
-                  <div className="flex items-center justify-between gap-4">
-                    <div className="flex flex-col gap-1">
-                      <span className="text-sm font-medium text-black dark:text-slate-100">
-                        Enable webhook
-                      </span>
-                      <span className="text-[13px] text-gray-500 dark:text-slate-400">
-                        When off, the URL is saved but events are not delivered.
-                      </span>
-                    </div>
-                    <Toggle
-                      checked={webhookEnabled && !!webhookUrl.trim()}
-                      onChange={setWebhookEnabled}
-                      disabled={!webhookUrl.trim()}
-                    />
-                  </div>
-
-                  <div className="flex flex-col gap-2">
-                    <label className="text-sm font-medium text-gray-700 dark:text-slate-300">
-                      Endpoint URL
-                    </label>
-                    <input
-                      type="url"
-                      value={webhookUrl}
-                      onChange={(e) => setWebhookUrl(e.target.value)}
-                      placeholder="https://hooks.example.com/doqseal"
-                      className="w-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 text-gray-900 dark:text-slate-100 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-1 focus:ring-[#2563eb]"
-                    />
-                  </div>
-
-                  <div className="flex flex-col gap-3">
-                    <span className="text-sm font-medium text-black dark:text-slate-100">
-                      Events
-                    </span>
-                    <div className="flex flex-col divide-y divide-gray-100 dark:divide-zinc-800 border border-gray-200 dark:border-zinc-700 rounded-lg overflow-hidden bg-white dark:bg-zinc-900">
-                      {WEBHOOK_EVENTS.map((event) => {
-                        const meta = WEBHOOK_EVENT_META[event];
-                        const checked = webhookEvents.includes(event);
-                        return (
-                          <div
-                            key={event}
-                            className="flex items-center justify-between gap-4 px-4 py-3"
-                          >
-                            <div>
-                              <p className="text-sm font-medium text-black dark:text-slate-100">
-                                {meta.label}
-                              </p>
-                              <p className="text-[13px] text-gray-500 dark:text-slate-400">
-                                {meta.description}
-                              </p>
-                              <p className="text-[11px] font-mono text-gray-400 mt-0.5">
-                                {event}
-                              </p>
-                            </div>
-                            <Toggle
-                              checked={checked}
-                              onChange={() => toggleEvent(event)}
-                            />
-                          </div>
-                        );
-                      })}
-                    </div>
-                  </div>
-                  <SaveBar saving={saving} onSave={saveAutomations} />
-                </section>
-
-                <section className="flex flex-col gap-4">
-                  <SectionTitle>Payload</SectionTitle>
-                  <p className="text-[13px] text-gray-500 dark:text-slate-400 -mt-1">
-                    Headers include{" "}
-                    <code className="text-xs bg-gray-100 dark:bg-zinc-800 px-1 rounded">
-                      X-DoqSeal-Event
-                    </code>
-                    . Example body on success:
-                  </p>
-                  <pre className="text-[11px] leading-relaxed overflow-x-auto rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-900 p-4 text-gray-600 dark:text-slate-300 font-mono">
-                    {`{
-  "event": "document.processed",
-  "projectId": "${projectId}",
-  "documentId": "…",
-  "jobId": "…",
-  "organisationId": "…",
-  "status": "completed",
-  "originalFilename": "file.pdf",
-  "displayTitle": "…",
-  "extraction": { "data": {}, "strategy": "pdf_text" },
-  "timestamp": "ISO-8601"
-}`}
-                  </pre>
-                </section>
-              </div>
-            )}
-
             {activeTabId === "access" && (
               <div className="flex flex-col gap-12 animate-in fade-in duration-300">
                 <section className="flex flex-col gap-5">
@@ -712,8 +536,8 @@ export default function ProjectSettingsPage() {
                 <SettingsIcon className="w-12 h-12 text-gray-300 mb-2" />
                 <h2 className="text-xl font-medium">Unknown settings tab</h2>
                 <p className="text-sm text-gray-500 text-center max-w-sm">
-                  Use the sidebar to open General, Extraction, Automations,
-                  Access, or Danger zone.
+                  Use the sidebar to open General, Extraction, Access, or Danger
+                  zone.
                 </p>
               </div>
             )}

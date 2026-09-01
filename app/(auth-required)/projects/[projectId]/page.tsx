@@ -20,15 +20,12 @@ import { UploadModal } from "@/components/UploadModal";
 import { useAuth } from "@/components/AuthProvider";
 import { withOrgHeaders } from "@/lib/client-api";
 import { StoredDocument } from "@/types/extraction";
-import { ProjectWebhook } from "@/lib/webhook-events";
 
 type Project = {
   projectId: string;
   name: string;
   description?: string;
   extractionHint?: string;
-  webhooks?: ProjectWebhook[];
-  webhookUrls?: string[];
 };
 
 type ListedDocument = {
@@ -155,10 +152,6 @@ export default function ProjectDetailPage() {
     );
   }
 
-  const webhookUrl =
-    project.webhooks?.[0]?.url || project.webhookUrls?.[0] || "";
-  const webhookEvents = project.webhooks?.[0]?.events || [];
-
   return (
     <div className="flex-1 flex flex-col min-h-0 bg-[#f8fafc]">
       <div className="flex-1 overflow-y-auto p-4 sm:p-8 pt-16 sm:pt-20">
@@ -218,21 +211,16 @@ export default function ProjectDetailPage() {
               </div>
             </Link>
             <Link
-              href={`/projects/${projectId}/settings`}
+              href="/manage/api-keys?tab=webhooks"
               className="bg-white border border-gray-200 rounded-2xl p-4 flex gap-3 hover:border-[#2563eb]/40 transition-colors"
             >
               <Webhook className="w-5 h-5 text-[#2563eb] shrink-0" />
               <div className="min-w-0">
-                <p className="text-sm font-medium text-gray-900">Webhook</p>
-                <p className="text-sm text-gray-600 mt-0.5 truncate">
-                  {webhookUrl ||
-                    "No webhook configured — set a URL and events in Settings."}
+                <p className="text-sm font-medium text-gray-900">Webhooks</p>
+                <p className="text-sm text-gray-600 mt-0.5">
+                  Configure organisation-wide event notifications in API
+                  management.
                 </p>
-                {webhookUrl && webhookEvents.length > 0 && (
-                  <p className="text-[11px] text-gray-400 mt-1">
-                    Events: {webhookEvents.join(", ")}
-                  </p>
-                )}
               </div>
             </Link>
           </div>

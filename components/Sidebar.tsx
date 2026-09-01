@@ -28,9 +28,7 @@ export function Sidebar() {
   const { userData, activeOrg, activeOrgId, setActiveOrgId } = useAuth();
 
   useEffect(() => {
-    if (pathname?.startsWith("/intelligence")) {
-      setIsCollapsed(true);
-    }
+    setIsCollapsed(pathname?.startsWith("/intelligence") ?? false);
   }, [pathname]);
 
   const handleLogout = async () => {

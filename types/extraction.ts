@@ -110,6 +110,12 @@ export type StoredDocument = {
   processedAt?: string;
   processingError?: string;
   filePurgedAt?: string | null;
+  retentionDays?: number | null;
+  keepForever?: boolean;
+  fileExpiresAt?: string | null;
+  uploadedBy?: string;
+  contentHash?: string;
+  sharedWithOrganisation?: boolean;
   demoMode?: boolean;
   demoRevealAt?: string | null;
 };

@@ -11,6 +11,11 @@ type BackendDocumentPayload = {
     status: string;
     contentHash?: string;
     filePurgedAt?: string | null;
+    retentionDays?: number | null;
+    keepForever?: boolean;
+    fileExpiresAt?: string | null;
+    uploadedBy?: string;
+    sharedWithOrganisation?: boolean;
     createdAt: string;
     updatedAt: string;
   };
@@ -72,6 +77,12 @@ export function mapBackendDocument(
     processedAt: extraction?.approvedAt ?? undefined,
     processingError: job?.error ?? undefined,
     filePurgedAt: document.filePurgedAt || null,
+    retentionDays: document.retentionDays ?? null,
+    keepForever: Boolean(document.keepForever),
+    fileExpiresAt: document.fileExpiresAt || null,
+    uploadedBy: document.uploadedBy,
+    contentHash: document.contentHash,
+    sharedWithOrganisation: document.sharedWithOrganisation !== false,
     demoMode: Boolean(job?.demoMode),
     demoRevealAt: job?.demoRevealAt ?? null,
   };
