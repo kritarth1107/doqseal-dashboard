@@ -39,6 +39,7 @@ type BillingData = {
     renewsAt: string | null;
     storageDayRateInr: number;
     subscriptionStatus?: string | null;
+    billingInterval?: "monthly" | "yearly";
   };
   paymentMethod: PaymentMethod | null;
   paymentMethods?: PaymentMethod[];
@@ -47,6 +48,7 @@ type BillingData = {
   checkoutAvailable?: boolean;
   checkoutMode?: "sandbox" | "production";
   checkoutProvider?: "cashfree" | "razorpay" | null;
+  yearlyDiscountPercent?: number;
 };
 
 function formatInvoiceDate(iso: string) {
@@ -222,6 +224,8 @@ export function BillingSettings() {
       : billing?.checkoutProvider === "cashfree"
         ? "Cashfree autopay"
         : "Autopay";
+  const intervalLabel =
+    plan?.billingInterval === "yearly" ? "Annual" : "Monthly";
 
   return (
     <>
@@ -243,7 +247,9 @@ export function BillingSettings() {
                 {plan?.name || "Free"} plan
               </p>
               <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-0.5">
-                {plan?.isFree ? "Free tier" : `Monthly · ${providerLabel}`}
+                {plan?.isFree
+                  ? "Free tier"
+                  : `${intervalLabel} · ${providerLabel}`}
               </p>
               {plan?.isFree ? (
                 <p className="text-sm text-zinc-500 dark:text-zinc-400 mt-2">
@@ -363,6 +369,7 @@ export function BillingSettings() {
         checkoutAvailable={Boolean(billing?.checkoutAvailable)}
         checkoutMode={billing?.checkoutMode || "sandbox"}
         checkoutProvider={billing?.checkoutProvider || "razorpay"}
+        yearlyDiscountPercent={billing?.yearlyDiscountPercent ?? 10}
         onCheckoutStarted={() => setShowPlans(false)}
       />
     </>
