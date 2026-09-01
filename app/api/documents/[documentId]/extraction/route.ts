@@ -7,7 +7,7 @@ async function requireSession() {
   return cookieStore.get("session_token")?.value ?? null;
 }
 
-export async function POST(
+export async function PATCH(
   request: NextRequest,
   { params }: { params: Promise<{ documentId: string }> }
 ) {
@@ -19,33 +19,24 @@ export async function POST(
   const { documentId } = await params;
 
   try {
-    let userContext: string | undefined;
-    try {
-      const body = await request.json();
-      if (body && typeof body.userContext === "string") {
-        userContext = body.userContext;
-      }
-    } catch {
-      // empty body is fine
-    }
-
+    const body = await request.json();
     const response = await backendFetch(
       request,
-      `documents/${documentId}/reprocess`,
+      `documents/${documentId}/extraction`,
       {
-        method: "POST",
+        method: "PATCH",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ userContext }),
+        body: JSON.stringify(body),
       }
     );
     const payload = await parseBackendJson(response);
     return NextResponse.json({ success: true, ...(payload.data || {}) });
   } catch (error: unknown) {
     const message =
-      error instanceof Error ? error.message : "Failed to reprocess document";
-    const status = /quota|exceeded/i.test(message)
-      ? 429
-      : /removed from storage|Original file/i.test(message)
+      error instanceof Error ? error.message : "Failed to update extraction";
+    const status = /not found/i.test(message)
+      ? 404
+      : /required/i.test(message)
         ? 400
         : 500;
     return NextResponse.json({ error: message }, { status });

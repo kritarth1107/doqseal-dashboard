@@ -122,6 +122,8 @@ export function DocumentDetailView({
   const [loading, setLoading] = useState(true);
   const [deleting, setDeleting] = useState(false);
   const [reprocessing, setReprocessing] = useState(false);
+  const [showReprocessModal, setShowReprocessModal] = useState(false);
+  const [reprocessContext, setReprocessContext] = useState("");
   const [pdfPage, setPdfPage] = useState(1);
 
   async function loadDocument(silent = false) {
@@ -191,11 +193,19 @@ export function DocumentDetailView({
     try {
       const res = await fetch(
         `/api/documents/${doc.id}/reprocess`,
-        withOrgHeaders(activeOrgId, { method: "POST" })
+        withOrgHeaders(activeOrgId, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            userContext: reprocessContext.trim() || undefined,
+          }),
+        })
       );
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Reprocess failed");
       toast.success("Re-extraction queued");
+      setShowReprocessModal(false);
+      setReprocessContext("");
       setDoc((prev) =>
         prev
           ? {
@@ -334,9 +344,17 @@ export function DocumentDetailView({
             <div className="flex items-center gap-2">
               <button
                 type="button"
-                onClick={handleReprocess}
+                onClick={() => setShowReprocessModal(true)}
                 disabled={
-                  reprocessing || deleting || doc.status === "processing"
+                  reprocessing ||
+                  deleting ||
+                  doc.status === "processing" ||
+                  Boolean(doc.filePurgedAt)
+                }
+                title={
+                  doc.filePurgedAt
+                    ? "Original file was purged — reprocessing unavailable"
+                    : undefined
                 }
                 className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-gray-700 dark:text-slate-200 bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 disabled:opacity-50"
               >
@@ -430,6 +448,23 @@ export function DocumentDetailView({
                 <ExtractionFields
                   data={extracted!}
                   fieldConfidence={doc.fieldConfidence}
+                  documentId={doc.id}
+                  organisationId={activeOrgId}
+                  onSaved={(next) => {
+                    setDoc((prev) =>
+                      prev
+                        ? {
+                            ...prev,
+                            extractedJson: next as StoredDocument["extractedJson"],
+                            displayTitle:
+                              typeof next.suggested_title === "string"
+                                ? next.suggested_title
+                                : prev.displayTitle,
+                          }
+                        : prev
+                    );
+                    toast.success("Corrections saved");
+                  }}
                 />
               ) : (
                 <div className="bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/10 rounded-2xl p-8 text-center text-sm text-gray-500 dark:text-slate-400">
@@ -444,6 +479,58 @@ export function DocumentDetailView({
           </div>
         </div>
       </div>
+
+      {showReprocessModal && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50 backdrop-blur-sm">
+          <div className="bg-white dark:bg-[#111827] w-full max-w-lg rounded-2xl border border-gray-200 dark:border-white/10 shadow-xl p-6 space-y-4">
+            <h2 className="text-lg font-semibold text-gray-900 dark:text-slate-50">
+              Re-run extraction?
+            </h2>
+            <p className="text-sm text-gray-600 dark:text-slate-400">
+              This uses one monthly extraction credit and replaces the current
+              extracted fields. You can optionally add context to guide the model.
+            </p>
+            <div>
+              <label className="text-xs font-medium text-gray-500 dark:text-slate-400 uppercase tracking-wide">
+                Additional context (optional)
+              </label>
+              <textarea
+                value={reprocessContext}
+                onChange={(e) => setReprocessContext(e.target.value)}
+                rows={4}
+                placeholder="e.g. Patient name is handwritten near the top right; client code is LUPIN-… "
+                className="mt-1.5 w-full rounded-xl border border-gray-200 dark:border-white/10 bg-gray-50 dark:bg-slate-900 px-3 py-2.5 text-sm text-gray-900 dark:text-slate-100 outline-none focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb] resize-y"
+              />
+            </div>
+            <div className="flex items-center justify-end gap-2 pt-2">
+              <button
+                type="button"
+                disabled={reprocessing}
+                onClick={() => {
+                  setShowReprocessModal(false);
+                  setReprocessContext("");
+                }}
+                className="px-4 py-2 text-sm font-medium text-gray-600 dark:text-slate-300 hover:bg-gray-100 dark:hover:bg-slate-800 rounded-lg"
+              >
+                Cancel
+              </button>
+              <button
+                type="button"
+                disabled={reprocessing}
+                onClick={() => void handleReprocess()}
+                className="inline-flex items-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#2563eb] hover:bg-[#1d4ed8] rounded-lg disabled:opacity-50"
+              >
+                {reprocessing ? (
+                  <Loader2 className="w-4 h-4 animate-spin" />
+                ) : (
+                  <RefreshCw className="w-4 h-4" />
+                )}
+                Confirm re-run
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }

@@ -65,6 +65,7 @@ export default function Dashboard() {
   const firstName = userData?.name?.split(" ")[0] || "there";
 
   const [statsData, setStatsData] = useState<OrgStats | null>(null);
+  const [isFreePlan, setIsFreePlan] = useState(false);
   const [loading, setLoading] = useState(true);
   const [greeting, setGreeting] = useState(() =>
     pickDashboardGreeting(firstName)
@@ -83,18 +84,31 @@ export default function Dashboard() {
 
       setLoading(true);
       try {
-        const res = await fetch(
-          `/api/organisations/${activeOrgId}/stats`,
-          withOrgHeaders(activeOrgId)
-        );
-        const data = await res.json();
-        if (res.ok) {
+        const [statsRes, usageRes] = await Promise.all([
+          fetch(
+            `/api/organisations/${activeOrgId}/stats`,
+            withOrgHeaders(activeOrgId)
+          ),
+          fetch(
+            `/api/organisations/${activeOrgId}/usage`,
+            withOrgHeaders(activeOrgId)
+          ),
+        ]);
+        const data = await statsRes.json();
+        if (statsRes.ok) {
           setStatsData(data.stats || null);
         } else {
           setStatsData(null);
         }
+        if (usageRes.ok) {
+          const usageData = await usageRes.json();
+          setIsFreePlan(Boolean(usageData.usage?.plan?.isFree));
+        } else {
+          setIsFreePlan(false);
+        }
       } catch {
         setStatsData(null);
+        setIsFreePlan(false);
       } finally {
         setLoading(false);
       }
@@ -170,6 +184,25 @@ export default function Dashboard() {
             </Link>
           </div>
         </div>
+
+        {isFreePlan && (
+          <div className="rounded-2xl border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+            <div>
+              <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">
+                You&apos;re on the Free plan
+              </p>
+              <p className="text-xs text-amber-800/80 dark:text-amber-200/70 mt-0.5">
+                5 MB storage · 2 extractions / month · 0 API calls. Upgrade for more capacity.
+              </p>
+            </div>
+            <Link
+              href="/settings/billing"
+              className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-[#2563eb] hover:bg-[#1d4ed8] rounded-lg shrink-0"
+            >
+              Upgrade plan
+            </Link>
+          </div>
+        )}
 
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">

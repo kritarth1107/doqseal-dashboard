@@ -5,6 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { Settings as SettingsIcon, Monitor, Sun, Moon } from 'lucide-react';
 import { useTheme } from 'next-themes';
 import { useAuth } from '@/components/AuthProvider';
+import { BillingSettings } from '@/components/settings/BillingSettings';
 
 const SETTINGS_TABS = [
     { id: 'general', label: 'General', path: '/settings' },
@@ -392,7 +393,11 @@ export default function SettingsPage() {
                             </div>
                         )}
 
-                        {activeTabId !== 'general' && activeTabId !== 'account' && (
+                        {activeTabId === 'billing' && (
+                            <BillingSettings />
+                        )}
+
+                        {activeTabId !== 'general' && activeTabId !== 'account' && activeTabId !== 'billing' && (
                             <div className="flex flex-col gap-6 animate-in fade-in duration-300 h-full justify-center items-center py-20 opacity-50">
                                 <SettingsIcon className="w-12 h-12 text-gray-300 mb-2" />
                                 <h2 className="text-xl font-medium">{SETTINGS_TABS.find(t => t.id === activeTabId)?.label || 'Tab'} Settings</h2>

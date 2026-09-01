@@ -57,6 +57,15 @@ export async function POST(request: NextRequest) {
       backendForm.append("projectId", projectId);
     }
 
+    const keepForever = formData.get("keepForever");
+    if (keepForever === "true" || keepForever === "1") {
+      backendForm.append("keepForever", "true");
+    }
+    const retentionDays = formData.get("retentionDays");
+    if (typeof retentionDays === "string" && retentionDays.trim()) {
+      backendForm.append("retentionDays", retentionDays.trim());
+    }
+
     const response = await backendFetch(request, "documents/upload", {
       method: "POST",
       body: backendForm,

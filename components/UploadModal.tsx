@@ -55,6 +55,8 @@ export function UploadModal({
   const [agreedToDPA, setAgreedToDPA] = useState(false);
   const [selectedProjectId, setSelectedProjectId] = useState("");
   const [shareWithOrg, setShareWithOrg] = useState(false);
+  const [keepForever, setKeepForever] = useState(false);
+  const [retentionDays, setRetentionDays] = useState(15);
   const [uploading, setUploading] = useState(false);
   const [fileProgress, setFileProgress] = useState<FileProgress[]>([]);
   const fileInputRef = useRef<HTMLInputElement>(null);
@@ -68,6 +70,8 @@ export function UploadModal({
     setAgreedToDPA(false);
     setUploading(false);
     setFileProgress([]);
+    setKeepForever(false);
+    setRetentionDays(15);
     if (fixedProjectId) {
       setSelectedProjectId(fixedProjectId);
       setShareWithOrg(defaultSharedWithOrganisation ?? true);
@@ -186,6 +190,8 @@ export function UploadModal({
           file,
           projectId: effectiveProjectId,
           sharedWithOrganisation: shareWithOrg,
+          retentionDays,
+          keepForever,
           onProgress: (percent) => {
             setFileProgress((prev) =>
               prev.map((p, idx) => (idx === i ? { ...p, percent } : p))
@@ -420,6 +426,43 @@ export function UploadModal({
               </span>
             </span>
           </label>
+
+          <div className="p-4 bg-gray-50 rounded-xl border border-gray-200 space-y-3">
+            <div>
+              <p className="text-sm font-medium text-[#333]">File retention (TTL)</p>
+              <p className="text-xs text-gray-500 mt-0.5 leading-relaxed">
+                Original file is deleted after this period. Extracted context for AI chat is kept.
+                Charged ₹0.12/doc/day while the file is stored. Minimum 15 days.
+              </p>
+            </div>
+            <label className="flex items-center gap-2 cursor-pointer">
+              <input
+                type="checkbox"
+                checked={keepForever}
+                disabled={uploading}
+                onChange={(e) => setKeepForever(e.target.checked)}
+                className="w-4 h-4 rounded border-gray-300 accent-[#2563eb]"
+              />
+              <span className="text-sm text-[#333]">Keep forever until I delete</span>
+            </label>
+            {!keepForever && (
+              <div className="flex items-center gap-3">
+                <input
+                  type="number"
+                  min={15}
+                  step={1}
+                  value={retentionDays}
+                  disabled={uploading}
+                  onChange={(e) => {
+                    const n = Number(e.target.value);
+                    setRetentionDays(Number.isNaN(n) ? 15 : Math.max(15, Math.floor(n)));
+                  }}
+                  className="w-24 rounded-lg border border-gray-200 bg-white px-3 py-2 text-sm outline-none focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb]"
+                />
+                <span className="text-sm text-gray-600">days (min 15)</span>
+              </div>
+            )}
+          </div>
 
           <div className="flex items-start gap-3 p-4 bg-gray-50 rounded-xl border border-gray-200">
             <div className="flex items-center h-5 mt-0.5">

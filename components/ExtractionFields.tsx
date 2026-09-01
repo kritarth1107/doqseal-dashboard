@@ -1,3 +1,8 @@
+"use client";
+
+import { useEffect, useState } from "react";
+import { Check, Loader2, Pencil, X } from "lucide-react";
+
 function formatLabel(key: string): string {
   return key
     .replace(/_/g, " ")
@@ -19,10 +24,16 @@ function FieldCard({
   label,
   value,
   confidence,
+  editable,
+  draft,
+  onDraftChange,
 }: {
   label: string;
   value: string;
   confidence?: number;
+  editable?: boolean;
+  draft?: string;
+  onDraftChange?: (next: string) => void;
 }) {
   return (
     <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-gray-50 dark:bg-slate-800/40 p-3">
@@ -36,9 +47,18 @@ function FieldCard({
           </span>
         )}
       </div>
-      <p className="mt-1 text-sm text-gray-900 dark:text-slate-100 whitespace-pre-wrap break-words">
-        {value}
-      </p>
+      {editable ? (
+        <input
+          type="text"
+          value={draft ?? value}
+          onChange={(e) => onDraftChange?.(e.target.value)}
+          className="mt-1.5 w-full rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-sm text-gray-900 dark:text-slate-100 outline-none focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb]"
+        />
+      ) : (
+        <p className="mt-1 text-sm text-gray-900 dark:text-slate-100 whitespace-pre-wrap break-words">
+          {value}
+        </p>
+      )}
     </div>
   );
 }
@@ -96,24 +116,43 @@ function Section({
   );
 }
 
+const RESERVED = new Set([
+  "document_type",
+  "suggested_title",
+  "summary",
+  "pointers",
+  "pages",
+  "key_entities",
+  "auto_tags",
+  "project_context",
+  "project_hint",
+  "project_description",
+  "source",
+  "ocr_preview",
+  "confidence_scores",
+]);
+
 export function ExtractionFields({
   data,
   fieldConfidence = {},
+  documentId,
+  organisationId,
+  onSaved,
 }: {
   data: Record<string, unknown>;
   fieldConfidence?: Record<string, number>;
+  documentId?: string;
+  organisationId?: string | null;
+  onSaved?: (next: Record<string, unknown>) => void;
 }) {
+  const [editing, setEditing] = useState(false);
+  const [drafts, setDrafts] = useState<Record<string, string>>({});
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
+
   const entries = Object.entries(data).filter(
     ([, value]) => value !== null && value !== undefined && value !== ""
   );
-
-  if (!entries.length) {
-    return (
-      <div className="bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/10 rounded-2xl p-8 text-center text-sm text-gray-500 dark:text-slate-400">
-        No extracted fields yet.
-      </div>
-    );
-  }
 
   const suggestedTitle =
     typeof data.suggested_title === "string" ? data.suggested_title : null;
@@ -126,27 +165,11 @@ export function ExtractionFields({
     : [];
   const keyEntities = isPlainObject(data.key_entities) ? data.key_entities : null;
   const autoTags = Array.isArray(data.auto_tags)
-    ? data.auto_tags.filter((t) => typeof t === "string") as string[]
+    ? (data.auto_tags.filter((t) => typeof t === "string") as string[])
     : [];
 
-  const reserved = new Set([
-    "document_type",
-    "suggested_title",
-    "summary",
-    "pointers",
-    "pages",
-    "key_entities",
-    "auto_tags",
-    "project_context",
-    "project_hint",
-    "project_description",
-    "source",
-    "ocr_preview",
-    "confidence_scores",
-  ]);
-
   const scalarEntries = entries.filter(([key, value]) => {
-    if (reserved.has(key)) return false;
+    if (RESERVED.has(key)) return false;
     return (
       typeof value === "string" ||
       typeof value === "number" ||
@@ -155,17 +178,153 @@ export function ExtractionFields({
   });
 
   const objectEntries = entries.filter(([key, value]) => {
-    if (reserved.has(key)) return false;
+    if (RESERVED.has(key)) return false;
     return isPlainObject(value);
   });
 
   const arrayEntries = entries.filter(([key, value]) => {
-    if (reserved.has(key)) return false;
+    if (RESERVED.has(key)) return false;
     return Array.isArray(value);
   });
 
+  const editableKeys: Array<{ key: string; value: string }> = [];
+  if (suggestedTitle) {
+    editableKeys.push({ key: "suggested_title", value: suggestedTitle });
+  }
+  if (summary) {
+    editableKeys.push({ key: "summary", value: summary });
+  }
+  for (const [key, value] of scalarEntries) {
+    editableKeys.push({ key, value: formatPrimitive(value) });
+  }
+  if (keyEntities) {
+    for (const [key, value] of Object.entries(keyEntities)) {
+      if (
+        typeof value === "string" ||
+        typeof value === "number" ||
+        typeof value === "boolean"
+      ) {
+        editableKeys.push({
+          key: `key_entities.${key}`,
+          value: formatPrimitive(value),
+        });
+      }
+    }
+  }
+
+  useEffect(() => {
+    if (!editing) return;
+    const next: Record<string, string> = {};
+    for (const row of editableKeys) {
+      next[row.key] = row.value === "—" ? "" : row.value;
+    }
+    setDrafts(next);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [editing, data]);
+
+  const canEdit = Boolean(documentId && organisationId);
+
+  const handleSave = async () => {
+    if (!documentId || !organisationId) return;
+    setSaving(true);
+    setError(null);
+    try {
+      const fields: Record<string, unknown> = {};
+      for (const row of editableKeys) {
+        const next = drafts[row.key];
+        if (next === undefined) continue;
+        const prev = row.value === "—" ? "" : row.value;
+        if (next !== prev) {
+          fields[row.key] = next;
+        }
+      }
+      if (!Object.keys(fields).length) {
+        setEditing(false);
+        return;
+      }
+
+      const res = await fetch(`/api/documents/${documentId}/extraction`, {
+        method: "PATCH",
+        headers: {
+          "Content-Type": "application/json",
+          "x-organisation-id": organisationId,
+        },
+        body: JSON.stringify({ fields }),
+      });
+      const payload = await res.json();
+      if (!res.ok) throw new Error(payload.error || "Save failed");
+      const nextData =
+        payload.data && typeof payload.data === "object"
+          ? (payload.data as Record<string, unknown>)
+          : ({ ...data, ...fields } as Record<string, unknown>);
+      onSaved?.(nextData);
+      setEditing(false);
+    } catch (err: unknown) {
+      setError(err instanceof Error ? err.message : "Save failed");
+    } finally {
+      setSaving(false);
+    }
+  };
+
+  if (!entries.length) {
+    return (
+      <div className="bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/10 rounded-2xl p-8 text-center text-sm text-gray-500 dark:text-slate-400">
+        No extracted fields yet.
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-4">
+      {canEdit && (
+        <div className="flex items-center justify-between gap-3">
+          <p className="text-xs text-gray-500 dark:text-slate-400">
+            Correct fields when extraction is wrong — saved for future model tuning.
+          </p>
+          <div className="flex items-center gap-2">
+            {editing ? (
+              <>
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => setEditing(false)}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-slate-300 bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 disabled:opacity-50"
+                >
+                  <X className="w-3.5 h-3.5" />
+                  Cancel
+                </button>
+                <button
+                  type="button"
+                  disabled={saving}
+                  onClick={() => void handleSave()}
+                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-[#2563eb] rounded-lg hover:bg-[#1d4ed8] disabled:opacity-50"
+                >
+                  {saving ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                  ) : (
+                    <Check className="w-3.5 h-3.5" />
+                  )}
+                  Save corrections
+                </button>
+              </>
+            ) : (
+              <button
+                type="button"
+                onClick={() => setEditing(true)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-slate-200 bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800"
+              >
+                <Pencil className="w-3.5 h-3.5" />
+                Edit fields
+              </button>
+            )}
+          </div>
+        </div>
+      )}
+
+      {error && (
+        <p className="text-xs text-red-600 dark:text-red-400">{error}</p>
+      )}
+
       {(suggestedTitle || summary) && (
         <Section title="Document overview">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
@@ -174,6 +333,11 @@ export function ExtractionFields({
                 label="Title"
                 value={suggestedTitle}
                 confidence={fieldConfidence.suggested_title}
+                editable={editing}
+                draft={drafts.suggested_title}
+                onDraftChange={(v) =>
+                  setDrafts((prev) => ({ ...prev, suggested_title: v }))
+                }
               />
             )}
             {typeof data.project_context === "string" && (
@@ -185,6 +349,11 @@ export function ExtractionFields({
                   label="Summary"
                   value={summary}
                   confidence={fieldConfidence.summary}
+                  editable={editing}
+                  draft={drafts.summary}
+                  onDraftChange={(v) =>
+                    setDrafts((prev) => ({ ...prev, summary: v }))
+                  }
                 />
               </div>
             )}
@@ -195,13 +364,26 @@ export function ExtractionFields({
       {keyEntities && Object.keys(keyEntities).length > 0 && (
         <Section title="Key entities">
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {Object.entries(keyEntities).map(([key, value]) => (
-              <FieldCard
-                key={key}
-                label={formatLabel(key)}
-                value={formatPrimitive(value)}
-              />
-            ))}
+            {Object.entries(keyEntities).map(([key, value]) => {
+              const path = `key_entities.${key}`;
+              return (
+                <FieldCard
+                  key={key}
+                  label={formatLabel(key)}
+                  value={formatPrimitive(value)}
+                  editable={
+                    editing &&
+                    (typeof value === "string" ||
+                      typeof value === "number" ||
+                      typeof value === "boolean")
+                  }
+                  draft={drafts[path]}
+                  onDraftChange={(v) =>
+                    setDrafts((prev) => ({ ...prev, [path]: v }))
+                  }
+                />
+              );
+            })}
           </div>
         </Section>
       )}
@@ -244,6 +426,11 @@ export function ExtractionFields({
                 label={formatLabel(key)}
                 value={formatPrimitive(value)}
                 confidence={fieldConfidence[key]}
+                editable={editing}
+                draft={drafts[key]}
+                onDraftChange={(v) =>
+                  setDrafts((prev) => ({ ...prev, [key]: v }))
+                }
               />
             ))}
           </div>

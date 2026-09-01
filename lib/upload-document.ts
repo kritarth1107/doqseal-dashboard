@@ -72,6 +72,9 @@ export async function uploadDocument(opts: {
   file: File;
   projectId?: string | null;
   sharedWithOrganisation?: boolean;
+  /** Days to keep original file (min 15). Ignored if keepForever. */
+  retentionDays?: number;
+  keepForever?: boolean;
   onProgress?: (percent: number) => void;
 }): Promise<UploadResult> {
   const {
@@ -79,6 +82,8 @@ export async function uploadDocument(opts: {
     file,
     projectId,
     sharedWithOrganisation = false,
+    retentionDays = 15,
+    keepForever = false,
     onProgress,
   } = opts;
 
@@ -89,6 +94,11 @@ export async function uploadDocument(opts: {
     "sharedWithOrganisation",
     sharedWithOrganisation ? "true" : "false"
   );
+  if (keepForever) {
+    formData.append("keepForever", "true");
+  } else {
+    formData.append("retentionDays", String(Math.max(15, retentionDays)));
+  }
   if (projectId) {
     formData.append("projectId", projectId);
   }

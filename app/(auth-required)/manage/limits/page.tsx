@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+import Link from "next/link";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { Gauge, Loader2 } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
@@ -23,45 +24,53 @@ type PlanInfo = {
   id: string;
   name: string;
   upgradeAvailable?: boolean;
+  isFree?: boolean;
 };
 
-const STARTER_QUOTAS: QuotaItem[] = [
+const FREE_QUOTAS: QuotaItem[] = [
   {
     id: "storage",
     name: "Document storage",
     used: 0,
-    limit: 100,
+    limit: 5,
     unit: "MB",
     usedLabel: "0 B",
-    limitLabel: "100 MB",
-    utilisedText: "0 B utilised of 100 MB",
+    limitLabel: "5 MB",
+    utilisedText: "0 B utilised of 5 MB",
   },
   {
     id: "extractions",
     name: "AI extractions / month",
     used: 0,
-    limit: 500,
-    utilisedText: "0 utilised of 500",
+    limit: 2,
+    utilisedText: "0 utilised of 2",
   },
   {
     id: "api",
     name: "API requests / day",
     used: 0,
-    limit: 10_000,
-    utilisedText: "0 utilised of 10,000",
+    limit: 0,
+    utilisedText: "0 utilised of 0",
   },
 ];
 
 function normalizeQuotas(raw: unknown): QuotaItem[] {
   if (Array.isArray(raw)) {
-    const items = raw.filter(
-      (item): item is QuotaItem =>
-        typeof item === "object" &&
-        item !== null &&
-        "name" in item &&
-        "used" in item &&
-        "limit" in item
-    );
+    const items = raw
+      .filter(
+        (item): item is QuotaItem =>
+          typeof item === "object" &&
+          item !== null &&
+          "name" in item &&
+          "used" in item
+      )
+      .map((q) => ({
+        ...q,
+        limit:
+          q.limit === null || q.limit === undefined
+            ? Number.MAX_SAFE_INTEGER
+            : Number(q.limit),
+      }));
     return items.filter((q) => !/e-?sign|envelope/i.test(q.name));
   }
 
@@ -72,13 +81,16 @@ function normalizeQuotas(raw: unknown): QuotaItem[] {
     }
   }
 
-  return STARTER_QUOTAS;
+  return FREE_QUOTAS;
 }
 
 function formatUtilised(q: QuotaItem) {
   if (q.utilisedText) return q.utilisedText;
   if (q.usedLabel && q.limitLabel) {
     return `${q.usedLabel} utilised of ${q.limitLabel}`;
+  }
+  if (q.limit >= Number.MAX_SAFE_INTEGER / 2) {
+    return `${q.used.toLocaleString()} utilised (unlimited)`;
   }
   const used =
     q.unit === "MB" && q.used % 1 !== 0
@@ -91,8 +103,8 @@ function formatUtilised(q: QuotaItem) {
 
 export default function LimitsPage() {
   const { activeOrgId } = useAuth();
-  const [quotas, setQuotas] = useState<QuotaItem[]>(STARTER_QUOTAS);
-  const [plan, setPlan] = useState<PlanInfo>({ id: "starter", name: "Starter" });
+  const [quotas, setQuotas] = useState<QuotaItem[]>(FREE_QUOTAS);
+  const [plan, setPlan] = useState<PlanInfo>({ id: "free", name: "Free" });
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -113,16 +125,17 @@ export default function LimitsPage() {
           setQuotas(normalizeQuotas(data.usage));
           if (data.usage.plan && typeof data.usage.plan === "object") {
             setPlan({
-              id: data.usage.plan.id || "starter",
-              name: data.usage.plan.name || "Starter",
+              id: data.usage.plan.id || "free",
+              name: data.usage.plan.name || "Free",
               upgradeAvailable: Boolean(data.usage.plan.upgradeAvailable),
+              isFree: Boolean(data.usage.plan.isFree),
             });
           }
         } else {
-          setQuotas(STARTER_QUOTAS);
+          setQuotas(FREE_QUOTAS);
         }
       } catch {
-        setQuotas(STARTER_QUOTAS);
+        setQuotas(FREE_QUOTAS);
       } finally {
         setLoading(false);
       }
@@ -153,7 +166,15 @@ export default function LimitsPage() {
                   </p>
                   <p className="text-lg font-semibold text-gray-900 mt-1">{plan.name}</p>
                   <p className="text-sm text-gray-500 mt-1">
-                    Included with your organisation. Higher limits will be available when upgrades launch.
+                    Quotas are enforced on upload, extraction, and API usage.
+                    {plan.upgradeAvailable ? (
+                      <>
+                        {" "}
+                        <Link href="/settings/billing" className="text-[#2563eb] hover:underline">
+                          Upgrade plan
+                        </Link>
+                      </>
+                    ) : null}
                   </p>
                 </div>
                 <span className="shrink-0 text-xs font-medium px-2.5 py-1 rounded-lg bg-blue-50 text-[#2563eb]">
@@ -163,7 +184,14 @@ export default function LimitsPage() {
             </div>
 
             {quotas.map((q) => {
-              const pct = q.limit > 0 ? Math.round((q.used / q.limit) * 100) : 0;
+              const pct =
+                q.limit > 0 && q.limit < Number.MAX_SAFE_INTEGER / 2
+                  ? Math.round((q.used / q.limit) * 100)
+                  : q.limit === 0
+                    ? q.used > 0
+                      ? 100
+                      : 0
+                    : 0;
               return (
                 <div
                   key={q.id || q.name}
@@ -185,7 +213,9 @@ export default function LimitsPage() {
                     />
                   </div>
                   <p className="text-xs text-gray-400 mt-2">
-                    {pct}% utilised
+                    {q.limit >= Number.MAX_SAFE_INTEGER / 2
+                      ? "Unlimited"
+                      : `${pct}% utilised`}
                     {typeof q.usedRaw === "number" && q.id === "storage"
                       ? ` · ${q.usedRaw.toLocaleString()} bytes on disk`
                       : ""}
