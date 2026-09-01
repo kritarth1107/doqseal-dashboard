@@ -7,14 +7,14 @@ import {
   Shield,
   MoreVertical,
   Search,
-  ShieldCheck,
   UserPlus,
-  AtSign,
   ArrowRight,
   CheckCircle2,
   Loader2,
   X,
   Trash2,
+  Copy,
+  Check,
 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/components/AuthProvider";
@@ -43,6 +43,19 @@ type OrgInvite = {
   expiresAt?: string;
 };
 
+type DomainAccessState = {
+  verifiedDomain: string | null;
+  isDomainVerified: boolean;
+  autoJoinEnabled: boolean;
+  domainVerifiedAt: string | null;
+  verificationToken: string | null;
+  txtRecordHost: string | null;
+  txtRecordValue: string | null;
+  pendingDomain: string | null;
+  adminEmailDomain: string | null;
+  adminCanVerifyDomains: boolean;
+};
+
 type RowItem =
   | { kind: "member"; id: string; name: string; email: string; role: string; status: "Active"; avatar: string }
   | { kind: "invite"; id: string; name: string; email: string; role: string; status: "Invited"; avatar: string };
@@ -65,12 +78,25 @@ function formatRole(role: string) {
   return role.charAt(0).toUpperCase() + role.slice(1);
 }
 
+async function copyText(value: string, label: string) {
+  try {
+    await navigator.clipboard.writeText(value);
+    toast.success(`${label} copied`);
+  } catch {
+    toast.error("Could not copy");
+  }
+}
+
 export default function MembersManagementPage() {
   const { activeOrgId, activeOrg, userData } = useAuth();
   const [activeTab, setActiveTab] = useState("members");
   const [searchQuery, setSearchQuery] = useState("");
-  const [autoJoin, setAutoJoin] = useState(true);
-  const [domain, setDomain] = useState("doqseal.io");
+  const [autoJoin, setAutoJoin] = useState(false);
+  const [domain, setDomain] = useState("");
+  const [domainState, setDomainState] = useState<DomainAccessState | null>(null);
+  const [domainLoading, setDomainLoading] = useState(false);
+  const [domainSaving, setDomainSaving] = useState(false);
+  const [domainVerifying, setDomainVerifying] = useState(false);
   const [members, setMembers] = useState<OrgMember[]>([]);
   const [invites, setInvites] = useState<OrgInvite[]>([]);
   const [loading, setLoading] = useState(true);
@@ -102,9 +128,6 @@ export default function MembersManagementPage() {
 
       if (orgRes.ok) {
         setMembers(orgData.organisation?.members || []);
-        if (orgData.organisation?.autoJoinDomain) {
-          setDomain(orgData.organisation.autoJoinDomain);
-        }
       } else {
         setMembers([]);
       }
@@ -129,6 +152,127 @@ export default function MembersManagementPage() {
   useEffect(() => {
     loadData();
   }, [loadData]);
+
+  const loadDomainSettings = useCallback(async () => {
+    if (!activeOrgId || !canManage) return;
+    setDomainLoading(true);
+    try {
+      const res = await fetch(
+        `/api/organisations/${activeOrgId}/domain`,
+        withOrgHeaders(activeOrgId)
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to load domain settings");
+      const d = data.domain as DomainAccessState;
+      setDomainState(d);
+      setAutoJoin(Boolean(d.autoJoinEnabled));
+      setDomain(
+        d.verifiedDomain ||
+          d.pendingDomain ||
+          (d.adminCanVerifyDomains ? d.adminEmailDomain || "" : "")
+      );
+    } catch (error: unknown) {
+      toast.error(
+        error instanceof Error ? error.message : "Failed to load domain settings"
+      );
+    } finally {
+      setDomainLoading(false);
+    }
+  }, [activeOrgId, canManage]);
+
+  useEffect(() => {
+    if (activeTab === "domains") {
+      loadDomainSettings();
+    }
+  }, [activeTab, loadDomainSettings]);
+
+  const handleClaimDomain = async () => {
+    if (!activeOrgId || !domain.trim()) return;
+    setDomainSaving(true);
+    try {
+      const res = await fetch(
+        `/api/organisations/${activeOrgId}/domain/claim`,
+        withOrgHeaders(activeOrgId, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ domain: domain.trim() }),
+        })
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to claim domain");
+      setDomainState(data.domain);
+      toast.success("Add the TXT record below, then verify DNS");
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Failed to claim domain");
+    } finally {
+      setDomainSaving(false);
+    }
+  };
+
+  const handleVerifyDomain = async () => {
+    if (!activeOrgId) return;
+    setDomainVerifying(true);
+    try {
+      const res = await fetch(
+        `/api/organisations/${activeOrgId}/domain/verify`,
+        withOrgHeaders(activeOrgId, { method: "POST" })
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Verification failed");
+      setDomainState(data.domain);
+      setAutoJoin(Boolean(data.domain.autoJoinEnabled));
+      toast.success("Domain verified — you can enable auto-join");
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Verification failed");
+    } finally {
+      setDomainVerifying(false);
+    }
+  };
+
+  const handleSaveDomainSettings = async () => {
+    if (!activeOrgId) return;
+    setDomainSaving(true);
+    try {
+      const res = await fetch(
+        `/api/organisations/${activeOrgId}/domain/settings`,
+        withOrgHeaders(activeOrgId, {
+          method: "PATCH",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({ autoJoinEnabled: autoJoin }),
+        })
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to save settings");
+      setDomainState(data.domain);
+      toast.success(autoJoin ? "Auto-join enabled" : "Auto-join disabled");
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Failed to save settings");
+    } finally {
+      setDomainSaving(false);
+    }
+  };
+
+  const handleReleaseDomain = async () => {
+    if (!activeOrgId) return;
+    if (!window.confirm("Release this domain? Auto-join will be disabled.")) return;
+    setDomainSaving(true);
+    try {
+      const res = await fetch(
+        `/api/organisations/${activeOrgId}/domain`,
+        withOrgHeaders(activeOrgId, { method: "DELETE" })
+      );
+      const data = await res.json();
+      if (!res.ok) throw new Error(data.error || "Failed to release domain");
+      setDomainState(data.domain);
+      setDomain("");
+      setAutoJoin(false);
+      toast.success("Domain released");
+    } catch (error: unknown) {
+      toast.error(error instanceof Error ? error.message : "Failed to release domain");
+    } finally {
+      setDomainSaving(false);
+    }
+  };
 
   const rows: RowItem[] = [
     ...members.map((m) => ({
@@ -478,99 +622,200 @@ export default function MembersManagementPage() {
     </div>
   );
 
-  const renderDomains = () => (
-    <div className="space-y-8 animate-in fade-in duration-300 max-w-4xl">
-      <div className="bg-white rounded-2xl border border-gray-200 p-8 shadow-sm relative overflow-hidden group">
-        <div className="absolute -top-24 -right-24 w-64 h-64 bg-[#2563eb]/5 rounded-full blur-3xl pointer-events-none group-hover:bg-[#2563eb]/10 transition-all duration-700" />
+  const renderDomains = () => {
+    const isVerified = domainState?.isDomainVerified;
+    const pending = domainState?.pendingDomain;
+    const showTxtInstructions =
+      pending && domainState?.txtRecordHost && domainState?.txtRecordValue;
+    const adminWorkDomain = domainState?.adminEmailDomain || null;
+    const canVerify = domainState?.adminCanVerifyDomains ?? false;
+    const domainNormalized = domain.trim().toLowerCase();
+    const domainMatchesAdmin =
+      Boolean(adminWorkDomain) && domainNormalized === adminWorkDomain;
 
-        <div className="relative z-10 flex flex-col md:flex-row gap-8 items-start">
-          <div className="w-14 h-14 rounded-2xl bg-[#2563eb]/10 flex items-center justify-center shrink-0">
-            <Globe className="w-7 h-7 text-[#2563eb]" />
+    return (
+      <div className="max-w-2xl space-y-4 animate-in fade-in duration-200">
+        {!canManage ? (
+          <p className="text-sm text-gray-500">
+            Only admins can configure domain auto-access.
+          </p>
+        ) : domainLoading ? (
+          <div className="flex items-center gap-2 py-8 text-sm text-gray-500">
+            <Loader2 className="w-4 h-4 animate-spin" />
+            Loading…
           </div>
-          <div className="flex-1 space-y-6">
-            <div>
-              <h3 className="text-xl font-semibold text-[#333] mb-2">Domain-based Auto-Access</h3>
-              <p className="text-sm text-gray-500 leading-relaxed">
-                Streamline your team&apos;s onboarding by allowing anyone with a specific email domain to automatically join your workspace. New users will be granted immediate access as team members.
-              </p>
+        ) : (
+          <div className="bg-white border border-gray-200 rounded-xl divide-y divide-gray-100">
+            <div className="px-4 py-3 flex items-center justify-between gap-3">
+              <div>
+                <h3 className="text-sm font-medium text-gray-900">Domain auto-access</h3>
+                <p className="text-xs text-gray-500 mt-0.5">
+                  Verify via DNS TXT, then allow @{domain || adminWorkDomain || "company.com"}{" "}
+                  users to join on login.
+                </p>
+              </div>
+              {isVerified ? (
+                <span className="inline-flex items-center gap-1 text-xs font-medium text-emerald-700 bg-emerald-50 px-2 py-1 rounded-md shrink-0">
+                  <CheckCircle2 className="w-3 h-3" />
+                  Verified
+                </span>
+              ) : pending ? (
+                <span className="text-xs font-medium text-amber-700 bg-amber-50 px-2 py-1 rounded-md shrink-0">
+                  Pending DNS
+                </span>
+              ) : null}
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-6">
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">
-                  Authorized Domain
+            {!canVerify && (
+              <div className="px-4 py-2.5 text-xs text-amber-800 bg-amber-50 border-b border-amber-100">
+                Sign in with a work email (not Gmail, Outlook, Yahoo, etc.) to verify
+                a company domain. Your account: {userData?.email}
+              </div>
+            )}
+
+            {canVerify && adminWorkDomain && !isVerified && !pending && (
+              <div className="px-4 py-2.5 text-xs text-gray-600 bg-gray-50 border-b border-gray-100">
+                You can only verify <strong>@{adminWorkDomain}</strong> — it must match
+                your signed-in email ({userData?.email}).
+              </div>
+            )}
+
+            <div className="px-4 py-3 space-y-3">
+              <div>
+                <label className="text-[11px] font-medium text-gray-400 uppercase tracking-wide">
+                  Domain
                 </label>
-                <div className="relative">
-                  <AtSign className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-400" />
+                <div className="mt-1 flex gap-2">
                   <input
                     type="text"
                     value={domain}
                     onChange={(e) => setDomain(e.target.value)}
-                    placeholder="e.g. doqseal.io"
-                    className="w-full pl-10 pr-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl text-sm outline-none focus:border-[#2563eb] transition-all font-medium"
+                    disabled={Boolean(isVerified || pending || (canVerify && adminWorkDomain))}
+                    placeholder={adminWorkDomain || "acme.com"}
+                    className="flex-1 px-3 py-2 bg-gray-50 border border-gray-200 rounded-lg text-sm outline-none focus:border-gray-400 disabled:opacity-60"
                   />
+                  {!isVerified && !pending && (
+                    <button
+                      type="button"
+                      onClick={handleClaimDomain}
+                      disabled={
+                        domainSaving ||
+                        !domain.trim() ||
+                        !canVerify ||
+                        !domainMatchesAdmin
+                      }
+                      className="px-3 py-2 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-800 disabled:opacity-50 whitespace-nowrap"
+                    >
+                      {domainSaving ? <Loader2 className="w-4 h-4 animate-spin" /> : "Verify"}
+                    </button>
+                  )}
                 </div>
               </div>
-              <div className="space-y-2">
-                <label className="text-xs font-bold text-gray-400 uppercase tracking-widest">
-                  Default Member Role
-                </label>
-                <div className="px-4 py-2.5 bg-gray-50 border border-gray-200 rounded-xl flex items-center justify-between">
-                  <span className="text-sm font-medium text-gray-700">Member</span>
-                  <ShieldCheck className="w-4 h-4 text-[#2563eb]" />
-                </div>
-              </div>
-            </div>
 
-            <div className="flex items-center justify-between p-4 bg-[#2563eb]/5 rounded-2xl border border-[#2563eb]/20">
-              <div className="flex items-center gap-3">
-                <CheckCircle2 className="w-5 h-5 text-[#2563eb]" />
-                <div>
-                  <p className="text-sm font-semibold text-[#333]">Enable auto-registration</p>
-                  <p className="text-xs text-gray-500">Allow users with @{domain} to join instantly.</p>
+              {showTxtInstructions && !isVerified && (
+                <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 space-y-2">
+                  <p className="text-xs text-gray-600">
+                    Add a TXT record at your DNS provider, then click Check DNS.
+                  </p>
+                  <div className="space-y-1.5">
+                    {[
+                      { label: "Host", value: domainState!.txtRecordHost! },
+                      { label: "Value", value: domainState!.txtRecordValue! },
+                    ].map((row) => (
+                      <div
+                        key={row.label}
+                        className="flex items-start gap-2 text-xs"
+                      >
+                        <span className="w-10 shrink-0 text-gray-400 pt-1.5">
+                          {row.label}
+                        </span>
+                        <code className="flex-1 px-2 py-1.5 bg-white border border-gray-200 rounded font-mono text-[11px] break-all">
+                          {row.value}
+                        </code>
+                        <button
+                          type="button"
+                          onClick={() => copyText(row.value, row.label)}
+                          className="p-1.5 text-gray-400 hover:text-gray-700 rounded"
+                          title={`Copy ${row.label}`}
+                        >
+                          <Copy className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    ))}
+                  </div>
+                  <button
+                    type="button"
+                    onClick={handleVerifyDomain}
+                    disabled={domainVerifying}
+                    className="text-xs font-medium text-gray-900 hover:underline disabled:opacity-50 inline-flex items-center gap-1.5"
+                  >
+                    {domainVerifying && <Loader2 className="w-3 h-3 animate-spin" />}
+                    Check DNS
+                  </button>
                 </div>
-              </div>
-              <button
-                type="button"
-                onClick={() => setAutoJoin(!autoJoin)}
-                className={`w-12 h-6 rounded-full transition-all duration-300 relative ${
-                  autoJoin ? "bg-[#2563eb]" : "bg-gray-300"
-                }`}
-              >
-                <div
-                  className={`absolute top-1 w-4 h-4 rounded-full bg-white transition-all duration-300 ${
-                    autoJoin ? "left-7" : "left-1"
-                  }`}
-                />
-              </button>
-            </div>
+              )}
 
-            <div className="pt-2">
-              <button
-                type="button"
-                className="px-6 py-2.5 text-sm font-medium text-white bg-[#2563eb] rounded-xl hover:opacity-90 transition-opacity shadow-lg shadow-[#2563eb]/10 flex items-center gap-2"
-              >
-                Save Configuration
-                <ArrowRight className="w-4 h-4" />
-              </button>
+              {isVerified && (
+                <>
+                  <div className="flex items-center justify-between py-1">
+                    <div>
+                      <p className="text-sm text-gray-900">Auto-join</p>
+                      <p className="text-xs text-gray-500">
+                        New logins with @{domainState?.verifiedDomain} → Member
+                      </p>
+                    </div>
+                    <button
+                      type="button"
+                      onClick={() => setAutoJoin(!autoJoin)}
+                      className={`w-10 h-5 rounded-full transition-colors relative ${
+                        autoJoin ? "bg-gray-900" : "bg-gray-300"
+                      }`}
+                    >
+                      <div
+                        className={`absolute top-0.5 w-4 h-4 rounded-full bg-white transition-all ${
+                          autoJoin ? "left-5" : "left-0.5"
+                        }`}
+                      />
+                    </button>
+                  </div>
+                  <div className="flex items-center gap-2 pt-1">
+                    <button
+                      type="button"
+                      onClick={handleSaveDomainSettings}
+                      disabled={domainSaving}
+                      className="px-3 py-1.5 text-xs font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-800 disabled:opacity-50 inline-flex items-center gap-1.5"
+                    >
+                      {domainSaving ? (
+                        <Loader2 className="w-3 h-3 animate-spin" />
+                      ) : (
+                        <Check className="w-3 h-3" />
+                      )}
+                      Save
+                    </button>
+                    <button
+                      type="button"
+                      onClick={handleReleaseDomain}
+                      disabled={domainSaving}
+                      className="px-3 py-1.5 text-xs font-medium text-red-600 hover:bg-red-50 rounded-lg disabled:opacity-50"
+                    >
+                      Release
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
           </div>
-        </div>
-      </div>
+        )}
 
-      <div className="p-6 bg-blue-50/50 rounded-2xl border border-blue-100 flex gap-4">
-        <div className="w-10 h-10 rounded-xl bg-blue-500/10 flex items-center justify-center shrink-0">
-          <ShieldCheck className="w-5 h-5 text-blue-500" />
-        </div>
-        <div className="space-y-1">
-          <h4 className="text-sm font-semibold text-blue-900">Secure by default</h4>
-          <p className="text-xs text-blue-700 leading-relaxed">
-            Domain-based access only applies to users who verify their email ownership. Administrators still retain full control to revoke access at any time from the Team Members list.
-          </p>
-        </div>
+        <p className="text-[11px] text-gray-400 leading-relaxed px-1">
+          Only admins signed in with @{adminWorkDomain || "yourcompany.com"} can verify
+          that domain. Gmail, Outlook, Yahoo, and other public providers are blocked.
+          DNS TXT on <code className="text-gray-500">_doqseal-verification.yourdomain.com</code>{" "}
+          proves ownership.
+        </p>
       </div>
-    </div>
-  );
+    );
+  };
 
   return (
     <div className="flex-1 overflow-y-auto bg-[#f9f9f9] p-4 sm:p-8 custom-scrollbar pt-20">
