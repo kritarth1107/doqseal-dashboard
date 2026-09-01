@@ -16,6 +16,7 @@ import {
   Zap,
   ArrowDownRight,
   Loader2,
+  Sparkles,
 } from "lucide-react";
 import Link from "next/link";
 
@@ -186,20 +187,29 @@ export default function Dashboard() {
         </div>
 
         {isFreePlan && (
-          <div className="rounded-2xl border border-amber-200 dark:border-amber-500/30 bg-amber-50 dark:bg-amber-500/10 px-5 py-4 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-            <div>
-              <p className="text-sm font-semibold text-amber-900 dark:text-amber-200">
-                You&apos;re on the Free plan
-              </p>
-              <p className="text-xs text-amber-800/80 dark:text-amber-200/70 mt-0.5">
-                5 MB storage · 2 extractions / month · 0 API calls. Upgrade for more capacity.
-              </p>
+          <div className="bg-white dark:bg-[#111827] rounded-2xl border border-gray-100 dark:border-white/10 shadow-sm px-5 py-4 sm:px-6 sm:py-5 flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+            <div className="flex items-start gap-3 min-w-0">
+              <div className="p-2 rounded-xl bg-[#2563eb]/10 dark:bg-[#2563eb]/20 text-[#2563eb] shrink-0">
+                <Sparkles className="w-5 h-5" />
+              </div>
+              <div className="min-w-0">
+                <p className="text-[13px] font-medium text-gray-500 dark:text-slate-400">
+                  Current plan
+                </p>
+                <p className="text-base font-semibold text-gray-900 dark:text-slate-50 mt-0.5">
+                  Free
+                </p>
+                <p className="text-sm text-gray-500 dark:text-slate-400 mt-1 leading-relaxed">
+                  5 MB storage · 2 extractions/mo · no API access
+                </p>
+              </div>
             </div>
             <Link
               href="/settings/billing"
-              className="inline-flex items-center justify-center px-4 py-2 text-sm font-medium text-white bg-[#2563eb] hover:bg-[#1d4ed8] rounded-lg shrink-0"
+              className="inline-flex items-center justify-center gap-1.5 px-4 py-2 text-sm font-medium text-[#2563eb] dark:text-[#2563eb] bg-[#2563eb]/5 dark:bg-[#2563eb]/10 border border-[#2563eb]/20 dark:border-[#2563eb]/30 rounded-lg hover:bg-[#2563eb]/10 dark:hover:bg-[#2563eb]/15 transition-colors shrink-0"
             >
               Upgrade plan
+              <ArrowUpRight className="w-4 h-4" />
             </Link>
           </div>
         )}
