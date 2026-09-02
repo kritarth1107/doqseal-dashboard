@@ -118,8 +118,16 @@ export function Sidebar() {
               isCollapsed ? "w-10 h-10 justify-center p-0" : "w-full p-2 px-2.5 border border-gray-100 dark:border-zinc-800 shadow-sm"
             }`}
           >
-            <div className="w-6 h-6 rounded bg-[#2563eb] text-white flex items-center justify-center font-bold text-[10px] shrink-0 uppercase">
-              {activeOrg?.name?.[0] || 'O'}
+            <div className="w-6 h-6 rounded bg-[#2563eb] text-white flex items-center justify-center font-bold text-[10px] shrink-0 uppercase overflow-hidden">
+              {resolveMediaUrl(activeOrg?.logoUrl) ? (
+                <img
+                  src={resolveMediaUrl(activeOrg?.logoUrl)!}
+                  alt=""
+                  className="w-full h-full object-cover"
+                />
+              ) : (
+                activeOrg?.name?.[0] || "O"
+              )}
             </div>
             {!isCollapsed && (
               <>
@@ -160,16 +168,29 @@ export function Sidebar() {
                       }}
                       className={`flex w-full items-center justify-between gap-2 px-2.5 py-2 hover:bg-gray-100 dark:hover:!bg-zinc-800 rounded-lg transition-colors text-left ${activeOrgId === org.organisationId ? 'bg-blue-50 dark:bg-blue-950/40' : ''}`}
                     >
-                      <div className="flex flex-col truncate">
-                        <span className={`text-sm font-medium truncate ${activeOrgId === org.organisationId ? 'text-[#2563eb]' : 'text-gray-600 dark:text-slate-300'}`}>
-                          {org.name}
-                        </span>
-                        <span className="text-[10px] text-gray-400 uppercase tracking-tighter">
-                          {org.role}
-                        </span>
+                      <div className="flex items-center gap-2.5 min-w-0">
+                        <div className="w-6 h-6 rounded bg-[#2563eb] text-white flex items-center justify-center font-bold text-[10px] shrink-0 uppercase overflow-hidden">
+                          {resolveMediaUrl(org.logoUrl) ? (
+                            <img
+                              src={resolveMediaUrl(org.logoUrl)!}
+                              alt=""
+                              className="w-full h-full object-cover"
+                            />
+                          ) : (
+                            org.name?.[0] || "O"
+                          )}
+                        </div>
+                        <div className="flex flex-col truncate">
+                          <span className={`text-sm font-medium truncate ${activeOrgId === org.organisationId ? 'text-[#2563eb]' : 'text-gray-600 dark:text-slate-300'}`}>
+                            {org.name}
+                          </span>
+                          <span className="text-[10px] text-gray-400 uppercase tracking-tighter">
+                            {org.role}
+                          </span>
+                        </div>
                       </div>
                       {activeOrgId === org.organisationId && (
-                        <Check className="w-4 h-4 text-[#2563eb]" />
+                        <Check className="w-4 h-4 text-[#2563eb] shrink-0" />
                       )}
                     </button>
                   ))}

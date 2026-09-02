@@ -7,6 +7,7 @@ interface UserOrganisation {
   organisationId: string;
   name: string;
   role: string;
+  logoUrl?: string | null;
 }
 
 interface UserData {

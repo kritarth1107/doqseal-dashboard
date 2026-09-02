@@ -1,7 +1,9 @@
 "use client";
 
 import { useCallback, useEffect, useRef, useState } from "react";
-import { Building2, Camera, Loader2 } from "lucide-react";
+import Link from "next/link";
+import { useRouter } from "next/navigation";
+import { ArrowLeft, Camera, Loader2 } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/components/AuthProvider";
 import { withOrgHeaders } from "@/lib/client-api";
@@ -30,7 +32,8 @@ function canManageOrg(role?: string) {
 }
 
 export function OrganisationProfileForm() {
-  const { activeOrgId, activeOrg } = useAuth();
+  const router = useRouter();
+  const { activeOrgId, activeOrg, refreshUser } = useAuth();
   const fileRef = useRef<HTMLInputElement>(null);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState(false);
@@ -109,7 +112,8 @@ export function OrganisationProfileForm() {
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Save failed");
       toast.success("Organisation details saved");
-      void load();
+      await refreshUser();
+      router.push("/manage/organisation");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Save failed");
     } finally {
@@ -131,6 +135,7 @@ export function OrganisationProfileForm() {
       if (!res.ok) throw new Error(data.error || "Upload failed");
       setLogoUrl(data.logoUrl || null);
       toast.success("Logo updated");
+      await refreshUser();
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Upload failed");
     } finally {
@@ -140,8 +145,25 @@ export function OrganisationProfileForm() {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-12">
+      <div className="flex justify-center py-16">
         <Loader2 className="w-6 h-6 animate-spin text-[#2563eb]" />
+      </div>
+    );
+  }
+
+  if (!editable) {
+    return (
+      <div className="max-w-xl mx-auto">
+        <Link
+          href="/manage/organisation"
+          className="inline-flex items-center gap-2 text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-white mb-6"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back
+        </Link>
+        <p className="text-sm text-amber-800 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
+          Only organisation owners and admins can edit workspace details.
+        </p>
       </div>
     );
   }
@@ -150,171 +172,179 @@ export function OrganisationProfileForm() {
   const initials = (details?.name || activeOrg?.name || "O").slice(0, 1).toUpperCase();
 
   return (
-    <div className="bg-white border border-gray-200 rounded-2xl p-6 mb-8 shadow-sm">
-      <div className="flex flex-col sm:flex-row sm:items-start gap-6">
-        <div className="relative shrink-0">
-          <div className="w-20 h-20 rounded-2xl bg-[#2563eb] text-white flex items-center justify-center font-bold text-2xl uppercase overflow-hidden">
-            {logoSrc ? (
-              <img src={logoSrc} alt="" className="w-full h-full object-cover" />
-            ) : (
-              initials
-            )}
+    <div className="max-w-xl mx-auto">
+      <div className="flex items-center justify-between gap-3 mb-6">
+        <Link
+          href="/manage/organisation"
+          className="inline-flex items-center gap-2 text-sm text-zinc-500 hover:text-zinc-900 dark:hover:text-white transition-colors"
+        >
+          <ArrowLeft className="w-4 h-4" />
+          Back
+        </Link>
+        <h1 className="text-base font-semibold text-zinc-900 dark:text-zinc-50">
+          Edit organisation
+        </h1>
+      </div>
+
+      <div className="bg-white dark:bg-zinc-950/60 border border-gray-200 dark:border-zinc-800 rounded-2xl p-5 shadow-sm space-y-5">
+        <div className="flex items-center gap-4">
+          <div className="relative shrink-0">
+            <div className="w-16 h-16 rounded-xl bg-[#2563eb] text-white flex items-center justify-center font-bold text-xl uppercase overflow-hidden">
+              {logoSrc ? (
+                <img src={logoSrc} alt="" className="w-full h-full object-cover" />
+              ) : (
+                initials
+              )}
+            </div>
+            <button
+              type="button"
+              disabled={uploadingLogo}
+              onClick={() => fileRef.current?.click()}
+              className="absolute -bottom-1 -right-1 w-7 h-7 rounded-full bg-white dark:bg-zinc-900 border border-gray-200 dark:border-zinc-700 shadow flex items-center justify-center text-gray-600 dark:text-zinc-300 hover:text-[#2563eb] disabled:opacity-50"
+              title="Upload logo"
+            >
+              {uploadingLogo ? (
+                <Loader2 className="w-3.5 h-3.5 animate-spin" />
+              ) : (
+                <Camera className="w-3.5 h-3.5" />
+              )}
+            </button>
+            <input
+              ref={fileRef}
+              type="file"
+              accept="image/jpeg,image/png,image/webp,image/gif"
+              className="hidden"
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+                if (file) void uploadLogo(file);
+                e.target.value = "";
+              }}
+            />
           </div>
-          {editable && (
-            <>
-              <button
-                type="button"
-                disabled={uploadingLogo}
-                onClick={() => fileRef.current?.click()}
-                className="absolute -bottom-1 -right-1 w-8 h-8 rounded-full bg-white border border-gray-200 shadow flex items-center justify-center text-gray-600 hover:text-[#2563eb] disabled:opacity-50"
-                title="Upload logo"
-              >
-                {uploadingLogo ? (
-                  <Loader2 className="w-4 h-4 animate-spin" />
-                ) : (
-                  <Camera className="w-4 h-4" />
-                )}
-              </button>
-              <input
-                ref={fileRef}
-                type="file"
-                accept="image/jpeg,image/png,image/webp,image/gif"
-                className="hidden"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  if (file) void uploadLogo(file);
-                  e.target.value = "";
-                }}
-              />
-            </>
-          )}
+          <div className="min-w-0">
+            <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100 truncate">
+              {name || "Organisation"}
+            </p>
+            <p className="text-xs text-zinc-500 mt-0.5">
+              Square image, JPG/PNG/WebP
+            </p>
+          </div>
         </div>
 
-        <div className="flex-1 min-w-0 space-y-4">
-          <div className="flex items-start justify-between gap-3">
-            <div>
-              <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-                <Building2 className="w-5 h-5 text-[#2563eb]" />
-                {details?.name || activeOrg?.name || "Workspace"}
-              </h2>
-              <p className="text-sm text-gray-500 mt-1">
-                Role: <span className="font-medium text-gray-700">{activeOrg?.role || "Member"}</span>
-              </p>
-            </div>
-          </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+          <label className="flex flex-col gap-1 text-sm sm:col-span-2">
+            <span className="font-medium text-zinc-700 dark:text-zinc-300">Name</span>
+            <input
+              value={name}
+              onChange={(e) => setName(e.target.value)}
+              className="rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-2 text-sm"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm sm:col-span-2">
+            <span className="font-medium text-zinc-700 dark:text-zinc-300">Website</span>
+            <input
+              value={website}
+              onChange={(e) => setWebsite(e.target.value)}
+              placeholder="https://example.com"
+              className="rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-2 text-sm"
+            />
+          </label>
+          <label className="flex flex-col gap-1 text-sm sm:col-span-2">
+            <span className="font-medium text-zinc-700 dark:text-zinc-300">GST number</span>
+            <input
+              value={gstNumber}
+              onChange={(e) => setGstNumber(e.target.value.toUpperCase())}
+              placeholder="22AAAAA0000A1Z5"
+              maxLength={15}
+              className="rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-2 text-sm font-mono uppercase"
+            />
+          </label>
+        </div>
 
-          {!editable && (
-            <p className="text-sm text-amber-700 bg-amber-50 border border-amber-200 rounded-lg px-3 py-2">
-              Only organisation owners and admins can edit workspace details.
-            </p>
-          )}
-
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <label className="flex flex-col gap-1.5 text-sm">
-              <span className="font-medium text-gray-700">Organisation name</span>
+        <div>
+          <p className="text-sm font-medium text-zinc-700 dark:text-zinc-300 mb-2">
+            Address
+          </p>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+            <label className="flex flex-col gap-1 text-sm sm:col-span-2">
+              <span className="text-zinc-500 text-xs">Line 1</span>
               <input
-                value={name}
-                disabled={!editable}
-                onChange={(e) => setName(e.target.value)}
-                className="rounded-lg border border-gray-200 px-3 py-2 disabled:bg-gray-50"
+                value={address.line1 || ""}
+                onChange={(e) =>
+                  setAddress((a) => ({ ...a, line1: e.target.value }))
+                }
+                className="rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-2 text-sm"
               />
             </label>
-            <label className="flex flex-col gap-1.5 text-sm">
-              <span className="font-medium text-gray-700">Website</span>
+            <label className="flex flex-col gap-1 text-sm sm:col-span-2">
+              <span className="text-zinc-500 text-xs">Line 2</span>
               <input
-                value={website}
-                disabled={!editable}
-                onChange={(e) => setWebsite(e.target.value)}
-                placeholder="https://example.com"
-                className="rounded-lg border border-gray-200 px-3 py-2 disabled:bg-gray-50"
+                value={address.line2 || ""}
+                onChange={(e) =>
+                  setAddress((a) => ({ ...a, line2: e.target.value }))
+                }
+                className="rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-2 text-sm"
               />
             </label>
-            <label className="flex flex-col gap-1.5 text-sm md:col-span-2">
-              <span className="font-medium text-gray-700">GST number</span>
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="text-zinc-500 text-xs">City</span>
               <input
-                value={gstNumber}
-                disabled={!editable}
-                onChange={(e) => setGstNumber(e.target.value.toUpperCase())}
-                placeholder="22AAAAA0000A1Z5"
-                maxLength={15}
-                className="rounded-lg border border-gray-200 px-3 py-2 font-mono uppercase disabled:bg-gray-50"
+                value={address.city || ""}
+                onChange={(e) =>
+                  setAddress((a) => ({ ...a, city: e.target.value }))
+                }
+                className="rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-2 text-sm"
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="text-zinc-500 text-xs">State</span>
+              <input
+                value={address.state || ""}
+                onChange={(e) =>
+                  setAddress((a) => ({ ...a, state: e.target.value }))
+                }
+                className="rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-2 text-sm"
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="text-zinc-500 text-xs">Postal code</span>
+              <input
+                value={address.postalCode || ""}
+                onChange={(e) =>
+                  setAddress((a) => ({ ...a, postalCode: e.target.value }))
+                }
+                className="rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-2 text-sm"
+              />
+            </label>
+            <label className="flex flex-col gap-1 text-sm">
+              <span className="text-zinc-500 text-xs">Country</span>
+              <input
+                value={address.country || "IN"}
+                onChange={(e) =>
+                  setAddress((a) => ({ ...a, country: e.target.value }))
+                }
+                className="rounded-lg border border-gray-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-3 py-2 text-sm"
               />
             </label>
           </div>
+        </div>
 
-          <div className="pt-2">
-            <p className="text-sm font-medium text-gray-700 mb-3">Business address</p>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-              <label className="flex flex-col gap-1.5 text-sm md:col-span-2">
-                <span className="text-gray-600">Address line 1</span>
-                <input
-                  value={address.line1 || ""}
-                  disabled={!editable}
-                  onChange={(e) => setAddress((a) => ({ ...a, line1: e.target.value }))}
-                  className="rounded-lg border border-gray-200 px-3 py-2 disabled:bg-gray-50"
-                />
-              </label>
-              <label className="flex flex-col gap-1.5 text-sm md:col-span-2">
-                <span className="text-gray-600">Address line 2</span>
-                <input
-                  value={address.line2 || ""}
-                  disabled={!editable}
-                  onChange={(e) => setAddress((a) => ({ ...a, line2: e.target.value }))}
-                  className="rounded-lg border border-gray-200 px-3 py-2 disabled:bg-gray-50"
-                />
-              </label>
-              <label className="flex flex-col gap-1.5 text-sm">
-                <span className="text-gray-600">City</span>
-                <input
-                  value={address.city || ""}
-                  disabled={!editable}
-                  onChange={(e) => setAddress((a) => ({ ...a, city: e.target.value }))}
-                  className="rounded-lg border border-gray-200 px-3 py-2 disabled:bg-gray-50"
-                />
-              </label>
-              <label className="flex flex-col gap-1.5 text-sm">
-                <span className="text-gray-600">State</span>
-                <input
-                  value={address.state || ""}
-                  disabled={!editable}
-                  onChange={(e) => setAddress((a) => ({ ...a, state: e.target.value }))}
-                  className="rounded-lg border border-gray-200 px-3 py-2 disabled:bg-gray-50"
-                />
-              </label>
-              <label className="flex flex-col gap-1.5 text-sm">
-                <span className="text-gray-600">Postal code</span>
-                <input
-                  value={address.postalCode || ""}
-                  disabled={!editable}
-                  onChange={(e) => setAddress((a) => ({ ...a, postalCode: e.target.value }))}
-                  className="rounded-lg border border-gray-200 px-3 py-2 disabled:bg-gray-50"
-                />
-              </label>
-              <label className="flex flex-col gap-1.5 text-sm">
-                <span className="text-gray-600">Country</span>
-                <input
-                  value={address.country || "IN"}
-                  disabled={!editable}
-                  onChange={(e) => setAddress((a) => ({ ...a, country: e.target.value }))}
-                  className="rounded-lg border border-gray-200 px-3 py-2 disabled:bg-gray-50"
-                />
-              </label>
-            </div>
-          </div>
-
-          {editable && (
-            <div className="flex justify-end pt-2">
-              <button
-                type="button"
-                disabled={saving}
-                onClick={() => void saveProfile()}
-                className="px-4 py-2 text-sm font-medium text-white bg-[#2563eb] rounded-lg hover:bg-[#1d4ed8] disabled:opacity-50 inline-flex items-center gap-2"
-              >
-                {saving && <Loader2 className="w-4 h-4 animate-spin" />}
-                Save details
-              </button>
-            </div>
-          )}
+        <div className="flex justify-end gap-2 pt-1">
+          <Link
+            href="/manage/organisation"
+            className="px-3.5 py-2 text-sm font-medium rounded-lg border border-gray-200 dark:border-zinc-700 text-zinc-700 dark:text-zinc-300 hover:bg-gray-50 dark:hover:bg-zinc-800"
+          >
+            Cancel
+          </Link>
+          <button
+            type="button"
+            disabled={saving}
+            onClick={() => void saveProfile()}
+            className="px-3.5 py-2 text-sm font-medium text-white bg-[#2563eb] rounded-lg hover:bg-[#1d4ed8] disabled:opacity-50 inline-flex items-center gap-2"
+          >
+            {saving && <Loader2 className="w-4 h-4 animate-spin" />}
+            Save
+          </button>
         </div>
       </div>
     </div>
