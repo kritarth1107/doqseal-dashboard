@@ -30,7 +30,8 @@ export async function GET(request: NextRequest) {
   const raw = (request.nextUrl.searchParams.get("provider") || "google").toLowerCase();
   const provider = ALLOWED.has(raw) ? raw : "google";
   const origin = publicOrigin(request);
-  const callbackUrl = `${origin}/auth/mobile-bridge?method=${encodeURIComponent(provider)}`;
+  // Handoff does an HTTP 302 to doqseal:// — Custom Tabs capture that reliably.
+  const callbackUrl = `${origin}/auth/mobile-handoff?method=${encodeURIComponent(provider)}`;
   const action = `${origin}/api/auth/signin/${provider}`;
 
   const html = `<!DOCTYPE html>

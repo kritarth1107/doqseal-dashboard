@@ -20,9 +20,13 @@ export function proxy(request: NextRequest) {
 
   // 3. Logic for authenticated users
   if (token) {
-    // Allow social login hook to finish; skip bounce for other /auth pages
-    const isAuthHook = pathname.startsWith('/auth/hook');
-    if (isAuthRoute && !isAuthHook) {
+    // Allow post-login hooks / mobile OAuth handoff to finish (do not bounce to dashboard)
+    const isAuthCompletion =
+      pathname.startsWith('/auth/hook') ||
+      pathname.startsWith('/auth/mobile-bridge') ||
+      pathname.startsWith('/auth/mobile-handoff') ||
+      pathname.startsWith('/auth/mobile-start');
+    if (isAuthRoute && !isAuthCompletion) {
       return NextResponse.redirect(new URL('/dashboard', request.url));
     }
     
