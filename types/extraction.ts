@@ -92,9 +92,18 @@ export type DocumentStatus =
   | "needs_review"
   | "failed";
 
+export type DocumentUserRef = {
+  userId: string;
+  name: string;
+  email?: string | null;
+  avatar?: string | null;
+};
+
 export type StoredDocument = {
   id: string;
   projectId: string | null;
+  projectName?: string | null;
+  organisationId?: string | null;
   jobId?: string;
   originalFilename: string;
   displayTitle?: string | null;
@@ -106,6 +115,7 @@ export type StoredDocument = {
   fieldConfidence?: Record<string, number>;
   confidence: number;
   extractionStrategy: string;
+  extractionStatus?: string | null;
   uploadedAt: string;
   processedAt?: string;
   processingError?: string;
@@ -114,6 +124,7 @@ export type StoredDocument = {
   keepForever?: boolean;
   fileExpiresAt?: string | null;
   uploadedBy?: string;
+  uploadedByUser?: DocumentUserRef | null;
   contentHash?: string;
   sharedWithOrganisation?: boolean;
   demoMode?: boolean;

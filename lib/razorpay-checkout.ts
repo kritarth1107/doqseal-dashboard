@@ -42,10 +42,16 @@ async function loadRazorpaySdk() {
   });
 }
 
+/**
+ * Razorpay's payment panel UI is always light-themed (product limitation).
+ * We still adapt the modal *backdrop* so light/dark app themes both read as
+ * an overlay over the upgrade page instead of a solid takeover.
+ */
 function razorpayTheme(isDark: boolean) {
   return {
     color: "#2563eb",
-    backdrop_color: isDark ? "#0b1220" : "#f4f4f5",
+    // 8-digit hex keeps the upgrade page visible behind the modal
+    backdrop_color: isDark ? "#0b1220cc" : "#18181bcc",
   };
 }
 
@@ -91,7 +97,8 @@ export async function openRazorpaySubscriptionCheckout(params: {
           reject(new Error("Checkout cancelled"));
         },
         escape: true,
-        backdropclose: false,
+        backdropclose: true,
+        animation: true,
       },
     });
     rzp.open();

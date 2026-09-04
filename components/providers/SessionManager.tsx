@@ -73,8 +73,8 @@ export function SessionManager() {
   const strokeDashoffset = circumference - (countdown / 3) * circumference
 
   return (
-    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/40 backdrop-blur-xl animate-in fade-in duration-500">
-      <div className="relative w-full max-w-[320px] p-6 bg-white/90 backdrop-blur-2xl rounded-[2rem] shadow-[0_24px_48px_-12px_rgba(0,0,0,0.4)] border border-white/20 text-center animate-in zoom-in-95 duration-500">
+    <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 dark:bg-black/70 backdrop-blur-xl animate-in fade-in duration-500">
+      <div className="relative w-full max-w-[320px] p-6 bg-white dark:bg-zinc-900 backdrop-blur-2xl rounded-[2rem] shadow-[0_24px_48px_-12px_rgba(0,0,0,0.4)] border border-zinc-200 dark:border-zinc-700 text-center animate-in zoom-in-95 duration-500">
         
         {/* Urgent Pulsing Background Ring */}
         <div className="absolute top-10 left-1/2 -translate-x-1/2 w-16 h-16 bg-red-500/10 rounded-full animate-ping opacity-20" />
@@ -83,15 +83,15 @@ export function SessionManager() {
           <div className="p-4 bg-gradient-to-br from-red-500 to-red-600 rounded-2xl shadow-lg shadow-red-500/20 transform -rotate-2">
             <ShieldAlert className="w-7 h-7 text-white" />
           </div>
-          <div className="absolute -top-1 -right-1 p-1.5 bg-black rounded-lg shadow-lg">
+          <div className="absolute -top-1 -right-1 p-1.5 bg-zinc-900 dark:bg-zinc-950 rounded-lg shadow-lg border border-transparent dark:border-zinc-700">
             <Lock className="w-3 h-3 text-white" />
           </div>
         </div>
         
-        <h2 className="text-xl font-bold text-black mb-2 tracking-tight">
+        <h2 className="text-xl font-bold text-zinc-900 dark:text-zinc-50 mb-2 tracking-tight">
           Session Expired
         </h2>
-        <p className="text-[13px] text-gray-500 mb-6 leading-relaxed px-2">
+        <p className="text-[13px] text-zinc-500 dark:text-zinc-400 mb-6 leading-relaxed px-2">
           Your account has been secured. Redirecting you to login.
         </p>
 
@@ -106,7 +106,7 @@ export function SessionManager() {
                   stroke="currentColor"
                   strokeWidth="3"
                   fill="transparent"
-                  className="text-gray-100"
+                  className="text-zinc-100 dark:text-zinc-700"
                 />
                 <circle
                   cx="24"
@@ -123,7 +123,7 @@ export function SessionManager() {
                   className="text-red-500"
                 />
               </svg>
-              <span className="absolute text-sm font-bold tabular-nums text-black">
+              <span className="absolute text-sm font-bold tabular-nums text-zinc-900 dark:text-zinc-50">
                 {Math.ceil(countdown)}
               </span>
             </div>
@@ -131,7 +131,7 @@ export function SessionManager() {
           
           <button
             onClick={handleLogout}
-            className="group w-full py-3 bg-black text-white rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg"
+            className="group w-full py-3 bg-zinc-900 dark:bg-zinc-100 text-white dark:text-zinc-900 rounded-xl font-bold text-sm flex items-center justify-center gap-2 hover:scale-[1.02] active:scale-[0.98] transition-all shadow-lg"
           >
             Reconnect
             <ArrowRight className="w-4 h-4 group-hover:translate-x-0.5 transition-transform" />

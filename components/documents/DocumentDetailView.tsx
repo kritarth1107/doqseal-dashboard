@@ -5,20 +5,27 @@ import Link from "next/link";
 import { useRouter } from "next/navigation";
 import {
   ArrowLeft,
+  Braces,
   CheckCircle2,
   Clock,
+  Copy,
+  Download,
   FileText,
-  Globe,
   Loader2,
   RefreshCw,
   Trash2,
+  Upload,
   Webhook,
   XCircle,
+  Pencil,
+  Shield,
 } from "lucide-react";
 import { toast } from "sonner";
 import { ExtractionFields } from "@/components/ExtractionFields";
 import { useAuth } from "@/components/AuthProvider";
 import { withOrgHeaders } from "@/lib/client-api";
+import { buildWebhookPayloadPreview } from "@/lib/document-api";
+import { resolveMediaUrl } from "@/lib/media-url";
 import { StoredDocument } from "@/types/extraction";
 
 function StatusBadge({ status }: { status: string }) {
@@ -53,11 +60,20 @@ function StatusBadge({ status }: { status: string }) {
   );
 }
 
-type DetailTab = "extraction" | "activity";
+type DetailTab = "extraction" | "json" | "activity";
+
+type TimelineActor = {
+  userId: string;
+  name: string;
+  email?: string | null;
+  avatar?: string | null;
+  isSystem?: boolean;
+};
 
 type TimelineEvent = {
   action: string;
   actorId: string;
+  actor?: TimelineActor | null;
   resourceType: string;
   metadata?: Record<string, unknown> | null;
   timestamp: string;
@@ -106,6 +122,120 @@ function describeTimelineEvent(event: TimelineEvent): string | null {
   }
   if (typeof meta.error === "string") return meta.error;
   return null;
+}
+
+function timelineStyle(action: string): {
+  icon: typeof Upload;
+  ring: string;
+  bg: string;
+} {
+  if (action === "document.upload") {
+    return {
+      icon: Upload,
+      ring: "ring-blue-200 dark:ring-blue-500/30",
+      bg: "bg-blue-500 text-white",
+    };
+  }
+  if (action === "document.reprocess") {
+    return {
+      icon: RefreshCw,
+      ring: "ring-sky-200 dark:ring-sky-500/30",
+      bg: "bg-sky-500 text-white",
+    };
+  }
+  if (action.startsWith("extraction.")) {
+    return {
+      icon: Pencil,
+      ring: "ring-amber-200 dark:ring-amber-500/30",
+      bg: "bg-amber-500 text-white",
+    };
+  }
+  if (action === "webhook.failed") {
+    return {
+      icon: XCircle,
+      ring: "ring-red-200 dark:ring-red-500/30",
+      bg: "bg-red-500 text-white",
+    };
+  }
+  if (action.startsWith("webhook.")) {
+    return {
+      icon: Webhook,
+      ring: "ring-violet-200 dark:ring-violet-500/30",
+      bg: "bg-violet-500 text-white",
+    };
+  }
+  if (action.includes("purge") || action.includes("delete")) {
+    return {
+      icon: Trash2,
+      ring: "ring-orange-200 dark:ring-orange-500/30",
+      bg: "bg-orange-500 text-white",
+    };
+  }
+  return {
+    icon: Shield,
+    ring: "ring-zinc-200 dark:ring-zinc-600",
+    bg: "bg-zinc-500 text-white",
+  };
+}
+
+function UserChip({
+  name,
+  avatar,
+  subtitle,
+}: {
+  name: string;
+  avatar?: string | null;
+  subtitle?: string | null;
+}) {
+  const src = resolveMediaUrl(avatar);
+  const initials =
+    name
+      .split(" ")
+      .map((n) => n[0])
+      .join("")
+      .slice(0, 2)
+      .toUpperCase() || "?";
+  return (
+    <span className="inline-flex items-center gap-2 min-w-0">
+      <span className="w-6 h-6 rounded-full bg-[#e3d5c8] text-[#5c4a3d] flex items-center justify-center text-[10px] font-semibold shrink-0 overflow-hidden">
+        {src ? (
+          // eslint-disable-next-line @next/next/no-img-element
+          <img src={src} alt="" className="w-full h-full object-cover" />
+        ) : (
+          initials
+        )}
+      </span>
+      <span className="min-w-0">
+        <span className="block text-sm text-zinc-900 dark:text-zinc-100 truncate">
+          {name}
+        </span>
+        {subtitle ? (
+          <span className="block text-[11px] text-zinc-500 truncate">{subtitle}</span>
+        ) : null}
+      </span>
+    </span>
+  );
+}
+
+function CopyButton({ value, label = "Copy" }: { value: string; label?: string }) {
+  return (
+    <button
+      type="button"
+      onClick={async () => {
+        try {
+          await navigator.clipboard.writeText(value);
+          toast.success(`${label} copied`);
+        } catch {
+          toast.error("Copy failed");
+        }
+      }}
+      className="inline-flex items-center gap-1 px-1.5 py-0.5 text-[10px] font-medium text-zinc-500 hover:text-zinc-800 dark:hover:text-zinc-200 border border-zinc-200 dark:border-zinc-700 rounded-md hover:bg-zinc-50 dark:hover:bg-zinc-800"
+      title={label}
+    >
+      <Copy className="w-3 h-3" />
+      {label}
+    </button>
+  );
 }
 
 type PageTab = { page: number; title: string };
@@ -439,6 +569,7 @@ export function DocumentDetailView({
             {(
               [
                 { id: "extraction" as const, label: "Extraction", icon: FileText },
+                { id: "json" as const, label: "JSON", icon: Braces },
                 { id: "activity" as const, label: "Activity", icon: Clock },
               ] as const
             ).map((tab) => {
@@ -450,8 +581,8 @@ export function DocumentDetailView({
                   onClick={() => setActiveTab(tab.id)}
                   className={`inline-flex items-center gap-1.5 px-3 py-2 text-xs font-medium border-b-2 -mb-px transition-colors ${
                     activeTab === tab.id
-                      ? "border-gray-900 text-gray-900"
-                      : "border-transparent text-gray-500 hover:text-gray-700"
+                      ? "border-gray-900 text-gray-900 dark:border-zinc-100 dark:text-zinc-50"
+                      : "border-transparent text-gray-500 hover:text-gray-700 dark:hover:text-zinc-300"
                   }`}
                 >
                   <Icon className="w-3.5 h-3.5" />
@@ -468,20 +599,20 @@ export function DocumentDetailView({
         <div className="max-w-6xl mx-auto">
           {activeTab === "extraction" ? (
             <div className="grid grid-cols-1 lg:grid-cols-2 gap-5">
-              <div className="border border-gray-200 rounded-xl overflow-hidden bg-gray-50">
-                <div className="flex items-center justify-between px-3 py-2 border-b border-gray-200 bg-white text-xs">
+              <div className="border border-gray-200 dark:border-zinc-800 rounded-xl overflow-hidden bg-gray-50 dark:bg-zinc-950/40">
+                <div className="flex items-center justify-between px-3 py-2 border-b border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-950 text-xs">
                   <span className="text-gray-500">Preview</span>
                   <a
                     href={fileUrl}
                     target="_blank"
                     rel="noreferrer"
-                    className="text-gray-900 hover:underline"
+                    className="text-gray-900 dark:text-zinc-100 hover:underline"
                   >
                     Open file
                   </a>
                 </div>
                 {doc.mimeType.includes("pdf") && pageTabs.length > 1 && (
-                  <div className="flex flex-wrap gap-1 px-3 py-2 border-b border-gray-200 bg-white">
+                  <div className="flex flex-wrap gap-1 px-3 py-2 border-b border-gray-200 dark:border-zinc-800 bg-white dark:bg-zinc-950">
                     {pageTabs.map((tab) => (
                       <button
                         key={`${tab.page}-${tab.title}`}
@@ -489,8 +620,8 @@ export function DocumentDetailView({
                         onClick={() => setPdfPage(tab.page)}
                         className={`px-2 py-1 rounded text-[11px] font-medium ${
                           pdfPage === tab.page
-                            ? "bg-gray-900 text-white"
-                            : "text-gray-600 hover:bg-gray-100"
+                            ? "bg-gray-900 text-white dark:bg-zinc-100 dark:text-zinc-900"
+                            : "text-gray-600 dark:text-zinc-400 hover:bg-gray-100 dark:hover:bg-zinc-800"
                         }`}
                       >
                         {tab.page}
@@ -501,7 +632,7 @@ export function DocumentDetailView({
                 <div className="p-3">
                   {doc.mimeType.includes("pdf") ? (
                     <div
-                      className="overflow-hidden rounded-lg border border-gray-200 bg-white"
+                      className="overflow-hidden rounded-lg border border-gray-200 dark:border-zinc-800 bg-white"
                       style={{ height: "420px" }}
                     >
                       <iframe
@@ -516,7 +647,7 @@ export function DocumentDetailView({
                     <img
                       src={fileUrl}
                       alt="Preview"
-                      className="w-full rounded-lg border border-gray-200"
+                      className="w-full rounded-lg border border-gray-200 dark:border-zinc-800"
                     />
                   )}
                 </div>
@@ -547,7 +678,7 @@ export function DocumentDetailView({
                     }}
                   />
                 ) : (
-                  <div className="border border-gray-200 rounded-xl p-8 text-center text-sm text-gray-500">
+                  <div className="border border-gray-200 dark:border-zinc-800 rounded-xl p-8 text-center text-sm text-gray-500">
                     {doc.status === "processing"
                       ? "Extraction in progress…"
                       : doc.status === "failed"
@@ -557,52 +688,164 @@ export function DocumentDetailView({
                 )}
               </div>
             </div>
+          ) : activeTab === "json" ? (
+            <div className="border border-zinc-200 dark:border-zinc-800 rounded-xl overflow-hidden bg-white dark:bg-zinc-950/60">
+              <div className="flex flex-wrap items-center justify-between gap-2 px-4 py-3 border-b border-zinc-100 dark:border-zinc-800">
+                <div>
+                  <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                    Webhook payload
+                  </h3>
+                  <p className="text-xs text-zinc-500 mt-0.5">
+                    Same shape sent on{" "}
+                    <code className="text-[11px]">document.processed</code>
+                  </p>
+                </div>
+                <div className="flex items-center gap-2">
+                  <button
+                    type="button"
+                    onClick={async () => {
+                      try {
+                        await navigator.clipboard.writeText(
+                          JSON.stringify(buildWebhookPayloadPreview(doc), null, 2)
+                        );
+                        toast.success("JSON copied");
+                      } catch {
+                        toast.error("Copy failed");
+                      }
+                    }}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium border border-zinc-200 dark:border-zinc-700 rounded-lg text-zinc-700 dark:text-zinc-200 hover:bg-zinc-50 dark:hover:bg-zinc-800"
+                  >
+                    <Copy className="w-3.5 h-3.5" />
+                    Copy
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      const blob = new Blob(
+                        [
+                          JSON.stringify(
+                            buildWebhookPayloadPreview(doc),
+                            null,
+                            2
+                          ),
+                        ],
+                        { type: "application/json" }
+                      );
+                      const url = URL.createObjectURL(blob);
+                      const a = document.createElement("a");
+                      a.href = url;
+                      a.download = `${doc.id}-document.processed.json`;
+                      a.click();
+                      URL.revokeObjectURL(url);
+                    }}
+                    className="inline-flex items-center gap-1.5 px-2.5 py-1.5 text-xs font-medium bg-[#2563eb] text-white rounded-lg hover:bg-[#1d4ed8]"
+                  >
+                    <Download className="w-3.5 h-3.5" />
+                    Download JSON
+                  </button>
+                </div>
+              </div>
+              <pre className="p-4 text-[12px] leading-relaxed overflow-x-auto max-h-[70vh] text-zinc-800 dark:text-zinc-200 font-mono bg-zinc-50 dark:bg-zinc-900/50">
+                {JSON.stringify(buildWebhookPayloadPreview(doc), null, 2)}
+              </pre>
+            </div>
           ) : (
             <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
               <div className="lg:col-span-1 space-y-4">
-                <div className="border border-gray-200 rounded-xl p-4">
-                  <h3 className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-3">
+                <div className="border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 bg-white dark:bg-zinc-950/60">
+                  <h3 className="text-xs font-medium text-zinc-400 uppercase tracking-wide mb-3">
                     File metadata
                   </h3>
-                  <dl className="space-y-2.5 text-xs">
-                    {[
-                      ["Type", doc.mimeType],
-                      ["Size", formatBytes(doc.size)],
-                      [
-                        "Uploaded",
-                        new Date(doc.uploadedAt).toLocaleString(),
-                      ],
-                      doc.processedAt
-                        ? ["Processed", new Date(doc.processedAt).toLocaleString()]
-                        : null,
-                      doc.confidence > 0
-                        ? ["Confidence", `${(doc.confidence * 100).toFixed(0)}%`]
-                        : null,
-                      doc.extractionStrategy &&
+                  <dl className="space-y-3 text-xs">
+                    <div className="flex justify-between gap-3">
+                      <dt className="text-zinc-500 shrink-0">Type</dt>
+                      <dd className="text-zinc-900 dark:text-zinc-100 text-right break-all">
+                        {doc.mimeType}
+                      </dd>
+                    </div>
+                    <div className="flex justify-between gap-3">
+                      <dt className="text-zinc-500 shrink-0">Size</dt>
+                      <dd className="text-zinc-900 dark:text-zinc-100 text-right">
+                        {formatBytes(doc.size)}
+                      </dd>
+                    </div>
+                    <div className="flex justify-between gap-3">
+                      <dt className="text-zinc-500 shrink-0">Uploaded</dt>
+                      <dd className="text-zinc-900 dark:text-zinc-100 text-right">
+                        {new Date(doc.uploadedAt).toLocaleString()}
+                      </dd>
+                    </div>
+                    {doc.processedAt && (
+                      <div className="flex justify-between gap-3">
+                        <dt className="text-zinc-500 shrink-0">Processed</dt>
+                        <dd className="text-zinc-900 dark:text-zinc-100 text-right">
+                          {new Date(doc.processedAt).toLocaleString()}
+                        </dd>
+                      </div>
+                    )}
+                    {doc.confidence > 0 && (
+                      <div className="flex justify-between gap-3">
+                        <dt className="text-zinc-500 shrink-0">Confidence</dt>
+                        <dd className="text-zinc-900 dark:text-zinc-100 text-right">
+                          {(doc.confidence * 100).toFixed(0)}%
+                        </dd>
+                      </div>
+                    )}
+                    {doc.extractionStrategy &&
                       doc.extractionStrategy !== "demo" &&
-                      doc.extractionStrategy !== "pending"
-                        ? ["Strategy", doc.extractionStrategy]
-                        : null,
-                      doc.projectId ? ["Project", doc.projectId] : null,
-                      doc.uploadedBy ? ["Uploaded by", doc.uploadedBy] : null,
-                      doc.contentHash
-                        ? ["Content hash", doc.contentHash.slice(0, 16) + "…"]
-                        : null,
-                    ]
-                      .filter(Boolean)
-                      .map((row) => (
-                        <div key={row![0]} className="flex justify-between gap-3">
-                          <dt className="text-gray-500 shrink-0">{row![0]}</dt>
-                          <dd className="text-gray-900 text-right break-all font-mono">
-                            {row![1]}
+                      doc.extractionStrategy !== "pending" && (
+                        <div className="flex justify-between gap-3">
+                          <dt className="text-zinc-500 shrink-0">Strategy</dt>
+                          <dd className="text-zinc-900 dark:text-zinc-100 text-right font-mono">
+                            {doc.extractionStrategy}
                           </dd>
                         </div>
-                      ))}
+                      )}
+                    {doc.projectId && (
+                      <div className="flex justify-between gap-3 items-start">
+                        <dt className="text-zinc-500 shrink-0 pt-0.5">Project</dt>
+                        <dd className="text-right">
+                          <Link
+                            href={`/projects/${doc.projectId}`}
+                            className="text-[#2563eb] hover:underline font-medium"
+                          >
+                            {doc.projectName?.trim() || "Untitled project"}
+                          </Link>
+                        </dd>
+                      </div>
+                    )}
+                    {(doc.uploadedByUser || doc.uploadedBy) && (
+                      <div className="flex justify-between gap-3 items-center">
+                        <dt className="text-zinc-500 shrink-0">Uploaded by</dt>
+                        <dd className="text-right">
+                          <UserChip
+                            name={
+                              doc.uploadedByUser?.name?.trim() ||
+                              "Unknown user"
+                            }
+                            avatar={doc.uploadedByUser?.avatar}
+                          />
+                        </dd>
+                      </div>
+                    )}
+                    {doc.contentHash && (
+                      <div className="flex justify-between gap-3 items-start">
+                        <dt className="text-zinc-500 shrink-0 pt-0.5">
+                          Content hash
+                        </dt>
+                        <dd className="text-right space-y-1">
+                          <p className="font-mono text-zinc-900 dark:text-zinc-100 break-all">
+                            {doc.contentHash.slice(0, 20)}…
+                          </p>
+                          <CopyButton value={doc.contentHash} label="Copy hash" />
+                        </dd>
+                      </div>
+                    )}
                   </dl>
                 </div>
 
-                <div className="border border-gray-200 rounded-xl p-4">
-                  <h3 className="text-xs font-medium text-gray-400 uppercase tracking-wide mb-3">
+                <div className="border border-zinc-200 dark:border-zinc-800 rounded-xl p-4 bg-white dark:bg-zinc-950/60">
+                  <h3 className="text-xs font-medium text-zinc-400 uppercase tracking-wide mb-3">
                     Retention
                   </h3>
                   <dl className="space-y-2.5 text-xs">
@@ -634,78 +877,88 @@ export function DocumentDetailView({
                       .filter(Boolean)
                       .map((row) => (
                         <div key={row![0]} className="flex justify-between gap-3">
-                          <dt className="text-gray-500">{row![0]}</dt>
-                          <dd className="text-gray-900 text-right">{row![1]}</dd>
+                          <dt className="text-zinc-500">{row![0]}</dt>
+                          <dd className="text-zinc-900 dark:text-zinc-100 text-right">
+                            {row![1]}
+                          </dd>
                         </div>
                       ))}
                   </dl>
                 </div>
               </div>
 
-              <div className="lg:col-span-2 border border-gray-200 rounded-xl">
-                <div className="px-4 py-3 border-b border-gray-100">
-                  <h3 className="text-sm font-medium text-gray-900">Timeline</h3>
-                  <p className="text-xs text-gray-500 mt-0.5">
+              <div className="lg:col-span-2 border border-zinc-200 dark:border-zinc-800 rounded-xl bg-white dark:bg-zinc-950/60 overflow-hidden">
+                <div className="px-4 py-3 border-b border-zinc-100 dark:border-zinc-800">
+                  <h3 className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+                    Timeline
+                  </h3>
+                  <p className="text-xs text-zinc-500 mt-0.5">
                     Uploads, extractions, webhooks, and retention events
                   </p>
                 </div>
                 <div className="p-4">
                   {timelineLoading ? (
-                    <div className="flex items-center gap-2 py-8 text-sm text-gray-500 justify-center">
+                    <div className="flex items-center gap-2 py-8 text-sm text-zinc-500 justify-center">
                       <Loader2 className="w-4 h-4 animate-spin" />
                       Loading…
                     </div>
                   ) : timeline.length === 0 ? (
-                    <p className="text-sm text-gray-500 py-8 text-center">
+                    <p className="text-sm text-zinc-500 py-8 text-center">
                       No activity recorded yet.
                     </p>
                   ) : (
                     <ul className="space-y-0">
                       {timeline.map((event, index) => {
                         const detail = describeTimelineEvent(event);
-                        const isWebhook = event.action.startsWith("webhook.");
+                        const style = timelineStyle(event.action);
+                        const Icon = style.icon;
+                        const actorName =
+                          event.actor?.name ||
+                          (event.actorId?.startsWith("system:")
+                            ? "System"
+                            : event.actorId
+                              ? event.actorId.slice(0, 8)
+                              : "Unknown");
                         return (
                           <li
                             key={`${event.timestamp}-${event.action}-${index}`}
-                            className="flex gap-3 pb-4 last:pb-0"
+                            className="flex gap-3 pb-5 last:pb-0"
                           >
                             <div className="flex flex-col items-center">
                               <div
-                                className={`w-7 h-7 rounded-full flex items-center justify-center shrink-0 ${
-                                  isWebhook
-                                    ? event.action === "webhook.failed"
-                                      ? "bg-red-50 text-red-600"
-                                      : "bg-violet-50 text-violet-600"
-                                    : "bg-gray-100 text-gray-600"
-                                }`}
+                                className={`w-8 h-8 rounded-full flex items-center justify-center shrink-0 ring-4 ring-white dark:ring-zinc-950 ${style.bg} ${style.ring}`}
                               >
-                                {isWebhook ? (
-                                  <Webhook className="w-3.5 h-3.5" />
-                                ) : (
-                                  <Globe className="w-3.5 h-3.5" />
-                                )}
+                                <Icon className="w-3.5 h-3.5" />
                               </div>
                               {index < timeline.length - 1 && (
-                                <div className="w-px flex-1 bg-gray-200 mt-1 min-h-[12px]" />
+                                <div className="w-0.5 flex-1 bg-gradient-to-b from-zinc-200 to-zinc-100 dark:from-zinc-700 dark:to-zinc-800 mt-1.5 min-h-[16px]" />
                               )}
                             </div>
                             <div className="flex-1 min-w-0 pt-0.5">
-                              <p className="text-sm font-medium text-gray-900">
-                                {formatTimelineAction(event.action)}
-                              </p>
+                              <div className="flex flex-wrap items-center justify-between gap-2">
+                                <p className="text-sm font-semibold text-zinc-900 dark:text-zinc-50">
+                                  {formatTimelineAction(event.action)}
+                                </p>
+                                <time className="text-[11px] text-zinc-400 tabular-nums">
+                                  {new Date(event.timestamp).toLocaleString()}
+                                </time>
+                              </div>
                               {detail && (
-                                <p className="text-xs text-gray-500 mt-0.5 break-all">
+                                <p className="text-xs text-zinc-500 mt-1 break-all">
                                   {detail}
                                 </p>
                               )}
-                              <p className="text-[11px] text-gray-400 mt-1">
-                                {new Date(event.timestamp).toLocaleString()}
-                                {event.actorId && event.actorId !== "system:webhook"
-                                  ? ` · ${event.actorId.slice(0, 8)}…`
-                                  : event.actorId === "system:webhook"
-                                    ? " · system"
-                                    : ""}
-                              </p>
+                              <div className="mt-2">
+                                <UserChip
+                                  name={actorName}
+                                  avatar={event.actor?.avatar}
+                                  subtitle={
+                                    event.actor?.isSystem
+                                      ? "Automated"
+                                      : event.actor?.email || null
+                                  }
+                                />
+                              </div>
                             </div>
                           </li>
                         );

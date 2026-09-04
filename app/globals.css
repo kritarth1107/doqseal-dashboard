@@ -24,6 +24,18 @@
   color-scheme: dark;
 }
 
+/*
+ * Razorpay Checkout inherits color-scheme:dark from <html.dark>, which forces
+ * an opaque white iframe backdrop and hides the page behind the modal.
+ * Keep checkout on a light color-scheme so the translucent modal works.
+ */
+.razorpay-container,
+.razorpay-container iframe,
+iframe.razorpay-checkout-frame,
+iframe[src*="razorpay"] {
+  color-scheme: light !important;
+}
+
 @theme inline {
   --color-background: var(--background);
   --color-foreground: var(--foreground);

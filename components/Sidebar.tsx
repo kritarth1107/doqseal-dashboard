@@ -19,6 +19,8 @@ import { navGroups } from "@/lib/navigation";
 
 export function Sidebar() {
   const pathname = usePathname();
+  const hideSidebar =
+    pathname?.startsWith("/settings/billing/upgrade") ?? false;
   const [isCollapsed, setIsCollapsed] = useState(() =>
     pathname?.startsWith("/intelligence") ?? false
   );
@@ -31,6 +33,8 @@ export function Sidebar() {
   useEffect(() => {
     setIsCollapsed(pathname?.startsWith("/intelligence") ?? false);
   }, [pathname]);
+
+  if (hideSidebar) return null;
 
   const handleLogout = async () => {
     try {

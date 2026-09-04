@@ -4,6 +4,8 @@ type BackendDocumentPayload = {
   document: {
     documentId: string;
     projectId: string | null;
+    projectName?: string | null;
+    organisationId?: string | null;
     originalFilename: string;
     displayTitle?: string | null;
     mimeType: string;
@@ -15,6 +17,12 @@ type BackendDocumentPayload = {
     keepForever?: boolean;
     fileExpiresAt?: string | null;
     uploadedBy?: string;
+    uploadedByUser?: {
+      userId: string;
+      name: string;
+      email?: string | null;
+      avatar?: string | null;
+    } | null;
     sharedWithOrganisation?: boolean;
     createdAt: string;
     updatedAt: string;
@@ -62,6 +70,8 @@ export function mapBackendDocument(
   return {
     id: document.documentId,
     projectId: document.projectId ?? null,
+    projectName: document.projectName ?? null,
+    organisationId: document.organisationId ?? null,
     jobId: job?.jobId,
     originalFilename: document.originalFilename,
     displayTitle: document.displayTitle || null,
@@ -73,14 +83,16 @@ export function mapBackendDocument(
     fieldConfidence,
     confidence: averageConfidence(fieldConfidence),
     extractionStrategy: extraction?.strategy || (extraction ? "hybrid" : "pending"),
+    extractionStatus: extraction?.status ?? null,
     uploadedAt: document.createdAt,
-    processedAt: extraction?.approvedAt ?? undefined,
+    processedAt: extraction?.approvedAt ?? job?.completedAt ?? undefined,
     processingError: job?.error ?? undefined,
     filePurgedAt: document.filePurgedAt || null,
     retentionDays: document.retentionDays ?? null,
     keepForever: Boolean(document.keepForever),
     fileExpiresAt: document.fileExpiresAt || null,
     uploadedBy: document.uploadedBy,
+    uploadedByUser: document.uploadedByUser ?? null,
     contentHash: document.contentHash,
     sharedWithOrganisation: document.sharedWithOrganisation !== false,
     demoMode: Boolean(job?.demoMode),
@@ -116,4 +128,49 @@ export function mapBackendDocumentList(
     extractionStrategy: "pending",
     uploadedAt: document.createdAt,
   }));
+}
+
+/** Preview of the webhook body sent on document.processed */
+export function buildWebhookPayloadPreview(doc: StoredDocument) {
+  return {
+    event: "document.processed",
+    organisationId: doc.organisationId ?? null,
+    project: doc.projectId
+      ? {
+          id: doc.projectId,
+          name: doc.projectName || null,
+        }
+      : null,
+    document: {
+      id: doc.id,
+      originalFilename: doc.originalFilename,
+      displayTitle: doc.displayTitle || null,
+      mimeType: doc.mimeType,
+      size: doc.size,
+      status: doc.status,
+      contentHash: doc.contentHash || null,
+    },
+    jobId: doc.jobId || null,
+    uploadedBy: doc.uploadedByUser
+      ? {
+          userId: doc.uploadedByUser.userId,
+          name: doc.uploadedByUser.name,
+          email: doc.uploadedByUser.email || null,
+        }
+      : doc.uploadedBy
+        ? { userId: doc.uploadedBy, name: null, email: null }
+        : null,
+    uploadedVia: "dashboard",
+    uploadedAt: doc.uploadedAt,
+    processedAt: doc.processedAt || null,
+    extraction: doc.extractedJson
+      ? {
+          data: doc.extractedJson,
+          fieldConfidence: doc.fieldConfidence || {},
+          strategy: doc.extractionStrategy || null,
+          status: doc.extractionStatus || doc.status,
+        }
+      : null,
+    timestamp: new Date().toISOString(),
+  };
 }

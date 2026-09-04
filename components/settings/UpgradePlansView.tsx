@@ -105,11 +105,7 @@ export function UpgradePlansView() {
   const [billingInterval, setBillingInterval] =
     useState<BillingInterval>("monthly");
 
-  const isDark =
-    resolvedTheme === "dark" ||
-    (resolvedTheme === "system" &&
-      typeof window !== "undefined" &&
-      window.matchMedia("(prefers-color-scheme: dark)").matches);
+  const isDark = resolvedTheme === "dark";
 
   useEffect(() => {
     async function load() {
@@ -267,15 +263,15 @@ export function UpgradePlansView() {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-24">
+      <div className="fixed inset-0 z-50 flex justify-center items-center bg-[#f9f9f9] dark:bg-[#0b1220]">
         <Loader2 className="w-8 h-8 animate-spin text-[#2563eb]" />
       </div>
     );
   }
 
   return (
-    <div className="min-h-full bg-[#f9f9f9] dark:bg-[#0b1220] text-zinc-900 dark:text-zinc-100">
-      <div className="border-b border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950/80">
+    <div className="fixed inset-0 z-50 overflow-y-auto bg-[#f9f9f9] dark:bg-[#0b1220] text-zinc-900 dark:text-zinc-100">
+      <div className="sticky top-0 z-10 border-b border-zinc-200 dark:border-zinc-800 bg-white/90 dark:bg-zinc-950/90 backdrop-blur-md">
         <div className="max-w-7xl mx-auto px-4 sm:px-8 py-4 flex items-center justify-between">
           <Link
             href="/settings/billing"
@@ -287,7 +283,7 @@ export function UpgradePlansView() {
         </div>
       </div>
 
-      <div className="max-w-7xl mx-auto px-4 sm:px-10 py-10 sm:py-16">
+      <div className="max-w-7xl mx-auto px-4 sm:px-10 py-10 sm:py-16 pb-20">
         <h1 className="text-3xl sm:text-4xl font-serif text-center text-zinc-900 dark:text-zinc-50 tracking-tight">
           Plans that grow with you
         </h1>

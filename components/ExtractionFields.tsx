@@ -20,13 +20,14 @@ function isPlainObject(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
 }
 
-function FieldCard({
+function FieldRow({
   label,
   value,
   confidence,
   editable,
   draft,
   onDraftChange,
+  multiline,
 }: {
   label: string;
   value: string;
@@ -34,84 +35,41 @@ function FieldCard({
   editable?: boolean;
   draft?: string;
   onDraftChange?: (next: string) => void;
+  multiline?: boolean;
 }) {
   return (
-    <div className="rounded-xl border border-gray-100 dark:border-white/10 bg-gray-50 dark:bg-slate-800/40 p-3">
-      <div className="flex items-center justify-between gap-2">
-        <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">
+    <div className="grid grid-cols-[minmax(7rem,32%)_1fr] gap-x-3 gap-y-0.5 py-2 border-b border-zinc-100 dark:border-zinc-800 last:border-0 items-start">
+      <div className="flex items-center gap-1.5 min-w-0 pt-0.5">
+        <span className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 truncate">
           {label}
-        </p>
+        </span>
         {typeof confidence === "number" && (
-          <span className="text-[10px] font-medium text-[#2563eb]">
+          <span className="text-[10px] text-[#2563eb] shrink-0">
             {(confidence * 100).toFixed(0)}%
           </span>
         )}
       </div>
       {editable ? (
-        <input
-          type="text"
-          value={draft ?? value}
-          onChange={(e) => onDraftChange?.(e.target.value)}
-          className="mt-1.5 w-full rounded-lg border border-gray-200 dark:border-white/10 bg-white dark:bg-slate-900 px-2.5 py-1.5 text-sm text-gray-900 dark:text-slate-100 outline-none focus:border-[#2563eb] focus:ring-1 focus:ring-[#2563eb]"
-        />
+        multiline ? (
+          <textarea
+            value={draft ?? value}
+            onChange={(e) => onDraftChange?.(e.target.value)}
+            rows={2}
+            className="w-full rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-2 py-1 text-sm text-zinc-900 dark:text-zinc-100 outline-none focus:border-[#2563eb] resize-y"
+          />
+        ) : (
+          <input
+            type="text"
+            value={draft ?? value}
+            onChange={(e) => onDraftChange?.(e.target.value)}
+            className="w-full rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-2 py-1 text-sm text-zinc-900 dark:text-zinc-100 outline-none focus:border-[#2563eb]"
+          />
+        )
       ) : (
-        <p className="mt-1 text-sm text-gray-900 dark:text-slate-100 whitespace-pre-wrap break-words">
+        <p className="text-sm text-zinc-900 dark:text-zinc-100 whitespace-pre-wrap break-words leading-snug">
           {value}
         </p>
       )}
-    </div>
-  );
-}
-
-function PointerList({
-  items,
-}: {
-  items: Array<Record<string, unknown>>;
-}) {
-  return (
-    <ul className="space-y-2">
-      {items.map((item, index) => {
-        const label = formatPrimitive(item.label ?? item.key ?? `Item ${index + 1}`);
-        const value = formatPrimitive(item.value ?? item.text ?? item.summary);
-        const page = item.page;
-        return (
-          <li
-            key={`${label}-${index}`}
-            className="rounded-xl border border-gray-100 dark:border-white/10 bg-gray-50 dark:bg-slate-800/40 p-3"
-          >
-            <div className="flex items-start justify-between gap-2">
-              <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-500 dark:text-slate-400">
-                {label}
-              </p>
-              {page != null && page !== "" && (
-                <span className="text-[10px] text-gray-400 dark:text-slate-500">
-                  p.{String(page)}
-                </span>
-              )}
-            </div>
-            <p className="mt-1 text-sm text-gray-900 dark:text-slate-100 whitespace-pre-wrap break-words">
-              {value}
-            </p>
-          </li>
-        );
-      })}
-    </ul>
-  );
-}
-
-function Section({
-  title,
-  children,
-}: {
-  title: string;
-  children: React.ReactNode;
-}) {
-  return (
-    <div className="bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/10 rounded-2xl p-5">
-      <h3 className="text-sm font-semibold text-gray-900 dark:text-slate-100 mb-4">
-        {title}
-      </h3>
-      {children}
     </div>
   );
 }
@@ -268,237 +226,256 @@ export function ExtractionFields({
 
   if (!entries.length) {
     return (
-      <div className="bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/10 rounded-2xl p-8 text-center text-sm text-gray-500 dark:text-slate-400">
+      <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950/60 px-4 py-8 text-center text-sm text-zinc-500">
         No extracted fields yet.
       </div>
     );
   }
 
   return (
-    <div className="space-y-4">
-      {canEdit && (
-        <div className="flex items-center justify-between gap-3">
-          <p className="text-xs text-gray-500 dark:text-slate-400">
-            Correct fields when extraction is wrong — saved for future model tuning.
+    <div className="rounded-xl border border-zinc-200 dark:border-zinc-800 bg-white dark:bg-zinc-950/60 overflow-hidden">
+      <div className="flex items-center justify-between gap-2 px-3.5 py-2.5 border-b border-zinc-100 dark:border-zinc-800">
+        <div>
+          <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
+            Extracted fields
           </p>
-          <div className="flex items-center gap-2">
+          {typeof data.document_type === "string" && (
+            <p className="text-[11px] text-zinc-500 mt-0.5 capitalize">
+              {String(data.document_type).replace(/_/g, " ")}
+            </p>
+          )}
+        </div>
+        {canEdit && (
+          <div className="flex items-center gap-1.5">
             {editing ? (
               <>
                 <button
                   type="button"
                   disabled={saving}
                   onClick={() => setEditing(false)}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-600 dark:text-slate-300 bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800 disabled:opacity-50"
+                  className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-zinc-600 dark:text-zinc-300 border border-zinc-200 dark:border-zinc-700 rounded-md hover:bg-zinc-50 dark:hover:bg-zinc-800 disabled:opacity-50"
                 >
-                  <X className="w-3.5 h-3.5" />
+                  <X className="w-3 h-3" />
                   Cancel
                 </button>
                 <button
                   type="button"
                   disabled={saving}
                   onClick={() => void handleSave()}
-                  className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-white bg-[#2563eb] rounded-lg hover:bg-[#1d4ed8] disabled:opacity-50"
+                  className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-white bg-[#2563eb] rounded-md hover:bg-[#1d4ed8] disabled:opacity-50"
                 >
                   {saving ? (
-                    <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                    <Loader2 className="w-3 h-3 animate-spin" />
                   ) : (
-                    <Check className="w-3.5 h-3.5" />
+                    <Check className="w-3 h-3" />
                   )}
-                  Save corrections
+                  Save
                 </button>
               </>
             ) : (
               <button
                 type="button"
                 onClick={() => setEditing(true)}
-                className="inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-medium text-gray-700 dark:text-slate-200 bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/10 rounded-lg hover:bg-gray-50 dark:hover:bg-slate-800"
+                className="inline-flex items-center gap-1 px-2 py-1 text-[11px] font-medium text-zinc-700 dark:text-zinc-200 border border-zinc-200 dark:border-zinc-700 rounded-md hover:bg-zinc-50 dark:hover:bg-zinc-800"
               >
-                <Pencil className="w-3.5 h-3.5" />
-                Edit fields
+                <Pencil className="w-3 h-3" />
+                Edit
               </button>
             )}
           </div>
-        </div>
-      )}
+        )}
+      </div>
 
       {error && (
-        <p className="text-xs text-red-600 dark:text-red-400">{error}</p>
+        <p className="px-3.5 py-2 text-xs text-red-600 dark:text-red-400 border-b border-zinc-100 dark:border-zinc-800">
+          {error}
+        </p>
       )}
 
-      {(suggestedTitle || summary) && (
-        <Section title="Document overview">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {suggestedTitle && (
-              <FieldCard
-                label="Title"
-                value={suggestedTitle}
-                confidence={fieldConfidence.suggested_title}
-                editable={editing}
-                draft={drafts.suggested_title}
-                onDraftChange={(v) =>
-                  setDrafts((prev) => ({ ...prev, suggested_title: v }))
-                }
-              />
-            )}
-            {typeof data.project_context === "string" && (
-              <FieldCard label="Project" value={data.project_context} />
-            )}
-            {summary && (
-              <div className="sm:col-span-2">
-                <FieldCard
-                  label="Summary"
-                  value={summary}
-                  confidence={fieldConfidence.summary}
-                  editable={editing}
-                  draft={drafts.summary}
-                  onDraftChange={(v) =>
-                    setDrafts((prev) => ({ ...prev, summary: v }))
-                  }
-                />
-              </div>
-            )}
-          </div>
-        </Section>
-      )}
+      <div className="px-3.5 py-1">
+        {suggestedTitle && (
+          <FieldRow
+            label="Title"
+            value={suggestedTitle}
+            confidence={fieldConfidence.suggested_title}
+            editable={editing}
+            draft={drafts.suggested_title}
+            onDraftChange={(v) =>
+              setDrafts((prev) => ({ ...prev, suggested_title: v }))
+            }
+          />
+        )}
+        {typeof data.project_context === "string" && data.project_context && (
+          <FieldRow label="Project" value={data.project_context} />
+        )}
+        {summary && (
+          <FieldRow
+            label="Summary"
+            value={summary}
+            confidence={fieldConfidence.summary}
+            editable={editing}
+            draft={drafts.summary}
+            onDraftChange={(v) =>
+              setDrafts((prev) => ({ ...prev, summary: v }))
+            }
+            multiline
+          />
+        )}
 
-      {keyEntities && Object.keys(keyEntities).length > 0 && (
-        <Section title="Key entities">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {Object.entries(keyEntities).map(([key, value]) => {
-              const path = `key_entities.${key}`;
-              return (
-                <FieldCard
-                  key={key}
-                  label={formatLabel(key)}
-                  value={formatPrimitive(value)}
-                  editable={
-                    editing &&
-                    (typeof value === "string" ||
-                      typeof value === "number" ||
-                      typeof value === "boolean")
-                  }
-                  draft={drafts[path]}
-                  onDraftChange={(v) =>
-                    setDrafts((prev) => ({ ...prev, [path]: v }))
-                  }
-                />
-              );
-            })}
-          </div>
-        </Section>
-      )}
-
-      {pointers.length > 0 && (
-        <Section title="Extracted pointers">
-          <PointerList items={pointers} />
-        </Section>
-      )}
-
-      {pages.length > 0 && (
-        <Section title="Pages">
-          <div className="space-y-2">
-            {pages.map((page, index) => (
-              <div
-                key={index}
-                className="rounded-xl border border-gray-100 dark:border-white/10 bg-gray-50 dark:bg-slate-800/40 p-3"
-              >
-                <p className="text-sm font-medium text-gray-900 dark:text-slate-100">
-                  Page {formatPrimitive(page.page ?? index + 1)}
-                  {page.title ? ` · ${formatPrimitive(page.title)}` : ""}
-                </p>
-                {page.summary != null && page.summary !== "" && (
-                  <p className="mt-1 text-sm text-gray-600 dark:text-slate-400">
-                    {formatPrimitive(page.summary)}
-                  </p>
-                )}
-              </div>
-            ))}
-          </div>
-        </Section>
-      )}
-
-      {scalarEntries.length > 0 && (
-        <Section title="Extracted fields">
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-            {scalarEntries.map(([key, value]) => (
-              <FieldCard
-                key={key}
+        {keyEntities &&
+          Object.entries(keyEntities).map(([key, value]) => {
+            const path = `key_entities.${key}`;
+            return (
+              <FieldRow
+                key={path}
                 label={formatLabel(key)}
                 value={formatPrimitive(value)}
-                confidence={fieldConfidence[key]}
-                editable={editing}
-                draft={drafts[key]}
+                editable={
+                  editing &&
+                  (typeof value === "string" ||
+                    typeof value === "number" ||
+                    typeof value === "boolean")
+                }
+                draft={drafts[path]}
                 onDraftChange={(v) =>
-                  setDrafts((prev) => ({ ...prev, [key]: v }))
+                  setDrafts((prev) => ({ ...prev, [path]: v }))
                 }
               />
-            ))}
-          </div>
-        </Section>
-      )}
+            );
+          })}
 
-      {objectEntries.map(([key, value]) => (
-        <Section key={key} title={formatLabel(key)}>
-          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        {scalarEntries.map(([key, value]) => (
+          <FieldRow
+            key={key}
+            label={formatLabel(key)}
+            value={formatPrimitive(value)}
+            confidence={fieldConfidence[key]}
+            editable={editing}
+            draft={drafts[key]}
+            onDraftChange={(v) =>
+              setDrafts((prev) => ({ ...prev, [key]: v }))
+            }
+          />
+        ))}
+
+        {objectEntries.map(([key, value]) => (
+          <div key={key} className="py-2 border-b border-zinc-100 dark:border-zinc-800 last:border-0">
+            <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400 mb-1">
+              {formatLabel(key)}
+            </p>
             {Object.entries(value as Record<string, unknown>).map(
               ([childKey, childValue]) => (
-                <FieldCard
+                <FieldRow
                   key={childKey}
                   label={formatLabel(childKey)}
                   value={
                     Array.isArray(childValue)
                       ? childValue.map(formatPrimitive).join(", ")
                       : isPlainObject(childValue)
-                        ? JSON.stringify(childValue, null, 2)
+                        ? JSON.stringify(childValue)
                         : formatPrimitive(childValue)
                   }
                 />
               )
             )}
           </div>
-        </Section>
-      ))}
+        ))}
 
-      {arrayEntries.map(([key, value]) => {
-        const list = value as unknown[];
-        if (list.every(isPlainObject)) {
+        {arrayEntries.map(([key, value]) => {
+          const list = value as unknown[];
           return (
-            <Section key={key} title={formatLabel(key)}>
-              <PointerList items={list as Array<Record<string, unknown>>} />
-            </Section>
+            <div key={key} className="py-2 border-b border-zinc-100 dark:border-zinc-800 last:border-0">
+              <p className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 mb-1">
+                {formatLabel(key)}
+              </p>
+              {list.every(isPlainObject) ? (
+                <ul className="space-y-1.5">
+                  {(list as Array<Record<string, unknown>>).map((item, index) => {
+                    const label = formatPrimitive(
+                      item.label ?? item.key ?? `Item ${index + 1}`
+                    );
+                    const itemValue = formatPrimitive(
+                      item.value ?? item.text ?? item.summary
+                    );
+                    return (
+                      <li
+                        key={`${label}-${index}`}
+                        className="text-sm text-zinc-800 dark:text-zinc-200"
+                      >
+                        <span className="text-zinc-500">{label}:</span>{" "}
+                        {itemValue}
+                      </li>
+                    );
+                  })}
+                </ul>
+              ) : (
+                <ul className="space-y-0.5">
+                  {list.map((item, index) => (
+                    <li
+                      key={index}
+                      className="text-sm text-zinc-800 dark:text-zinc-200 flex gap-1.5"
+                    >
+                      <span className="text-[#2563eb]">•</span>
+                      {formatPrimitive(item)}
+                    </li>
+                  ))}
+                </ul>
+              )}
+            </div>
           );
-        }
-        return (
-          <Section key={key} title={formatLabel(key)}>
+        })}
+
+        {pointers.length > 0 && (
+          <div className="py-2 border-b border-zinc-100 dark:border-zinc-800 last:border-0">
+            <p className="text-[11px] font-medium text-zinc-500 mb-1">Pointers</p>
             <ul className="space-y-1">
-              {list.map((item, index) => (
-                <li
-                  key={index}
-                  className="text-sm text-gray-900 dark:text-slate-100 flex items-start gap-2"
-                >
-                  <span className="text-[#2563eb] mt-0.5">•</span>
-                  {formatPrimitive(item)}
+              {pointers.map((item, index) => (
+                <li key={index} className="text-sm text-zinc-800 dark:text-zinc-200">
+                  <span className="text-zinc-500">
+                    {formatPrimitive(item.label ?? item.key ?? `Item ${index + 1}`)}:
+                  </span>{" "}
+                  {formatPrimitive(item.value ?? item.text ?? item.summary)}
                 </li>
               ))}
             </ul>
-          </Section>
-        );
-      })}
+          </div>
+        )}
 
-      {typeof data.ocr_preview === "string" && data.ocr_preview && (
-        <Section title="OCR preview">
-          <p className="text-sm text-gray-700 dark:text-slate-300 whitespace-pre-wrap break-words">
-            {data.ocr_preview}
-          </p>
-        </Section>
-      )}
+        {pages.length > 0 && (
+          <div className="py-2 border-b border-zinc-100 dark:border-zinc-800 last:border-0">
+            <p className="text-[11px] font-medium text-zinc-500 mb-1">Pages</p>
+            <ul className="space-y-1">
+              {pages.map((page, index) => (
+                <li key={index} className="text-sm text-zinc-800 dark:text-zinc-200">
+                  Page {formatPrimitive(page.page ?? index + 1)}
+                  {page.title ? ` · ${formatPrimitive(page.title)}` : ""}
+                  {page.summary ? (
+                    <span className="block text-xs text-zinc-500 mt-0.5">
+                      {formatPrimitive(page.summary)}
+                    </span>
+                  ) : null}
+                </li>
+              ))}
+            </ul>
+          </div>
+        )}
+
+        {typeof data.ocr_preview === "string" && data.ocr_preview && (
+          <div className="py-2">
+            <p className="text-[11px] font-medium text-zinc-500 mb-1">OCR preview</p>
+            <p className="text-xs text-zinc-600 dark:text-zinc-400 whitespace-pre-wrap break-words max-h-40 overflow-y-auto">
+              {data.ocr_preview}
+            </p>
+          </div>
+        )}
+      </div>
 
       {autoTags.length > 0 && (
-        <div className="flex flex-wrap gap-2">
+        <div className="px-3.5 py-2.5 border-t border-zinc-100 dark:border-zinc-800 flex flex-wrap gap-1.5">
           {autoTags.map((tag) => (
             <span
               key={tag}
-              className="rounded-full bg-gray-100 dark:bg-slate-800 px-3 py-1 text-xs font-medium text-gray-700 dark:text-slate-300"
+              className="rounded-md bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 text-[11px] font-medium text-zinc-600 dark:text-zinc-300"
             >
               {tag}
             </span>
