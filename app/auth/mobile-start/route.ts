@@ -1,37 +1,35 @@
-import { cookies, headers } from "next/headers";
 import { NextRequest, NextResponse } from "next/server";
 
 const ALLOWED = new Set(["google", "github", "linkedin", "twitter"]);
 
+function publicOrigin(request: NextRequest): string {
+  const env =
+    process.env.NEXTAUTH_URL?.replace(/\/$/, "") ||
+    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "");
+  if (env?.startsWith("http")) return env;
+
+  const xfHost = request.headers.get("x-forwarded-host");
+  const xfProto = request.headers.get("x-forwarded-proto") || "https";
+  if (xfHost && !xfHost.includes("0.0.0.0")) {
+    return `${xfProto}://${xfHost.split(",")[0].trim()}`;
+  }
+
+  const host = request.headers.get("host");
+  if (host && !host.includes("0.0.0.0") && !host.startsWith("127.")) {
+    return `https://${host}`;
+  }
+
+  return "https://app.doqseal.com";
+}
+
 /**
- * Starts NextAuth OAuth via CSRF auto-submit HTML.
- * Target for FlutterWebAuth2 — avoids client signIn / SessionProvider issues.
+ * Starts NextAuth OAuth inside FlutterWebAuth2 / Custom Tabs.
+ * CSRF is fetched in the browser (avoids Azure loopback/host issues).
  */
 export async function GET(request: NextRequest) {
   const raw = (request.nextUrl.searchParams.get("provider") || "google").toLowerCase();
   const provider = ALLOWED.has(raw) ? raw : "google";
-
-  const h = await headers();
-  const host = h.get("x-forwarded-host") || h.get("host") || "app.doqseal.com";
-  const proto = h.get("x-forwarded-proto") || "https";
-  const origin = `${proto}://${host}`;
-
-  const cookieStore = await cookies();
-  const cookieHeader = cookieStore
-    .getAll()
-    .map((c) => `${c.name}=${c.value}`)
-    .join("; ");
-
-  const csrfRes = await fetch(`${origin}/api/auth/csrf`, {
-    headers: cookieHeader ? { cookie: cookieHeader } : {},
-    cache: "no-store",
-  });
-  const csrfJson = (await csrfRes.json()) as { csrfToken?: string };
-  const csrfToken = csrfJson.csrfToken || "";
-
-  // Forward Set-Cookie from CSRF so the POST has a matching token.
-  const setCookies = csrfRes.headers.getSetCookie?.() || [];
-
+  const origin = publicOrigin(request);
   const callbackUrl = `${origin}/auth/mobile-bridge?method=${encodeURIComponent(provider)}`;
   const action = `${origin}/api/auth/signin/${provider}`;
 
@@ -43,26 +41,50 @@ export async function GET(request: NextRequest) {
   <title>DoqSeal Sign-in</title>
 </head>
 <body style="margin:0;min-height:100vh;display:flex;align-items:center;justify-content:center;font-family:system-ui,sans-serif;background:#f8fafc;color:#0f172a">
-  <form id="oauth" method="POST" action="${action}">
-    <input type="hidden" name="csrfToken" value="${csrfToken.replace(/"/g, "&quot;")}" />
-    <input type="hidden" name="callbackUrl" value="${callbackUrl.replace(/"/g, "&quot;")}" />
-  </form>
-  <p style="font-size:14px;font-weight:500">Continuing securely…</p>
-  <script>document.getElementById('oauth').submit();</script>
+  <p id="msg" style="font-size:14px;font-weight:500">Continuing securely…</p>
+  <script>
+(async function () {
+  try {
+    var csrfRes = await fetch(${JSON.stringify(`${origin}/api/auth/csrf`)}, {
+      credentials: "same-origin",
+      cache: "no-store"
+    });
+    var csrfJson = await csrfRes.json();
+    var csrfToken = csrfJson.csrfToken || "";
+    if (!csrfToken) throw new Error("Missing CSRF token");
+
+    var form = document.createElement("form");
+    form.method = "POST";
+    form.action = ${JSON.stringify(action)};
+
+    var csrf = document.createElement("input");
+    csrf.type = "hidden";
+    csrf.name = "csrfToken";
+    csrf.value = csrfToken;
+    form.appendChild(csrf);
+
+    var cb = document.createElement("input");
+    cb.type = "hidden";
+    cb.name = "callbackUrl";
+    cb.value = ${JSON.stringify(callbackUrl)};
+    form.appendChild(cb);
+
+    document.body.appendChild(form);
+    form.submit();
+  } catch (e) {
+    console.error(e);
+    document.getElementById("msg").textContent = "Could not start sign-in. Close and try again.";
+  }
+})();
+  </script>
 </body>
 </html>`;
 
-  const response = new NextResponse(html, {
+  return new NextResponse(html, {
     status: 200,
     headers: {
       "Content-Type": "text/html; charset=utf-8",
       "Cache-Control": "no-store",
     },
   });
-
-  for (const c of setCookies) {
-    response.headers.append("Set-Cookie", c);
-  }
-
-  return response;
 }
