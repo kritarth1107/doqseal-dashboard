@@ -12,6 +12,7 @@ export const WEBHOOK_EVENTS = [
   "extraction.completed",
   "extraction.failed",
   "project.created",
+  "request_link.submitted",
   "api_key.created",
   "api_key.revoked",
 ] as const;
@@ -96,6 +97,11 @@ export const WEBHOOK_EVENT_META: Record<
     description: "New project workspace created in the org",
     category: "Projects",
   },
+  "request_link.submitted": {
+    label: "Request link submitted",
+    description: "Someone uploaded files via a collection / request link",
+    category: "Request Links",
+  },
   "api_key.created": {
     label: "API key created",
     description: "New APP ID / secret pair issued",
@@ -112,5 +118,6 @@ export const WEBHOOK_EVENT_CATEGORIES = [
   "Documents",
   "Extraction",
   "Projects",
+  "Request Links",
   "API",
 ] as const;

@@ -3,6 +3,7 @@
   HardDrive,
   Brain,
   FolderKanban,
+  Link2,
   BarChart3,
   History,
   ShieldCheck,
@@ -37,6 +38,7 @@ export const navGroups: NavGroup[] = [
       { name: "Document Drive", icon: HardDrive, href: "/drive" },
       { name: "AI Intelligence", icon: Brain, href: "/intelligence" },
       { name: "Projects", icon: FolderKanban, href: "/projects" },
+      { name: "Request Links", icon: Link2, href: "/request-links" },
     ],
   },
   {
