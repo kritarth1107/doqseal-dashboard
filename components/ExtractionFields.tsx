@@ -9,15 +9,76 @@ function formatLabel(key: string): string {
     .replace(/\b\w/g, (char) => char.toUpperCase());
 }
 
-function formatPrimitive(value: unknown): string {
-  if (value === null || value === undefined) return "—";
-  if (typeof value === "boolean") return value ? "Yes" : "No";
-  if (typeof value === "number") return String(value);
-  return String(value);
-}
-
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return Boolean(value) && typeof value === "object" && !Array.isArray(value);
+}
+
+/** Models often return { value, low_confidence } — unwrap for display. */
+function unwrapConfidenceValue(value: unknown): unknown {
+  if (!isPlainObject(value)) return value;
+  const keys = Object.keys(value);
+  if (
+    "value" in value &&
+    (keys.length === 1 ||
+      (keys.length <= 3 &&
+        keys.every((k) =>
+          ["value", "low_confidence", "confidence", "confidence_score"].includes(k)
+        )))
+  ) {
+    return value.value;
+  }
+  return value;
+}
+
+function formatPrimitive(value: unknown): string {
+  const unwrapped = unwrapConfidenceValue(value);
+  if (unwrapped === null || unwrapped === undefined || unwrapped === "") {
+    return "—";
+  }
+  if (typeof unwrapped === "boolean") return unwrapped ? "Yes" : "No";
+  if (typeof unwrapped === "number") return String(unwrapped);
+  if (typeof unwrapped === "string") return unwrapped;
+  if (Array.isArray(unwrapped)) {
+    const parts = unwrapped
+      .map((item) => formatPrimitive(item))
+      .filter((part) => part && part !== "—");
+    return parts.length ? parts.join(", ") : "—";
+  }
+  if (isPlainObject(unwrapped)) {
+    if (typeof unwrapped.text === "string") return unwrapped.text;
+    if (typeof unwrapped.content === "string") return unwrapped.content;
+    if (typeof unwrapped.name === "string") return unwrapped.name;
+    if (typeof unwrapped.label === "string" && "value" in unwrapped) {
+      return `${unwrapped.label}: ${formatPrimitive(unwrapped.value)}`;
+    }
+    const parts = Object.entries(unwrapped)
+      .filter(
+        ([k, v]) =>
+          !["low_confidence", "confidence", "confidence_score"].includes(k) &&
+          v !== null &&
+          v !== undefined &&
+          v !== ""
+      )
+      .map(([k, v]) => `${formatLabel(k)}: ${formatPrimitive(v)}`);
+    return parts.length ? parts.join(" · ") : "—";
+  }
+  return String(unwrapped);
+}
+
+function confidenceFromValue(
+  value: unknown,
+  fallback?: number
+): number | undefined {
+  if (
+    isPlainObject(value) &&
+    typeof value.low_confidence === "boolean"
+  ) {
+    return value.low_confidence ? 0.55 : 0.92;
+  }
+  if (isPlainObject(value) && typeof value.confidence === "number") {
+    return value.confidence;
+  }
+  return fallback;
 }
 
 function FieldRow({
@@ -457,23 +518,21 @@ export function ExtractionFields({
             {keyEntities &&
               Object.entries(keyEntities).map(([key, value]) => {
                 const path = `key_entities.${key}`;
+                const display = formatPrimitive(value);
+                const editableScalar =
+                  typeof unwrapConfidenceValue(value) === "string" ||
+                  typeof unwrapConfidenceValue(value) === "number" ||
+                  typeof unwrapConfidenceValue(value) === "boolean";
                 return (
                   <FieldRow
                     key={path}
                     label={formatLabel(key)}
-                    value={
-                      Array.isArray(value)
-                        ? value.map(formatPrimitive).join(", ")
-                        : isPlainObject(value)
-                          ? JSON.stringify(value)
-                          : formatPrimitive(value)
-                    }
-                    editable={
-                      editing &&
-                      (typeof value === "string" ||
-                        typeof value === "number" ||
-                        typeof value === "boolean")
-                    }
+                    value={display}
+                    confidence={confidenceFromValue(
+                      value,
+                      fieldConfidence[`key_entities.${key}`]
+                    )}
+                    editable={editing && editableScalar}
                     draft={drafts[path]}
                     onDraftChange={(v) =>
                       setDrafts((prev) => ({ ...prev, [path]: v }))
@@ -487,6 +546,7 @@ export function ExtractionFields({
                   key={`fields.${key}`}
                   label={formatLabel(key)}
                   value={formatPrimitive(value)}
+                  confidence={confidenceFromValue(value)}
                 />
               ))}
           </SectionCard>
@@ -499,7 +559,10 @@ export function ExtractionFields({
                 key={key}
                 label={formatLabel(key)}
                 value={formatPrimitive(value)}
-                confidence={fieldConfidence[key]}
+                confidence={
+                  confidenceFromValue(value, fieldConfidence[key]) ??
+                  fieldConfidence[key]
+                }
                 editable={editing}
                 draft={drafts[key]}
                 onDraftChange={(v) =>
@@ -596,32 +659,52 @@ export function ExtractionFields({
           </SectionCard>
         )}
 
-        {objectEntries.map(([key, value]) => (
-          <SectionCard key={key} title={formatLabel(key)}>
-            {Object.entries(value as Record<string, unknown>).map(
-              ([childKey, childValue]) => (
+        {objectEntries.map(([key, value]) => {
+          const obj = value as Record<string, unknown>;
+          // Single confidence wrapper masquerading as a section
+          if (
+            "value" in obj &&
+            Object.keys(obj).every((k) =>
+              ["value", "low_confidence", "confidence"].includes(k)
+            )
+          ) {
+            return (
+              <SectionCard key={key} title={formatLabel(key)}>
+                <FieldRow
+                  label={formatLabel(key)}
+                  value={formatPrimitive(obj)}
+                  confidence={confidenceFromValue(obj)}
+                />
+              </SectionCard>
+            );
+          }
+          return (
+            <SectionCard key={key} title={formatLabel(key)}>
+              {Object.entries(obj).map(([childKey, childValue]) => (
                 <FieldRow
                   key={childKey}
                   label={formatLabel(childKey)}
-                  value={
-                    Array.isArray(childValue)
-                      ? childValue.map(formatPrimitive).join(", ")
-                      : isPlainObject(childValue)
-                        ? JSON.stringify(childValue)
-                        : formatPrimitive(childValue)
-                  }
+                  value={formatPrimitive(childValue)}
+                  confidence={confidenceFromValue(childValue)}
                 />
-              )
-            )}
-          </SectionCard>
-        ))}
+              ))}
+            </SectionCard>
+          );
+        })}
 
         {arrayEntries.map(([key, value]) => {
           const list = value as unknown[];
           if (list.every(isPlainObject)) {
-            const asTable = uniformObjectTable(
-              list as Array<Record<string, unknown>>
+            const normalizedList = (list as Array<Record<string, unknown>>).map(
+              (item) => {
+                const next: Record<string, unknown> = {};
+                for (const [k, v] of Object.entries(item)) {
+                  next[k] = unwrapConfidenceValue(v);
+                }
+                return next;
+              }
             );
+            const asTable = uniformObjectTable(normalizedList);
             if (asTable) {
               return (
                 <SectionCard key={key} title={formatLabel(key)}>
@@ -635,10 +718,11 @@ export function ExtractionFields({
             return (
               <SectionCard key={key} title={formatLabel(key)}>
                 <ul className="space-y-2">
-                  {(list as Array<Record<string, unknown>>).map((item, index) => {
+                  {normalizedList.map((item, index) => {
                     const title =
                       item.name ??
                       item.drug_name ??
+                      item.drug_name_as_written ??
                       item.test_name ??
                       item.label ??
                       item.heading ??
@@ -650,6 +734,7 @@ export function ExtractionFields({
                           ![
                             "name",
                             "drug_name",
+                            "drug_name_as_written",
                             "test_name",
                             "label",
                             "heading",
@@ -659,14 +744,12 @@ export function ExtractionFields({
                           v !== undefined &&
                           v !== ""
                       )
-                      .map(([k, v]) =>
-                        isPlainObject(v) || Array.isArray(v)
-                          ? `${formatLabel(k)}: ${JSON.stringify(v)}`
-                          : `${formatLabel(k)}: ${formatPrimitive(v)}`
+                      .map(
+                        ([k, v]) => `${formatLabel(k)}: ${formatPrimitive(v)}`
                       );
                     return (
                       <li
-                        key={`${String(title)}-${index}`}
+                        key={`${formatPrimitive(title)}-${index}`}
                         className="text-sm rounded-lg bg-zinc-50 dark:bg-zinc-900/60 px-2.5 py-2"
                       >
                         <p className="font-medium text-zinc-900 dark:text-zinc-100">
