@@ -426,16 +426,19 @@ export default function ProjectSettingsPage() {
                     </p>
                     <ul className="text-[13px] text-gray-500 dark:text-slate-400 space-y-1.5 list-disc pl-4">
                       <li>
-                        Prefer a clear checklist — one item per line or
-                        comma-separated.
+                        Write full instructions for the document type — sections,
+                        field names, lists (e.g. medicines), and null rules. The
+                        engine follows this context instead of a generic TRF
+                        template when it is detailed.
                       </li>
                       <li>
                         Mention stamps/signatures if presence matters (AI maps
                         them to true/false).
                       </li>
                       <li>
-                        Changes apply to the next upload; already-processed
-                        files keep their prior extraction.
+                        Changes apply to the next upload or Re-run; already-
+                        processed files keep their prior extraction until you
+                        re-run.
                       </li>
                     </ul>
                   </div>

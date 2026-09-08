@@ -389,21 +389,56 @@ export function ExtractionFields({
                 {formatLabel(key)}
               </p>
               {list.every(isPlainObject) ? (
-                <ul className="space-y-1.5">
+                <ul className="space-y-2">
                   {(list as Array<Record<string, unknown>>).map((item, index) => {
-                    const label = formatPrimitive(
-                      item.label ?? item.key ?? `Item ${index + 1}`
-                    );
-                    const itemValue = formatPrimitive(
+                    const title =
+                      item.name ??
+                      item.drug_name ??
+                      item.test_name ??
+                      item.label ??
+                      item.key ??
+                      `Item ${index + 1}`;
+                    const details = Object.entries(item)
+                      .filter(
+                        ([k, v]) =>
+                          ![
+                            "name",
+                            "drug_name",
+                            "test_name",
+                            "label",
+                            "key",
+                          ].includes(k) &&
+                          v !== null &&
+                          v !== undefined &&
+                          v !== ""
+                      )
+                      .map(([k, v]) =>
+                        isPlainObject(v) || Array.isArray(v)
+                          ? `${formatLabel(k)}: ${JSON.stringify(v)}`
+                          : `${formatLabel(k)}: ${formatPrimitive(v)}`
+                      );
+                    const fallbackValue = formatPrimitive(
                       item.value ?? item.text ?? item.summary
                     );
                     return (
                       <li
-                        key={`${label}-${index}`}
-                        className="text-sm text-zinc-800 dark:text-zinc-200"
+                        key={`${String(title)}-${index}`}
+                        className="text-sm text-zinc-800 dark:text-zinc-200 rounded-lg bg-zinc-50 dark:bg-zinc-900/60 px-2.5 py-2"
                       >
-                        <span className="text-zinc-500">{label}:</span>{" "}
-                        {itemValue}
+                        <p className="font-medium text-zinc-900 dark:text-zinc-100">
+                          {formatPrimitive(title)}
+                        </p>
+                        {details.length > 0 ? (
+                          <p className="text-[12px] text-zinc-500 mt-0.5 leading-relaxed">
+                            {details.join(" · ")}
+                          </p>
+                        ) : (
+                          fallbackValue !== "—" && (
+                            <p className="text-[12px] text-zinc-500 mt-0.5">
+                              {fallbackValue}
+                            </p>
+                          )
+                        )}
                       </li>
                     );
                   })}
