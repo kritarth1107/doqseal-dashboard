@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState, type ReactNode } from "react";
 import { Check, Loader2, Pencil, X } from "lucide-react";
 
 function formatLabel(key: string): string {
@@ -54,7 +54,7 @@ function FieldRow({
           <textarea
             value={draft ?? value}
             onChange={(e) => onDraftChange?.(e.target.value)}
-            rows={2}
+            rows={3}
             className="w-full rounded-md border border-zinc-200 dark:border-zinc-700 bg-white dark:bg-zinc-950 px-2 py-1 text-sm text-zinc-900 dark:text-zinc-100 outline-none focus:border-[#2563eb] resize-y"
           />
         ) : (
@@ -74,12 +74,112 @@ function FieldRow({
   );
 }
 
+function SectionCard({
+  title,
+  children,
+}: {
+  title: string;
+  children: ReactNode;
+}) {
+  return (
+    <section className="py-3 border-b border-zinc-100 dark:border-zinc-800 last:border-0">
+      <h3 className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400 mb-2">
+        {title}
+      </h3>
+      {children}
+    </section>
+  );
+}
+
+function DataTable({
+  name,
+  headers,
+  rows,
+}: {
+  name?: string | null;
+  headers: string[];
+  rows: string[][];
+}) {
+  if (!headers.length && !rows.length) return null;
+  const cols =
+    headers.length > 0
+      ? headers
+      : Array.from(
+          { length: Math.max(0, ...rows.map((r) => r.length)) },
+          (_, i) => `Col ${i + 1}`
+        );
+  return (
+    <div className="mb-3 last:mb-0 overflow-x-auto rounded-lg border border-zinc-200 dark:border-zinc-800">
+      {name && (
+        <p className="px-2.5 py-1.5 text-[11px] font-medium text-zinc-600 dark:text-zinc-300 bg-zinc-50 dark:bg-zinc-900/60 border-b border-zinc-200 dark:border-zinc-800">
+          {name}
+        </p>
+      )}
+      <table className="min-w-full text-left text-[12px]">
+        <thead className="bg-zinc-50 dark:bg-zinc-900/40 text-zinc-500">
+          <tr>
+            {cols.map((h, i) => (
+              <th key={`${h}-${i}`} className="px-2.5 py-1.5 font-medium whitespace-nowrap">
+                {h}
+              </th>
+            ))}
+          </tr>
+        </thead>
+        <tbody>
+          {rows.map((row, ri) => (
+            <tr
+              key={ri}
+              className="border-t border-zinc-100 dark:border-zinc-800 text-zinc-800 dark:text-zinc-200"
+            >
+              {cols.map((_, ci) => (
+                <td key={ci} className="px-2.5 py-1.5 align-top whitespace-pre-wrap">
+                  {formatPrimitive(row[ci])}
+                </td>
+              ))}
+            </tr>
+          ))}
+        </tbody>
+      </table>
+    </div>
+  );
+}
+
+function uniformObjectTable(
+  list: Array<Record<string, unknown>>
+): { headers: string[]; rows: string[][] } | null {
+  if (list.length < 2) return null;
+  const keys = Object.keys(list[0]);
+  if (keys.length < 2) return null;
+  const allSame = list.every((item) => {
+    const itemKeys = Object.keys(item);
+    return (
+      itemKeys.length === keys.length &&
+      keys.every((k) => itemKeys.includes(k)) &&
+      itemKeys.every(
+        (k) =>
+          typeof item[k] === "string" ||
+          typeof item[k] === "number" ||
+          typeof item[k] === "boolean" ||
+          item[k] === null
+      )
+    );
+  });
+  if (!allSame) return null;
+  return {
+    headers: keys.map(formatLabel),
+    rows: list.map((item) => keys.map((k) => formatPrimitive(item[k]))),
+  };
+}
+
 const RESERVED = new Set([
   "document_type",
   "suggested_title",
   "summary",
   "pointers",
   "pages",
+  "sections",
+  "tables",
+  "fields",
   "key_entities",
   "auto_tags",
   "project_context",
@@ -115,15 +215,22 @@ export function ExtractionFields({
   const suggestedTitle =
     typeof data.suggested_title === "string" ? data.suggested_title : null;
   const summary = typeof data.summary === "string" ? data.summary : null;
-  const pointers = Array.isArray(data.pointers)
-    ? (data.pointers.filter(isPlainObject) as Array<Record<string, unknown>>)
+  const documentType =
+    typeof data.document_type === "string" ? data.document_type : null;
+  const keyEntities = isPlainObject(data.key_entities) ? data.key_entities : null;
+  const nestedFields = isPlainObject(data.fields) ? data.fields : null;
+  const autoTags = Array.isArray(data.auto_tags)
+    ? (data.auto_tags.filter((t) => typeof t === "string") as string[])
+    : [];
+  const pointers = Array.isArray(data.pointers) ? data.pointers : [];
+  const sections = Array.isArray(data.sections)
+    ? (data.sections.filter(isPlainObject) as Array<Record<string, unknown>>)
+    : [];
+  const tables = Array.isArray(data.tables)
+    ? (data.tables.filter(isPlainObject) as Array<Record<string, unknown>>)
     : [];
   const pages = Array.isArray(data.pages)
     ? (data.pages.filter(isPlainObject) as Array<Record<string, unknown>>)
-    : [];
-  const keyEntities = isPlainObject(data.key_entities) ? data.key_entities : null;
-  const autoTags = Array.isArray(data.auto_tags)
-    ? (data.auto_tags.filter((t) => typeof t === "string") as string[])
     : [];
 
   const scalarEntries = entries.filter(([key, value]) => {
@@ -144,6 +251,16 @@ export function ExtractionFields({
     if (RESERVED.has(key)) return false;
     return Array.isArray(value);
   });
+
+  const layoutHint = useMemo(() => {
+    const type = (documentType || "").toLowerCase();
+    if (pages.length > 0 || type.includes("deck") || type.includes("presentation")) {
+      return "deck";
+    }
+    if (tables.length > 0) return "tabular";
+    if (sections.length > 0) return "sections";
+    return "fields";
+  }, [documentType, pages.length, tables.length, sections.length]);
 
   const editableKeys: Array<{ key: string; value: string }> = [];
   if (suggestedTitle) {
@@ -239,11 +356,9 @@ export function ExtractionFields({
           <p className="text-sm font-medium text-zinc-900 dark:text-zinc-50">
             Extracted fields
           </p>
-          {typeof data.document_type === "string" && (
-            <p className="text-[11px] text-zinc-500 mt-0.5 capitalize">
-              {String(data.document_type).replace(/_/g, " ")}
-            </p>
-          )}
+          <p className="text-[11px] text-zinc-500 mt-0.5 capitalize">
+            {[documentType?.replace(/_/g, " "), layoutHint].filter(Boolean).join(" · ")}
+          </p>
         </div>
         {canEdit && (
           <div className="flex items-center gap-1.5">
@@ -292,7 +407,7 @@ export function ExtractionFields({
         </p>
       )}
 
-      <div className="px-3.5 py-1">
+      <div className="px-3.5 py-1 max-h-[70vh] overflow-y-auto">
         {suggestedTitle && (
           <FieldRow
             label="Title"
@@ -305,64 +420,184 @@ export function ExtractionFields({
             }
           />
         )}
-        {typeof data.project_context === "string" && data.project_context && (
-          <FieldRow label="Project" value={data.project_context} />
-        )}
+
         {summary && (
-          <FieldRow
-            label="Summary"
-            value={summary}
-            confidence={fieldConfidence.summary}
-            editable={editing}
-            draft={drafts.summary}
-            onDraftChange={(v) =>
-              setDrafts((prev) => ({ ...prev, summary: v }))
-            }
-            multiline
-          />
+          <SectionCard title="Summary">
+            <FieldRow
+              label="Overview"
+              value={summary}
+              confidence={fieldConfidence.summary}
+              editable={editing}
+              draft={drafts.summary}
+              onDraftChange={(v) =>
+                setDrafts((prev) => ({ ...prev, summary: v }))
+              }
+              multiline
+            />
+          </SectionCard>
         )}
 
-        {keyEntities &&
-          Object.entries(keyEntities).map(([key, value]) => {
-            const path = `key_entities.${key}`;
-            return (
+        {autoTags.length > 0 && (
+          <SectionCard title="Tags">
+            <div className="flex flex-wrap gap-1.5 pb-1">
+              {autoTags.map((tag) => (
+                <span
+                  key={tag}
+                  className="px-2 py-0.5 rounded-md text-[11px] bg-zinc-100 dark:bg-zinc-800 text-zinc-700 dark:text-zinc-200"
+                >
+                  {tag}
+                </span>
+              ))}
+            </div>
+          </SectionCard>
+        )}
+
+        {(keyEntities || nestedFields) && (
+          <SectionCard title="Key entities">
+            {keyEntities &&
+              Object.entries(keyEntities).map(([key, value]) => {
+                const path = `key_entities.${key}`;
+                return (
+                  <FieldRow
+                    key={path}
+                    label={formatLabel(key)}
+                    value={
+                      Array.isArray(value)
+                        ? value.map(formatPrimitive).join(", ")
+                        : isPlainObject(value)
+                          ? JSON.stringify(value)
+                          : formatPrimitive(value)
+                    }
+                    editable={
+                      editing &&
+                      (typeof value === "string" ||
+                        typeof value === "number" ||
+                        typeof value === "boolean")
+                    }
+                    draft={drafts[path]}
+                    onDraftChange={(v) =>
+                      setDrafts((prev) => ({ ...prev, [path]: v }))
+                    }
+                  />
+                );
+              })}
+            {nestedFields &&
+              Object.entries(nestedFields).map(([key, value]) => (
+                <FieldRow
+                  key={`fields.${key}`}
+                  label={formatLabel(key)}
+                  value={formatPrimitive(value)}
+                />
+              ))}
+          </SectionCard>
+        )}
+
+        {scalarEntries.length > 0 && (
+          <SectionCard title="Fields">
+            {scalarEntries.map(([key, value]) => (
               <FieldRow
-                key={path}
+                key={key}
                 label={formatLabel(key)}
                 value={formatPrimitive(value)}
-                editable={
-                  editing &&
-                  (typeof value === "string" ||
-                    typeof value === "number" ||
-                    typeof value === "boolean")
-                }
-                draft={drafts[path]}
+                confidence={fieldConfidence[key]}
+                editable={editing}
+                draft={drafts[key]}
                 onDraftChange={(v) =>
-                  setDrafts((prev) => ({ ...prev, [path]: v }))
+                  setDrafts((prev) => ({ ...prev, [key]: v }))
                 }
               />
-            );
-          })}
+            ))}
+          </SectionCard>
+        )}
 
-        {scalarEntries.map(([key, value]) => (
-          <FieldRow
-            key={key}
-            label={formatLabel(key)}
-            value={formatPrimitive(value)}
-            confidence={fieldConfidence[key]}
-            editable={editing}
-            draft={drafts[key]}
-            onDraftChange={(v) =>
-              setDrafts((prev) => ({ ...prev, [key]: v }))
-            }
-          />
-        ))}
+        {tables.length > 0 && (
+          <SectionCard title="Tables">
+            {tables.map((table, index) => {
+              const headers = Array.isArray(table.headers)
+                ? table.headers.map(formatPrimitive)
+                : [];
+              const rows = Array.isArray(table.rows)
+                ? (table.rows as unknown[]).map((row) =>
+                    Array.isArray(row)
+                      ? row.map(formatPrimitive)
+                      : [formatPrimitive(row)]
+                  )
+                : [];
+              return (
+                <DataTable
+                  key={index}
+                  name={
+                    typeof table.name === "string" ? table.name : `Table ${index + 1}`
+                  }
+                  headers={headers}
+                  rows={rows}
+                />
+              );
+            })}
+          </SectionCard>
+        )}
+
+        {sections.length > 0 && (
+          <SectionCard title="Sections">
+            <div className="space-y-3">
+              {sections.map((section, index) => (
+                <div
+                  key={index}
+                  className="rounded-lg bg-zinc-50 dark:bg-zinc-900/50 px-3 py-2"
+                >
+                  <p className="text-sm font-medium text-zinc-900 dark:text-zinc-100">
+                    {formatPrimitive(section.heading ?? `Section ${index + 1}`)}
+                  </p>
+                  <p className="text-[13px] text-zinc-600 dark:text-zinc-300 mt-1 whitespace-pre-wrap leading-relaxed">
+                    {formatPrimitive(section.content)}
+                  </p>
+                </div>
+              ))}
+            </div>
+          </SectionCard>
+        )}
+
+        {pages.length > 0 && (
+          <SectionCard title={layoutHint === "deck" ? "Slides" : "Pages"}>
+            <div className="space-y-2">
+              {pages.map((page, index) => {
+                const bullets = Array.isArray(page.bullets)
+                  ? page.bullets.map(formatPrimitive)
+                  : [];
+                const points = Array.isArray(page.key_points)
+                  ? page.key_points.map(formatPrimitive)
+                  : [];
+                return (
+                  <div
+                    key={index}
+                    className="rounded-lg border border-zinc-200 dark:border-zinc-800 px-3 py-2"
+                  >
+                    <p className="text-[11px] font-semibold text-[#2563eb]">
+                      {formatPrimitive(page.page ?? index + 1)}.{" "}
+                      {formatPrimitive(page.title ?? "Untitled")}
+                    </p>
+                    {(bullets.length > 0 || points.length > 0) && (
+                      <ul className="mt-1.5 space-y-0.5">
+                        {[...bullets, ...points].map((item, i) => (
+                          <li
+                            key={i}
+                            className="text-[13px] text-zinc-700 dark:text-zinc-300 flex gap-1.5"
+                          >
+                            <span className="text-[#2563eb]">•</span>
+                            <span>{item}</span>
+                          </li>
+                        ))}
+                      </ul>
+                    )}
+                  </div>
+                );
+              })}
+            </div>
+          </SectionCard>
+        )}
 
         {objectEntries.map(([key, value]) => (
-          <div key={key} className="py-2 border-b border-zinc-100 dark:border-zinc-800 last:border-0">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-zinc-400 mb-1">
-              {formatLabel(key)}
-            </p>
+          <SectionCard key={key} title={formatLabel(key)}>
             {Object.entries(value as Record<string, unknown>).map(
               ([childKey, childValue]) => (
                 <FieldRow
@@ -378,17 +613,27 @@ export function ExtractionFields({
                 />
               )
             )}
-          </div>
+          </SectionCard>
         ))}
 
         {arrayEntries.map(([key, value]) => {
           const list = value as unknown[];
-          return (
-            <div key={key} className="py-2 border-b border-zinc-100 dark:border-zinc-800 last:border-0">
-              <p className="text-[11px] font-medium text-zinc-500 dark:text-zinc-400 mb-1">
-                {formatLabel(key)}
-              </p>
-              {list.every(isPlainObject) ? (
+          if (list.every(isPlainObject)) {
+            const asTable = uniformObjectTable(
+              list as Array<Record<string, unknown>>
+            );
+            if (asTable) {
+              return (
+                <SectionCard key={key} title={formatLabel(key)}>
+                  <DataTable
+                    headers={asTable.headers}
+                    rows={asTable.rows}
+                  />
+                </SectionCard>
+              );
+            }
+            return (
+              <SectionCard key={key} title={formatLabel(key)}>
                 <ul className="space-y-2">
                   {(list as Array<Record<string, unknown>>).map((item, index) => {
                     const title =
@@ -396,6 +641,7 @@ export function ExtractionFields({
                       item.drug_name ??
                       item.test_name ??
                       item.label ??
+                      item.heading ??
                       item.key ??
                       `Item ${index + 1}`;
                     const details = Object.entries(item)
@@ -406,6 +652,7 @@ export function ExtractionFields({
                             "drug_name",
                             "test_name",
                             "label",
+                            "heading",
                             "key",
                           ].includes(k) &&
                           v !== null &&
@@ -417,106 +664,65 @@ export function ExtractionFields({
                           ? `${formatLabel(k)}: ${JSON.stringify(v)}`
                           : `${formatLabel(k)}: ${formatPrimitive(v)}`
                       );
-                    const fallbackValue = formatPrimitive(
-                      item.value ?? item.text ?? item.summary
-                    );
                     return (
                       <li
                         key={`${String(title)}-${index}`}
-                        className="text-sm text-zinc-800 dark:text-zinc-200 rounded-lg bg-zinc-50 dark:bg-zinc-900/60 px-2.5 py-2"
+                        className="text-sm rounded-lg bg-zinc-50 dark:bg-zinc-900/60 px-2.5 py-2"
                       >
                         <p className="font-medium text-zinc-900 dark:text-zinc-100">
                           {formatPrimitive(title)}
                         </p>
-                        {details.length > 0 ? (
+                        {details.length > 0 && (
                           <p className="text-[12px] text-zinc-500 mt-0.5 leading-relaxed">
                             {details.join(" · ")}
                           </p>
-                        ) : (
-                          fallbackValue !== "—" && (
-                            <p className="text-[12px] text-zinc-500 mt-0.5">
-                              {fallbackValue}
-                            </p>
-                          )
                         )}
                       </li>
                     );
                   })}
                 </ul>
-              ) : (
-                <ul className="space-y-0.5">
-                  {list.map((item, index) => (
-                    <li
-                      key={index}
-                      className="text-sm text-zinc-800 dark:text-zinc-200 flex gap-1.5"
-                    >
-                      <span className="text-[#2563eb]">•</span>
-                      {formatPrimitive(item)}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </div>
+              </SectionCard>
+            );
+          }
+          return (
+            <SectionCard key={key} title={formatLabel(key)}>
+              <ul className="space-y-0.5">
+                {list.map((item, index) => (
+                  <li
+                    key={index}
+                    className="text-sm text-zinc-800 dark:text-zinc-200 flex gap-1.5"
+                  >
+                    <span className="text-[#2563eb]">•</span>
+                    {formatPrimitive(item)}
+                  </li>
+                ))}
+              </ul>
+            </SectionCard>
           );
         })}
 
         {pointers.length > 0 && (
-          <div className="py-2 border-b border-zinc-100 dark:border-zinc-800 last:border-0">
-            <p className="text-[11px] font-medium text-zinc-500 mb-1">Pointers</p>
+          <SectionCard title="Highlights">
             <ul className="space-y-1">
               {pointers.map((item, index) => (
-                <li key={index} className="text-sm text-zinc-800 dark:text-zinc-200">
-                  <span className="text-zinc-500">
-                    {formatPrimitive(item.label ?? item.key ?? `Item ${index + 1}`)}:
-                  </span>{" "}
-                  {formatPrimitive(item.value ?? item.text ?? item.summary)}
+                <li
+                  key={index}
+                  className="text-[13px] text-zinc-700 dark:text-zinc-300 flex gap-1.5"
+                >
+                  <span className="text-[#2563eb]">•</span>
+                  <span>
+                    {isPlainObject(item)
+                      ? formatPrimitive(
+                          item.text ?? item.summary ?? item.label ?? JSON.stringify(item)
+                        )
+                      : formatPrimitive(item)}
+                  </span>
                 </li>
               ))}
             </ul>
-          </div>
-        )}
-
-        {pages.length > 0 && (
-          <div className="py-2 border-b border-zinc-100 dark:border-zinc-800 last:border-0">
-            <p className="text-[11px] font-medium text-zinc-500 mb-1">Pages</p>
-            <ul className="space-y-1">
-              {pages.map((page, index) => (
-                <li key={index} className="text-sm text-zinc-800 dark:text-zinc-200">
-                  Page {formatPrimitive(page.page ?? index + 1)}
-                  {page.title ? ` · ${formatPrimitive(page.title)}` : ""}
-                  {page.summary ? (
-                    <span className="block text-xs text-zinc-500 mt-0.5">
-                      {formatPrimitive(page.summary)}
-                    </span>
-                  ) : null}
-                </li>
-              ))}
-            </ul>
-          </div>
-        )}
-
-        {typeof data.ocr_preview === "string" && data.ocr_preview && (
-          <div className="py-2">
-            <p className="text-[11px] font-medium text-zinc-500 mb-1">OCR preview</p>
-            <p className="text-xs text-zinc-600 dark:text-zinc-400 whitespace-pre-wrap break-words max-h-40 overflow-y-auto">
-              {data.ocr_preview}
-            </p>
-          </div>
+          </SectionCard>
         )}
       </div>
-
-      {autoTags.length > 0 && (
-        <div className="px-3.5 py-2.5 border-t border-zinc-100 dark:border-zinc-800 flex flex-wrap gap-1.5">
-          {autoTags.map((tag) => (
-            <span
-              key={tag}
-              className="rounded-md bg-zinc-100 dark:bg-zinc-800 px-2 py-0.5 text-[11px] font-medium text-zinc-600 dark:text-zinc-300"
-            >
-              {tag}
-            </span>
-          ))}
-        </div>
-      )}
     </div>
   );
 }
