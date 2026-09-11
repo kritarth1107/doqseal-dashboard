@@ -4,32 +4,80 @@ import React, { useEffect, useState, useRef } from 'react'
 import { ShieldAlert, ArrowRight, Lock } from 'lucide-react'
 
 /**
- * SessionManager - Globally monitors for 401/403 responses
- * and handles session expiration with a high-fidelity, non-closable dialog.
+ * SessionManager - Globally monitors for 401 responses.
+ * Tries a silent session refresh first; only then shows the re-login dialog.
+ * 403 (banned/suspended) still forces re-login without refresh.
  */
 export function SessionManager() {
   const [isExpired, setIsExpired] = useState(false)
   const [countdown, setCountdown] = useState(3)
   const interceptorRef = useRef<boolean>(false)
+  const refreshPromiseRef = useRef<Promise<boolean> | null>(null)
 
   useEffect(() => {
     if (interceptorRef.current) return
     interceptorRef.current = true
 
     const originalFetch = window.fetch
-    window.fetch = async (...args) => {
-      try {
-        const response = await originalFetch(...args)
-        
-        // Handle both Unauthorized (401) and Forbidden (403)
-        if (response.status === 401 || response.status === 403) {
-          setIsExpired(true)
-        }
-        
-        return response
-      } catch (error) {
-        throw error
+
+    const shouldSkipRefresh = (input: RequestInfo | URL) => {
+      const url =
+        typeof input === 'string'
+          ? input
+          : input instanceof URL
+            ? input.toString()
+            : input.url
+      return (
+        url.includes('/api/auth/refresh') ||
+        url.includes('/api/auth/logout') ||
+        url.includes('/api/auth/login') ||
+        url.includes('/api/auth/mobile') ||
+        url.includes('/api/auth/providers') ||
+        url.includes('/api/auth/csrf') ||
+        url.includes('/api/auth/callback') ||
+        url.includes('/api/auth/signin') ||
+        url.includes('/api/auth/session')
+      )
+    }
+
+    const trySilentRefresh = async () => {
+      if (!refreshPromiseRef.current) {
+        refreshPromiseRef.current = originalFetch('/api/auth/refresh', {
+          method: 'POST',
+          credentials: 'same-origin',
+        })
+          .then((res) => res.ok)
+          .catch(() => false)
+          .finally(() => {
+            refreshPromiseRef.current = null
+          })
       }
+      return refreshPromiseRef.current
+    }
+
+    window.fetch = async (...args) => {
+      const response = await originalFetch(...args)
+
+      if (response.status === 403) {
+        setIsExpired(true)
+        return response
+      }
+
+      if (response.status !== 401) {
+        return response
+      }
+
+      if (shouldSkipRefresh(args[0])) {
+        return response
+      }
+
+      const refreshed = await trySilentRefresh()
+      if (refreshed) {
+        return originalFetch(...args)
+      }
+
+      setIsExpired(true)
+      return response
     }
 
     return () => {
@@ -67,16 +115,10 @@ export function SessionManager() {
 
   if (!isExpired) return null
 
-  // Calculate circle properties
-  const radius = 24
-  const circumference = 2 * Math.PI * radius
-  const strokeDashoffset = circumference - (countdown / 3) * circumference
-
   return (
     <div className="fixed inset-0 z-[9999] flex items-center justify-center bg-black/50 dark:bg-black/70 backdrop-blur-xl animate-in fade-in duration-500">
       <div className="relative w-full max-w-[320px] p-6 bg-white dark:bg-zinc-900 backdrop-blur-2xl rounded-[2rem] shadow-[0_24px_48px_-12px_rgba(0,0,0,0.4)] border border-zinc-200 dark:border-zinc-700 text-center animate-in zoom-in-95 duration-500">
         
-        {/* Urgent Pulsing Background Ring */}
         <div className="absolute top-10 left-1/2 -translate-x-1/2 w-16 h-16 bg-red-500/10 rounded-full animate-ping opacity-20" />
 
         <div className="relative mb-6 flex justify-center">
@@ -115,7 +157,7 @@ export function SessionManager() {
                   stroke="currentColor"
                   strokeWidth="3"
                   fill="transparent"
-                  strokeDasharray={113} // 2 * PI * 18
+                  strokeDasharray={113}
                   style={{ 
                     strokeDashoffset: isNaN(113 - (countdown / 3) * 113) ? 0 : 113 - (countdown / 3) * 113,
                     transition: 'stroke-dashoffset 100ms linear'

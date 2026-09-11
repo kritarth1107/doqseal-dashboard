@@ -37,14 +37,9 @@ export async function POST(request: NextRequest) {
     }
 
     if (data.success && data.data?.token) {
+      const { SESSION_COOKIE_OPTIONS } = await import("@/lib/session-cookie");
       const cookieStore = await cookies();
-      cookieStore.set("session_token", data.data.token, {
-        httpOnly: true,
-        secure: process.env.NODE_ENV === "production",
-        sameSite: "lax",
-        path: "/",
-        maxAge: 60 * 60 * 24 * 7,
-      });
+      cookieStore.set("session_token", data.data.token, SESSION_COOKIE_OPTIONS);
     }
 
     return NextResponse.json(data);

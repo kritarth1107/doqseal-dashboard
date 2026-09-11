@@ -76,13 +76,8 @@ const handler = NextAuth({
             // Set the session_token cookie for the custom AuthProvider
             const { cookies } = await import('next/headers');
             const cookieStore = await cookies();
-            cookieStore.set("session_token", data.data.token, {
-              httpOnly: true,
-              secure: process.env.NODE_ENV === "production",
-              sameSite: "lax",
-              path: "/",
-              maxAge: 60 * 60 * 24 * 7, // 1 week
-            });
+            const { SESSION_COOKIE_OPTIONS } = await import("@/lib/session-cookie");
+            cookieStore.set("session_token", data.data.token, SESSION_COOKIE_OPTIONS);
             return true;
           }
           console.error("Backend auth failed:", data);
