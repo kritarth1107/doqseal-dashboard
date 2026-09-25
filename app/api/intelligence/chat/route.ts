@@ -62,7 +62,7 @@ export async function POST(request: NextRequest) {
         status: "indexed",
         href: c.projectId
           ? `/projects/${c.projectId}/documents/${c.documentId}`
-          : `/projects`,
+          : `/view/${c.documentId}`,
       }));
 
     return NextResponse.json({
