@@ -30,7 +30,7 @@ export function ChatHistorySidebar({
   return (
     <aside
       className={`${
-        collapsed ? "w-12" : "w-64"
+        collapsed ? "w-11" : "w-52"
       } shrink-0 hidden md:flex flex-col h-full border-r border-gray-200 dark:border-white/10 bg-white dark:bg-[#0f172a] transition-all duration-200`}
     >
       <div
@@ -92,7 +92,7 @@ export function ChatHistorySidebar({
                 type="button"
                 onClick={() => onSelect(item.id)}
                 className={`flex-1 min-w-0 text-left ${
-                  collapsed ? "p-2 flex justify-center" : "px-3 py-2.5 pr-8"
+                  collapsed ? "p-2 flex justify-center" : "px-2.5 py-1.5 pr-7"
                 }`}
                 title={item.title}
               >
@@ -105,17 +105,13 @@ export function ChatHistorySidebar({
                 ) : (
                   <>
                     <p
-                      className={`text-sm truncate ${
+                      className={`text-[13px] leading-5 truncate ${
                         active
                           ? "text-[#2563eb] font-medium"
                           : "text-gray-800 dark:text-slate-200"
                       }`}
                     >
                       {item.title}
-                    </p>
-                    <p className="text-[11px] text-gray-400 mt-0.5 truncate">
-                      {formatRelative(item.updatedAt)}
-                      {item.preview ? ` · ${item.preview}` : ""}
                     </p>
                   </>
                 )}
@@ -139,17 +135,4 @@ export function ChatHistorySidebar({
       </div>
     </aside>
   );
-}
-
-function formatRelative(iso: string) {
-  const date = new Date(iso);
-  const diffMs = Date.now() - date.getTime();
-  const mins = Math.floor(diffMs / 60000);
-  if (mins < 1) return "Just now";
-  if (mins < 60) return `${mins}m ago`;
-  const hours = Math.floor(mins / 60);
-  if (hours < 24) return `${hours}h ago`;
-  const days = Math.floor(hours / 24);
-  if (days < 7) return `${days}d ago`;
-  return date.toLocaleDateString();
 }

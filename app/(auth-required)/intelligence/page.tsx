@@ -20,6 +20,7 @@ import {
   TypingIndicator,
   UserMessage,
 } from "@/components/intelligence/ChatMessage";
+import { DocumentPreviewPanel, type PreviewDocument } from "@/components/intelligence/DocumentPreviewPanel";
 import {
   ChatHistorySidebar,
   type ChatHistoryItem,
@@ -131,6 +132,7 @@ const NewSearchPage = () => {
   const [sessions, setSessions] = useState<StoredChatSession[]>([]);
   const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [historyCollapsed, setHistoryCollapsed] = useState(false);
+  const [previewDoc, setPreviewDoc] = useState<PreviewDocument | null>(null);
 
   const isTyping = query.trim().length > 0;
   const inChat = messages.length > 0;
@@ -214,6 +216,7 @@ const NewSearchPage = () => {
     setActiveChatId(null);
     setMessages([]);
     setQuery("");
+    setPreviewDoc(null);
   };
 
   const selectChat = (id: string) => {
@@ -377,6 +380,14 @@ const NewSearchPage = () => {
                       documents={message.documents}
                       thinking={message.thinking}
                       thinkingOpen={message.id === messages[messages.length - 1]?.id}
+                      activeDocumentId={previewDoc?.id}
+                      onOpenDocument={(doc) =>
+                        setPreviewDoc({
+                          id: doc.id,
+                          title: doc.patientName,
+                          href: doc.href,
+                        })
+                      }
                     />
                   )
                 )}
@@ -527,6 +538,9 @@ const NewSearchPage = () => {
           onSuccess={handleUploadSuccess}
         />
       </div>
+      {previewDoc && (
+        <DocumentPreviewPanel doc={previewDoc} onClose={() => setPreviewDoc(null)} />
+      )}
     </div>
   );
 };

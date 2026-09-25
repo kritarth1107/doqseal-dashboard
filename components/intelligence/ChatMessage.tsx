@@ -1,7 +1,6 @@
 "use client";
 
 import { useEffect, useState } from "react";
-import Link from "next/link";
 import { Bot, ChevronDown, ExternalLink, FileText, User } from "lucide-react";
 import { ChatMarkdown } from "./ChatMarkdown";
 
@@ -104,11 +103,15 @@ export function AssistantMessage({
   documents,
   thinking,
   thinkingOpen = false,
+  activeDocumentId,
+  onOpenDocument,
 }: {
   content: string;
   documents?: DocRef[];
   thinking?: ThinkingStep[];
   thinkingOpen?: boolean;
+  activeDocumentId?: string | null;
+  onOpenDocument?: (doc: DocRef) => void;
 }) {
   return (
     <div className="flex gap-3">
@@ -127,10 +130,15 @@ export function AssistantMessage({
                 Source documents
               </p>
               {documents.map((doc) => (
-                <Link
+                <button
                   key={doc.id}
-                  href={doc.href}
-                  className="group flex items-center gap-3 rounded-xl border border-gray-200 bg-gray-50/80 p-3 transition-all hover:border-[#2563eb]/30 hover:bg-[#2563eb]/5 dark:border-white/10 dark:bg-white/5"
+                  type="button"
+                  onClick={() => onOpenDocument?.(doc)}
+                  className={`group flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-all ${
+                    activeDocumentId === doc.id
+                      ? "border-[#2563eb]/40 bg-[#2563eb]/5"
+                      : "border-gray-200 bg-gray-50/80 hover:border-[#2563eb]/30 hover:bg-[#2563eb]/5 dark:border-white/10 dark:bg-white/5"
+                  }`}
                 >
                   <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-white border border-gray-200 group-hover:border-[#2563eb]/20 dark:bg-[#0b1220] dark:border-white/10">
                     <FileText className="h-4 w-4 text-[#2563eb]" />
@@ -142,7 +150,7 @@ export function AssistantMessage({
                     <p className="text-xs text-gray-500 dark:text-slate-400 truncate">{doc.filename}</p>
                   </div>
                   <ExternalLink className="h-3.5 w-3.5 text-gray-400 group-hover:text-[#2563eb] shrink-0" />
-                </Link>
+                </button>
               ))}
             </div>
           )}
