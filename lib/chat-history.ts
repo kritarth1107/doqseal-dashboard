@@ -11,6 +11,10 @@ export type StoredChatMessage = {
     status: string;
     href: string;
   }[];
+  thinking?: {
+    title: string;
+    detail?: string;
+  }[];
 };
 
 export type StoredChatSession = {

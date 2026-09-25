@@ -10,7 +10,14 @@ async function requireSession() {
 type ChatCitation = {
   documentId?: string;
   projectId?: string;
+  title?: string;
+  kind?: string;
   snippet?: string;
+};
+
+type ThinkingStep = {
+  title?: string;
+  detail?: string;
 };
 
 export async function POST(request: NextRequest) {
@@ -50,6 +57,7 @@ export async function POST(request: NextRequest) {
     const payload = await parseBackendJson<{
       answer: string;
       citations: ChatCitation[];
+      thinking?: ThinkingStep[];
       mode: string;
     }>(response);
 
@@ -57,17 +65,27 @@ export async function POST(request: NextRequest) {
       .filter((c) => c.documentId)
       .map((c) => ({
         id: c.documentId as string,
-        patientName: "Referenced document",
-        filename: c.snippet?.slice(0, 80) || c.documentId || "Document",
+        patientName: c.title || c.snippet?.replace(/^[^:]+:\s*/, "") || "Document",
+        filename: c.kind
+          ? c.kind.replace(/_/g, " ")
+          : c.snippet?.slice(0, 80) || "Indexed document",
         status: "indexed",
         href: c.projectId
           ? `/projects/${c.projectId}/documents/${c.documentId}`
           : `/view/${c.documentId}`,
       }));
 
+    const thinking = (payload.data.thinking ?? [])
+      .filter((step) => step?.title)
+      .map((step) => ({
+        title: String(step.title),
+        detail: step.detail ? String(step.detail) : undefined,
+      }));
+
     return NextResponse.json({
       reply: payload.data.answer,
       documents,
+      thinking,
       mode: payload.data.mode,
     });
   } catch (error: unknown) {

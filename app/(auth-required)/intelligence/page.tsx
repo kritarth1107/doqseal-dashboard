@@ -265,6 +265,7 @@ const NewSearchPage = () => {
           role: "assistant",
           content: data.reply,
           documents: data.documents,
+          thinking: data.thinking,
         },
       ];
       setMessages(withAssistant);
@@ -374,6 +375,8 @@ const NewSearchPage = () => {
                       key={message.id}
                       content={message.content}
                       documents={message.documents}
+                      thinking={message.thinking}
+                      thinkingOpen={message.id === messages[messages.length - 1]?.id}
                     />
                   )
                 )}
