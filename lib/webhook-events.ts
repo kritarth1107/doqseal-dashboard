@@ -49,7 +49,7 @@ export const WEBHOOK_EVENT_META: Record<
   },
   "document.failed": {
     label: "Document failed",
-    description: "Extraction failed or was rejected",
+    description: "Extraction failed or encountered errors",
     category: "Documents",
   },
   "document.deleted": {
@@ -84,7 +84,7 @@ export const WEBHOOK_EVENT_META: Record<
   },
   "extraction.completed": {
     label: "Extraction completed",
-    description: "Structured data saved and approved",
+    description: "Structured data saved and ready",
     category: "Extraction",
   },
   "extraction.failed": {

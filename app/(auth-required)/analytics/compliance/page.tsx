@@ -6,7 +6,7 @@ import Link from "next/link";
 
 export default function CompliancePage() {
   const checks = [
-    { name: "DPDP data residency", status: "pass", detail: "Processing in approved region" },
+    { name: "DPDP data residency", status: "pass", detail: "Processing in configured region" },
     { name: "Encryption at rest", status: "pass", detail: "AES-256 for all stored documents" },
     { name: "E-sign legal framework", status: "pass", detail: "ESIGN / eIDAS aligned workflows" },
     { name: "Member access review", status: "warn", detail: "2 external developers with API access — review quarterly" },
