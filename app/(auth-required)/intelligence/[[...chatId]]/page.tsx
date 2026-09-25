@@ -1,6 +1,6 @@
 "use client";
 
-import React, { Suspense, useEffect, useRef, useState } from "react";
+import React, { Suspense, useCallback, useEffect, useRef, useState } from "react";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
@@ -18,6 +18,8 @@ import chatTitlesData from "@/utils/new_chat_titles.json";
 import { UploadModal } from "@/components/UploadModal";
 import {
   AssistantMessage,
+  DeclineMessage,
+  StreamingMessage,
   TypingIndicator,
   UserMessage,
 } from "@/components/intelligence/ChatMessage";
@@ -30,12 +32,22 @@ import { useAuth } from "@/components/AuthProvider";
 import { withOrgHeaders } from "@/lib/client-api";
 import { isPrescriptionProject } from "@/lib/project-config";
 import {
-  loadChatSessions,
-  saveChatSessions,
   titleFromMessages,
-  type StoredChatSession,
   type StoredChatMessage,
+  type StoredCitation,
+  type StoredStep,
+  purgeChatLocalStorage,
+  documentsFromCitations,
+  citationsFromEvents,
+  stepsFromEvents,
 } from "@/lib/chat-history";
+import {
+  parseSSEStream,
+  stepTraceReducer,
+  initialStepTraceState,
+  type StepEvent,
+  type CitationEvent,
+} from "@/lib/sse-parser";
 
 type Highlight = {
   word: string;
@@ -53,6 +65,14 @@ type Greeting = {
 };
 
 type Message = StoredChatMessage;
+
+type ConversationSummary = {
+  conversationId: string;
+  title: string;
+  projectId?: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
 
 const renderGreetingText = (greeting: Greeting) => {
   let parts: React.ReactNode[] = [greeting.text];
@@ -134,12 +154,19 @@ const NewSearchPage = () => {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
-  const [sessions, setSessions] = useState<StoredChatSession[]>([]);
+  const [sessions, setSessions] = useState<ConversationSummary[]>([]);
   const [historyCollapsed, setHistoryCollapsed] = useState(false);
   const [previewDoc, setPreviewDoc] = useState<PreviewDocument | null>(null);
   const [sessionsReady, setSessionsReady] = useState(false);
   const createdChatId = useRef<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+
+  const [streamingContent, setStreamingContent] = useState("");
+  const [streamingSteps, setStreamingSteps] = useState<StoredStep[]>([]);
+  const [streamingActiveStepId, setStreamingActiveStepId] = useState<string | null>(null);
+  const [streamingCitations, setStreamingCitations] = useState<StoredCitation[]>([]);
+  const [declineMessage, setDeclineMessage] = useState<string | null>(null);
+  const [streamSupported, setStreamSupported] = useState<boolean | null>(null);
 
   const chatHref = (id?: string | null, project?: string) => {
     const base = id ? `/intelligence/${id}` : "/intelligence";
@@ -148,23 +175,79 @@ const NewSearchPage = () => {
   };
 
   const isTyping = query.trim().length > 0;
-  const inChat = messages.length > 0;
+  const inChat = messages.length > 0 || loading;
 
   useEffect(() => {
     const greetingsList = chatTitlesData.greetings as Greeting[];
     const randomGreeting = greetingsList[Math.floor(Math.random() * greetingsList.length)];
     setGreeting(randomGreeting);
     setIsMounted(true);
+    purgeChatLocalStorage();
   }, []);
 
-  useEffect(() => {
+  const loadConversations = useCallback(async () => {
     if (!activeOrgId) {
       setSessions([]);
       return;
     }
-    setSessions(loadChatSessions(activeOrgId));
-    setSessionsReady(true);
+    try {
+      const res = await fetch("/api/intelligence/conversations", withOrgHeaders(activeOrgId));
+      if (!res.ok) throw new Error("Failed to load conversations");
+      const data = await res.json();
+      setSessions(data.conversations ?? []);
+    } catch (error) {
+      console.error("Failed to load conversations:", error);
+      setSessions([]);
+    } finally {
+      setSessionsReady(true);
+    }
   }, [activeOrgId]);
+
+  useEffect(() => {
+    loadConversations();
+  }, [loadConversations]);
+
+  const loadConversation = useCallback(async (conversationId: string) => {
+    if (!activeOrgId) return;
+    try {
+      const res = await fetch(
+        `/api/intelligence/conversations/${encodeURIComponent(conversationId)}`,
+        withOrgHeaders(activeOrgId)
+      );
+      if (!res.ok) {
+        if (res.status === 404) {
+          router.replace(chatHref(null));
+          return;
+        }
+        throw new Error("Failed to load conversation");
+      }
+      const data = await res.json();
+      const conversation = data.conversation;
+      
+      const loadedMessages: Message[] = (conversation.messages ?? []).map((msg: {
+        messageId: string;
+        role: "user" | "assistant";
+        content: string;
+        citations?: StoredCitation[];
+        steps?: StoredStep[];
+        mode?: string;
+      }) => ({
+        id: msg.messageId,
+        role: msg.role,
+        content: msg.content,
+        citations: msg.citations,
+        steps: msg.steps,
+        documents: msg.citations ? documentsFromCitations(msg.citations, conversation.projectId) : undefined,
+        mode: msg.mode,
+      }));
+      
+      setMessages(loadedMessages);
+    } catch (error) {
+      console.error("Failed to load conversation:", error);
+      toast.error("Failed to load conversation");
+    }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [activeOrgId, router]);
 
   useEffect(() => {
     if (!sessionsReady) return;
@@ -174,21 +257,15 @@ const NewSearchPage = () => {
       setPreviewDoc(null);
       return;
     }
-    const session = sessions.find((item) => item.id === routeChatId);
     const justCreated = createdChatId.current === routeChatId;
-    if (justCreated) createdChatId.current = null;
-    if (!session) {
-      if (justCreated) return;
-      router.replace(chatHref(null));
+    if (justCreated) {
+      createdChatId.current = null;
       return;
     }
-    if (justCreated) return;
-    setMessages(session.messages);
+    loadConversation(routeChatId);
     setQuery("");
     setPreviewDoc(null);
-    // Hydrate from history when the URL chat changes, not on every save.
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [routeChatId, sessionsReady, activeOrgId]);
+  }, [routeChatId, sessionsReady, loadConversation]);
 
   useEffect(() => {
     async function loadProject() {
@@ -213,50 +290,35 @@ const NewSearchPage = () => {
 
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
-  }, [messages, loading]);
-
-  const persistSessions = (next: StoredChatSession[]) => {
-    setSessions(next);
-    if (activeOrgId) saveChatSessions(activeOrgId, next);
-  };
-
-  const upsertActiveSession = (nextMessages: Message[], chatId: string) => {
-    if (!activeOrgId || nextMessages.length === 0) return;
-
-    const now = new Date().toISOString();
-    const title = titleFromMessages(nextMessages);
-    const preview =
-      nextMessages.filter((m) => m.role === "assistant").at(-1)?.content.slice(0, 60) ||
-      undefined;
-
-    setSessions((prev) => {
-      const existing = prev.find((s) => s.id === chatId);
-      const nextSession: StoredChatSession = {
-        id: chatId,
-        title,
-        preview,
-        updatedAt: now,
-        projectId: projectId || existing?.projectId,
-        messages: nextMessages,
-      };
-      const next = existing
-        ? prev.map((s) => (s.id === chatId ? nextSession : s))
-        : [nextSession, ...prev];
-
-      saveChatSessions(activeOrgId, next);
-      return next;
-    });
-  };
+  }, [messages, loading, streamingContent]);
 
   const startNewChat = () => {
     setMessages([]);
     setQuery("");
     setPreviewDoc(null);
+    setStreamingContent("");
+    setStreamingSteps([]);
+    setStreamingCitations([]);
+    setDeclineMessage(null);
   };
 
-  const deleteChat = (id: string) => {
-    const next = sessions.filter((s) => s.id !== id);
-    persistSessions(next);
+  const deleteChat = async (id: string) => {
+    if (!activeOrgId) return;
+    
+    try {
+      const res = await fetch(
+        `/api/intelligence/conversations/${encodeURIComponent(id)}`,
+        { method: "DELETE", ...withOrgHeaders(activeOrgId) }
+      );
+      if (!res.ok) throw new Error("Failed to delete");
+    } catch (error) {
+      console.error("Failed to delete conversation:", error);
+      toast.error("Failed to delete conversation");
+      return;
+    }
+
+    setSessions((prev) => prev.filter((s) => s.conversationId !== id));
+    
     if (routeChatId === id) {
       setQuery("");
       setPreviewDoc(null);
@@ -268,6 +330,160 @@ const NewSearchPage = () => {
     abortRef.current?.abort();
   };
 
+  const sendMessageStreaming = async (text: string, chatId: string) => {
+    const controller = new AbortController();
+    abortRef.current = controller;
+
+    setStreamingContent("");
+    setStreamingSteps([]);
+    setStreamingActiveStepId(null);
+    setStreamingCitations([]);
+    setDeclineMessage(null);
+
+    const stepEvents: StepEvent[] = [];
+    const citationEvents: CitationEvent[] = [];
+    let contentBuffer = "";
+    let stepState = initialStepTraceState;
+    let conversationId = chatId;
+    let mode: string | undefined;
+    let localDeclineMessage: string | null = null;
+
+    try {
+      const res = await fetch("/api/intelligence/chat/stream", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
+        body: JSON.stringify({
+          message: text.trim(),
+          conversationId: routeChatId || undefined,
+          projectId: projectId || undefined,
+        }),
+      });
+
+      if (res.status === 404) {
+        setStreamSupported(false);
+        return false;
+      }
+
+      if (!res.ok) {
+        const errorData = await res.json().catch(() => ({}));
+        throw new Error(errorData.error || "Stream request failed");
+      }
+
+      if (!res.body) {
+        throw new Error("No response body");
+      }
+
+      setStreamSupported(true);
+
+      for await (const event of parseSSEStream(res.body)) {
+        if (controller.signal.aborted) break;
+
+        switch (event.type) {
+          case "run.started":
+            if (event.conversationId) {
+              conversationId = event.conversationId;
+            }
+            break;
+
+          case "step":
+            stepEvents.push(event);
+            stepState = stepTraceReducer(stepState, { type: "step", event });
+            setStreamingSteps([...stepState.steps]);
+            setStreamingActiveStepId(stepState.activeStepId);
+            break;
+
+          case "token":
+            contentBuffer += event.text;
+            setStreamingContent(contentBuffer);
+            break;
+
+          case "citation":
+            citationEvents.push(event);
+            setStreamingCitations(citationsFromEvents(citationEvents));
+            break;
+
+          case "decline":
+            mode = "declined";
+            localDeclineMessage = event.message;
+            setDeclineMessage(event.message);
+            break;
+
+          case "run.completed":
+            mode = event.mode;
+            break;
+
+          case "error":
+            throw new Error(event.message);
+        }
+      }
+
+      const assistantMsg: Message = {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        content: contentBuffer || localDeclineMessage || "",
+        citations: citationsFromEvents(citationEvents),
+        steps: stepsFromEvents(stepEvents),
+        documents: documentsFromCitations(citationsFromEvents(citationEvents), projectId || undefined),
+        mode,
+      };
+
+      setMessages((prev) => [...prev, assistantMsg]);
+
+      if (!routeChatId && conversationId && conversationId !== chatId) {
+        createdChatId.current = conversationId;
+        router.replace(chatHref(conversationId));
+      }
+
+      loadConversations();
+
+      return true;
+    } catch (error) {
+      if (error instanceof Error && error.name === "AbortError") {
+        return true;
+      }
+      throw error;
+    } finally {
+      setStreamingContent("");
+      setStreamingSteps([]);
+      setStreamingActiveStepId(null);
+      setStreamingCitations([]);
+      if (abortRef.current === controller) abortRef.current = null;
+    }
+  };
+
+  const sendMessageFallback = async (text: string, history: Message[], chatId: string) => {
+    const res = await fetch("/api/intelligence/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      signal: abortRef.current?.signal,
+      body: JSON.stringify({
+        projectId,
+        messages: history.map((m) => ({ role: m.role, content: m.content })),
+      }),
+    });
+    const data = await res.json();
+    if (!res.ok) throw new Error(data.error);
+
+    const withAssistant: Message[] = [
+      ...history,
+      {
+        id: crypto.randomUUID(),
+        role: "assistant",
+        content: data.reply,
+        documents: data.documents,
+        thinking: data.thinking,
+      },
+    ];
+    setMessages(withAssistant);
+
+    if (!routeChatId) {
+      createdChatId.current = chatId;
+      router.replace(chatHref(chatId));
+    }
+    loadConversations();
+  };
+
   const sendMessage = async (text: string) => {
     const trimmed = text.trim();
     if (!trimmed || loading) return;
@@ -276,47 +492,33 @@ const NewSearchPage = () => {
     const userMsg: Message = { id: crypto.randomUUID(), role: "user", content: trimmed };
     const history = [...messages, userMsg];
     setMessages(history);
-    upsertActiveSession(history, chatId);
     setQuery("");
+    
     if (!routeChatId) {
       createdChatId.current = chatId;
       router.replace(chatHref(chatId));
     }
+    
     const controller = new AbortController();
     abortRef.current = controller;
     setLoading(true);
 
     try {
-      const res = await fetch("/api/intelligence/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        signal: controller.signal,
-        body: JSON.stringify({
-          projectId,
-          messages: history.map((m) => ({ role: m.role, content: m.content })),
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-
-      const withAssistant: Message[] = [
-        ...history,
-        {
-          id: crypto.randomUUID(),
-          role: "assistant",
-          content: data.reply,
-          documents: data.documents,
-          thinking: data.thinking,
-        },
-      ];
-      setMessages(withAssistant);
-      upsertActiveSession(withAssistant, chatId);
+      if (streamSupported === false) {
+        await sendMessageFallback(trimmed, history, chatId);
+      } else {
+        const streamWorked = await sendMessageStreaming(trimmed, chatId);
+        if (streamWorked === false) {
+          await sendMessageFallback(trimmed, history, chatId);
+        }
+      }
     } catch (error: unknown) {
       if (error instanceof Error && error.name === "AbortError") return;
       toast.error(error instanceof Error ? error.message : "Failed to get response");
     } finally {
       if (abortRef.current === controller) abortRef.current = null;
       setLoading(false);
+      setDeclineMessage(null);
     }
   };
 
@@ -338,12 +540,22 @@ const NewSearchPage = () => {
     }
   };
 
+  const handleOpenCitation = (citation: StoredCitation) => {
+    setPreviewDoc({
+      id: citation.documentId,
+      title: citation.title,
+      href: projectId
+        ? `/projects/${projectId}/documents/${citation.documentId}`
+        : `/view/${citation.documentId}`,
+    });
+  };
+
   const historyItems: ChatHistoryItem[] = sessions.map((s) => ({
-    id: s.id,
-    title: s.title,
+    id: s.conversationId,
+    title: s.title || titleFromMessages([]),
     updatedAt: s.updatedAt,
-    preview: s.preview,
-    projectId: s.projectId,
+    preview: undefined,
+    projectId: s.projectId ?? undefined,
   }));
 
   return (
@@ -355,7 +567,7 @@ const NewSearchPage = () => {
         onToggleCollapsed={() => setHistoryCollapsed((v) => !v)}
         newChatHref={chatHref(null)}
         chatHref={(id) => {
-          const session = sessions.find((item) => item.id === id);
+          const session = sessions.find((item) => item.conversationId === id);
           return chatHref(id, session?.projectId || projectId);
         }}
         onNewChat={startNewChat}
@@ -417,12 +629,19 @@ const NewSearchPage = () => {
                 {messages.map((message) =>
                   message.role === "user" ? (
                     <UserMessage key={message.id} content={message.content} />
+                  ) : message.mode === "declined" ? (
+                    <DeclineMessage
+                      key={message.id}
+                      message={message.content || "I can only answer questions using your organization's documents."}
+                    />
                   ) : (
                     <AssistantMessage
                       key={message.id}
                       content={message.content}
                       documents={message.documents}
                       thinking={message.thinking}
+                      steps={message.steps}
+                      citations={message.citations}
                       activeDocumentId={previewDoc?.id}
                       onOpenDocument={(doc) =>
                         setPreviewDoc({
@@ -431,10 +650,26 @@ const NewSearchPage = () => {
                           href: doc.href,
                         })
                       }
+                      onOpenCitation={handleOpenCitation}
                     />
                   )
                 )}
-                {loading && <TypingIndicator />}
+                {loading && streamingContent === "" && streamingSteps.length === 0 && !declineMessage && (
+                  <TypingIndicator />
+                )}
+                {loading && (streamingContent || streamingSteps.length > 0) && !declineMessage && (
+                  <StreamingMessage
+                    content={streamingContent}
+                    steps={streamingSteps}
+                    activeStepId={streamingActiveStepId}
+                    citations={streamingCitations}
+                    isComplete={false}
+                    onOpenCitation={handleOpenCitation}
+                  />
+                )}
+                {loading && declineMessage && (
+                  <DeclineMessage message={declineMessage} />
+                )}
               </div>
             )}
 
