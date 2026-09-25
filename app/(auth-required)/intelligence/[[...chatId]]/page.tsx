@@ -2,7 +2,7 @@
 
 import React, { Suspense, useEffect, useRef, useState } from "react";
 import Link from "next/link";
-import { useRouter, useSearchParams } from "next/navigation";
+import { usePathname, useRouter, useSearchParams } from "next/navigation";
 import {
   Search,
   Folder,
@@ -117,9 +117,13 @@ type ProjectSummary = {
 
 const NewSearchPage = () => {
   const router = useRouter();
+  const pathname = usePathname();
   const searchParams = useSearchParams();
   const { activeOrgId } = useAuth();
   const projectId = searchParams.get("project") ?? "";
+  const routeChatId = pathname.startsWith("/intelligence/")
+    ? decodeURIComponent(pathname.slice("/intelligence/".length).split("/")[0] || "")
+    : "";
   const [project, setProject] = useState<ProjectSummary | null>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
 
@@ -130,9 +134,16 @@ const NewSearchPage = () => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
   const [sessions, setSessions] = useState<StoredChatSession[]>([]);
-  const [activeChatId, setActiveChatId] = useState<string | null>(null);
   const [historyCollapsed, setHistoryCollapsed] = useState(false);
   const [previewDoc, setPreviewDoc] = useState<PreviewDocument | null>(null);
+  const [sessionsReady, setSessionsReady] = useState(false);
+  const createdChatId = useRef<string | null>(null);
+
+  const chatHref = (id?: string | null, project?: string) => {
+    const base = id ? `/intelligence/${id}` : "/intelligence";
+    const scope = project ?? projectId;
+    return scope ? `${base}?project=${encodeURIComponent(scope)}` : base;
+  };
 
   const isTyping = query.trim().length > 0;
   const inChat = messages.length > 0;
@@ -150,7 +161,32 @@ const NewSearchPage = () => {
       return;
     }
     setSessions(loadChatSessions(activeOrgId));
+    setSessionsReady(true);
   }, [activeOrgId]);
+
+  useEffect(() => {
+    if (!sessionsReady) return;
+    if (!routeChatId) {
+      if (createdChatId.current) return;
+      setMessages([]);
+      setPreviewDoc(null);
+      return;
+    }
+    const session = sessions.find((item) => item.id === routeChatId);
+    const justCreated = createdChatId.current === routeChatId;
+    if (justCreated) createdChatId.current = null;
+    if (!session) {
+      if (justCreated) return;
+      router.replace(chatHref(null));
+      return;
+    }
+    if (justCreated) return;
+    setMessages(session.messages);
+    setQuery("");
+    setPreviewDoc(null);
+    // Hydrate from history when the URL chat changes, not on every save.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [routeChatId, sessionsReady, activeOrgId]);
 
   useEffect(() => {
     async function loadProject() {
@@ -182,7 +218,7 @@ const NewSearchPage = () => {
     if (activeOrgId) saveChatSessions(activeOrgId, next);
   };
 
-  const upsertActiveSession = (nextMessages: Message[]) => {
+  const upsertActiveSession = (nextMessages: Message[], chatId: string) => {
     if (!activeOrgId || nextMessages.length === 0) return;
 
     const now = new Date().toISOString();
@@ -190,8 +226,6 @@ const NewSearchPage = () => {
     const preview =
       nextMessages.filter((m) => m.role === "assistant").at(-1)?.content.slice(0, 60) ||
       undefined;
-    const chatId = activeChatId ?? crypto.randomUUID();
-    if (!activeChatId) setActiveChatId(chatId);
 
     setSessions((prev) => {
       const existing = prev.find((s) => s.id === chatId);
@@ -207,34 +241,24 @@ const NewSearchPage = () => {
         ? prev.map((s) => (s.id === chatId ? nextSession : s))
         : [nextSession, ...prev];
 
-      if (activeOrgId) saveChatSessions(activeOrgId, next);
+      saveChatSessions(activeOrgId, next);
       return next;
     });
   };
 
   const startNewChat = () => {
-    setActiveChatId(null);
     setMessages([]);
     setQuery("");
     setPreviewDoc(null);
   };
 
-  const selectChat = (id: string) => {
-    const session = sessions.find((s) => s.id === id);
-    if (!session) return;
-    setActiveChatId(id);
-    setMessages(session.messages);
-    setQuery("");
-    if (session.projectId && session.projectId !== projectId) {
-      router.push(`/intelligence?project=${session.projectId}`);
-    }
-  };
-
   const deleteChat = (id: string) => {
     const next = sessions.filter((s) => s.id !== id);
     persistSessions(next);
-    if (activeChatId === id) {
-      startNewChat();
+    if (routeChatId === id) {
+      setQuery("");
+      setPreviewDoc(null);
+      router.push(chatHref(null));
     }
   };
 
@@ -242,11 +266,16 @@ const NewSearchPage = () => {
     const trimmed = text.trim();
     if (!trimmed || loading) return;
 
+    const chatId = routeChatId || crypto.randomUUID();
     const userMsg: Message = { id: crypto.randomUUID(), role: "user", content: trimmed };
     const history = [...messages, userMsg];
     setMessages(history);
-    upsertActiveSession(history);
+    upsertActiveSession(history, chatId);
     setQuery("");
+    if (!routeChatId) {
+      createdChatId.current = chatId;
+      router.replace(chatHref(chatId));
+    }
     setLoading(true);
 
     try {
@@ -272,7 +301,7 @@ const NewSearchPage = () => {
         },
       ];
       setMessages(withAssistant);
-      upsertActiveSession(withAssistant);
+      upsertActiveSession(withAssistant, chatId);
     } catch (error: unknown) {
       toast.error(error instanceof Error ? error.message : "Failed to get response");
     } finally {
@@ -310,11 +339,15 @@ const NewSearchPage = () => {
     <div className="flex-1 flex h-full min-h-0 bg-[#f4f4f5] dark:bg-[#0b1220]">
       <ChatHistorySidebar
         items={historyItems}
-        activeId={activeChatId}
+        activeId={routeChatId || null}
         collapsed={historyCollapsed}
         onToggleCollapsed={() => setHistoryCollapsed((v) => !v)}
+        newChatHref={chatHref(null)}
+        chatHref={(id) => {
+          const session = sessions.find((item) => item.id === id);
+          return chatHref(id, session?.projectId || projectId);
+        }}
         onNewChat={startNewChat}
-        onSelect={selectChat}
         onDelete={deleteChat}
       />
 

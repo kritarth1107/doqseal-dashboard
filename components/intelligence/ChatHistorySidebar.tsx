@@ -1,5 +1,6 @@
 "use client";
 
+import Link from "next/link";
 import { MessageSquarePlus, PanelLeftClose, PanelLeft, Trash2 } from "lucide-react";
 
 export type ChatHistoryItem = {
@@ -15,16 +16,18 @@ export function ChatHistorySidebar({
   activeId,
   collapsed,
   onToggleCollapsed,
+  newChatHref,
+  chatHref,
   onNewChat,
-  onSelect,
   onDelete,
 }: {
   items: ChatHistoryItem[];
   activeId: string | null;
   collapsed: boolean;
   onToggleCollapsed: () => void;
+  newChatHref: string;
+  chatHref: (id: string) => string;
   onNewChat: () => void;
-  onSelect: (id: string) => void;
   onDelete: (id: string) => void;
 }) {
   return (
@@ -58,8 +61,8 @@ export function ChatHistorySidebar({
       </div>
 
       <div className={`p-2 ${collapsed ? "flex justify-center" : ""}`}>
-        <button
-          type="button"
+        <Link
+          href={newChatHref}
           onClick={onNewChat}
           className={`flex items-center gap-2 rounded-lg text-sm font-medium text-[#2563eb] bg-[#2563eb]/10 hover:bg-[#2563eb]/15 transition-colors ${
             collapsed ? "w-8 h-8 justify-center" : "w-full px-3 py-2"
@@ -68,7 +71,7 @@ export function ChatHistorySidebar({
         >
           <MessageSquarePlus className="w-4 h-4 shrink-0" />
           {!collapsed && <span>New chat</span>}
-        </button>
+        </Link>
       </div>
 
       <div className="flex-1 overflow-y-auto px-2 pb-3 space-y-0.5">
@@ -88,9 +91,8 @@ export function ChatHistorySidebar({
                   : "hover:bg-gray-50 dark:hover:bg-slate-800/60"
               }`}
             >
-              <button
-                type="button"
-                onClick={() => onSelect(item.id)}
+              <Link
+                href={chatHref(item.id)}
                 className={`flex-1 min-w-0 text-left ${
                   collapsed ? "p-2 flex justify-center" : "px-2.5 py-1.5 pr-7"
                 }`}
@@ -115,7 +117,7 @@ export function ChatHistorySidebar({
                     </p>
                   </>
                 )}
-              </button>
+              </Link>
               {!collapsed && (
                 <button
                   type="button"
