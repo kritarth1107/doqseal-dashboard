@@ -1,13 +1,15 @@
 "use client";
 
-import { useEffect, useState } from "react";
-import { Bot, ChevronDown, ExternalLink, FileText, User } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
+import { Bot, ChevronDown, User } from "lucide-react";
 import { ChatMarkdown } from "./ChatMarkdown";
 
 type DocRef = {
   id: string;
   patientName: string;
   filename: string;
+  kind?: string;
+  fileName?: string;
   status: string;
   href: string;
 };
@@ -41,18 +43,32 @@ export function ThinkingTrace({
 }) {
   const [open, setOpen] = useState(defaultOpen || live);
   const [shown, setShown] = useState(live ? 1 : steps.length);
+  const stepRef = useRef<HTMLLIElement>(null);
 
   useEffect(() => {
     if (!live) {
       setShown(steps.length);
+      setOpen(defaultOpen);
       return;
     }
+    setOpen(true);
     setShown(1);
     const timer = window.setInterval(() => {
       setShown((count) => (count >= steps.length ? count : count + 1));
     }, 700);
     return () => window.clearInterval(timer);
-  }, [live, steps.length]);
+  }, [live, steps.length, defaultOpen]);
+
+  useEffect(() => {
+    if (!live || shown < steps.length) return;
+    const timer = window.setTimeout(() => setOpen(false), 700);
+    return () => window.clearTimeout(timer);
+  }, [live, shown, steps.length]);
+
+  useEffect(() => {
+    if (!open) return;
+    stepRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+  }, [shown, open]);
 
   const visible = steps.slice(0, shown);
 
@@ -73,7 +89,11 @@ export function ThinkingTrace({
       {open && (
         <ol className="mt-2 space-y-2 border-l border-gray-200 pl-3 dark:border-white/10">
           {visible.map((step, index) => (
-            <li key={`${step.title}-${index}`} className="animate-in fade-in duration-300">
+            <li
+              key={`${step.title}-${index}`}
+              ref={index === visible.length - 1 ? stepRef : undefined}
+              className="animate-in fade-in duration-300"
+            >
               <p className="text-[13px] font-medium text-gray-800 dark:text-slate-100">
                 {step.title}
               </p>
@@ -90,6 +110,83 @@ export function ThinkingTrace({
   );
 }
 
+function proseWithoutTable(content: string): string {
+  const lines = content.split("\n");
+  const kept: string[] = [];
+  let index = 0;
+  while (index < lines.length) {
+    const line = lines[index]?.trim() ?? "";
+    const next = lines[index + 1]?.trim() ?? "";
+    if (line.startsWith("|") && line.endsWith("|") && /^\|[\s\-:|]+\|$/.test(next)) {
+      index += 2;
+      while (index < lines.length && (lines[index]?.trim() ?? "").startsWith("|")) {
+        index += 1;
+      }
+      continue;
+    }
+    kept.push(lines[index] ?? "");
+    index += 1;
+  }
+  return kept.join("\n").trim();
+}
+
+function DocumentTable({
+  documents,
+  activeDocumentId,
+  onOpenDocument,
+}: {
+  documents: DocRef[];
+  activeDocumentId?: string | null;
+  onOpenDocument?: (doc: DocRef) => void;
+}) {
+  return (
+    <div className="mt-4 overflow-x-auto rounded-xl border border-gray-200 dark:border-white/10">
+      <table className="w-full text-sm">
+        <thead>
+          <tr className="border-b border-gray-200 dark:border-white/10">
+            <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+              #
+            </th>
+            <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+              Document
+            </th>
+            <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+              Type
+            </th>
+            <th className="px-3 py-2 text-left text-xs font-semibold uppercase tracking-wide text-gray-500">
+              File
+            </th>
+          </tr>
+        </thead>
+        <tbody>
+          {documents.map((doc, index) => {
+            const typeLabel = doc.kind || doc.filename || "Document";
+            const fileLabel = doc.fileName || "—";
+            const active = activeDocumentId === doc.id;
+            return (
+              <tr
+                key={doc.id}
+                onClick={() => onOpenDocument?.(doc)}
+                className={`cursor-pointer border-b border-gray-100 last:border-0 dark:border-white/10 ${
+                  active ? "bg-[#2563eb]/5" : "hover:bg-[#2563eb]/5"
+                }`}
+              >
+                <td className="px-3 py-2.5 text-gray-400">{index + 1}</td>
+                <td className="px-3 py-2.5 font-medium text-gray-900 dark:text-slate-100">
+                  {doc.patientName}
+                </td>
+                <td className="px-3 py-2.5 capitalize text-gray-600 dark:text-slate-300">
+                  {typeLabel}
+                </td>
+                <td className="px-3 py-2.5 text-gray-500 dark:text-slate-400">{fileLabel}</td>
+              </tr>
+            );
+          })}
+        </tbody>
+      </table>
+    </div>
+  );
+}
 const LIVE_STEPS: ThinkingStep[] = [
   { title: "Read the question", detail: "Figuring out whether this is a count, a list, or a lookup." },
   { title: "Open Drive", detail: "Loading the documents you can see in this organisation." },
@@ -113,6 +210,9 @@ export function AssistantMessage({
   activeDocumentId?: string | null;
   onOpenDocument?: (doc: DocRef) => void;
 }) {
+  const hasDocuments = Boolean(documents && documents.length > 0);
+  const answer = hasDocuments ? proseWithoutTable(content) : content;
+
   return (
     <div className="flex gap-3">
       <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-[#2563eb] shadow-sm">
@@ -122,38 +222,17 @@ export function AssistantMessage({
         {thinking && thinking.length > 0 && (
           <ThinkingTrace steps={thinking} defaultOpen={thinkingOpen} />
         )}
-        <div className="text-[15px] leading-relaxed text-gray-900 dark:text-slate-100">
-          <ChatMarkdown content={content} />
-        </div>
-        {documents && documents.length > 0 && (
-          <div className="mt-4 space-y-2">
-            <p className="text-[11px] font-semibold uppercase tracking-wide text-gray-400">
-              Source documents
-            </p>
-            {documents.map((doc) => (
-              <button
-                key={doc.id}
-                type="button"
-                onClick={() => onOpenDocument?.(doc)}
-                className={`group flex w-full items-center gap-3 rounded-xl border p-3 text-left transition-all ${
-                  activeDocumentId === doc.id
-                    ? "border-[#2563eb]/40 bg-[#2563eb]/5"
-                    : "border-gray-200 bg-white hover:border-[#2563eb]/30 hover:bg-[#2563eb]/5 dark:border-white/10 dark:bg-[#111827]"
-                }`}
-              >
-                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-lg bg-gray-50 border border-gray-200 group-hover:border-[#2563eb]/20 dark:bg-[#0b1220] dark:border-white/10">
-                  <FileText className="h-4 w-4 text-[#2563eb]" />
-                </div>
-                <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-gray-900 dark:text-slate-100 truncate">
-                    {doc.patientName}
-                  </p>
-                  <p className="text-xs text-gray-500 dark:text-slate-400 truncate">{doc.filename}</p>
-                </div>
-                <ExternalLink className="h-3.5 w-3.5 text-gray-400 group-hover:text-[#2563eb] shrink-0" />
-              </button>
-            ))}
+        {answer && (
+          <div className="text-[15px] leading-relaxed text-gray-900 dark:text-slate-100">
+            <ChatMarkdown content={answer} />
           </div>
+        )}
+        {hasDocuments && (
+          <DocumentTable
+            documents={documents ?? []}
+            activeDocumentId={activeDocumentId}
+            onOpenDocument={onOpenDocument}
+          />
         )}
       </div>
     </div>

@@ -12,6 +12,7 @@ type ChatCitation = {
   projectId?: string;
   title?: string;
   kind?: string;
+  filename?: string;
   snippet?: string;
 };
 
@@ -69,6 +70,8 @@ export async function POST(request: NextRequest) {
         filename: c.kind
           ? c.kind.replace(/_/g, " ")
           : c.snippet?.slice(0, 80) || "Indexed document",
+        kind: c.kind ? c.kind.replace(/_/g, " ") : undefined,
+        fileName: c.filename || undefined,
         status: "indexed",
         href: c.projectId
           ? `/projects/${c.projectId}/documents/${c.documentId}`

@@ -8,6 +8,8 @@ export type StoredChatMessage = {
     id: string;
     patientName: string;
     filename: string;
+    kind?: string;
+    fileName?: string;
     status: string;
     href: string;
   }[];

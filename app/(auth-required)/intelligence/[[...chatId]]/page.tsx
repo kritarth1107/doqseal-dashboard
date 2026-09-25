@@ -11,6 +11,7 @@ import {
   ArrowUp,
   Loader2,
   Sparkles,
+  Square,
 } from "lucide-react";
 import { toast } from "sonner";
 import chatTitlesData from "@/utils/new_chat_titles.json";
@@ -138,6 +139,7 @@ const NewSearchPage = () => {
   const [previewDoc, setPreviewDoc] = useState<PreviewDocument | null>(null);
   const [sessionsReady, setSessionsReady] = useState(false);
   const createdChatId = useRef<string | null>(null);
+  const abortRef = useRef<AbortController | null>(null);
 
   const chatHref = (id?: string | null, project?: string) => {
     const base = id ? `/intelligence/${id}` : "/intelligence";
@@ -262,6 +264,10 @@ const NewSearchPage = () => {
     }
   };
 
+  const stopGeneration = () => {
+    abortRef.current?.abort();
+  };
+
   const sendMessage = async (text: string) => {
     const trimmed = text.trim();
     if (!trimmed || loading) return;
@@ -276,12 +282,15 @@ const NewSearchPage = () => {
       createdChatId.current = chatId;
       router.replace(chatHref(chatId));
     }
+    const controller = new AbortController();
+    abortRef.current = controller;
     setLoading(true);
 
     try {
       const res = await fetch("/api/intelligence/chat", {
         method: "POST",
         headers: { "Content-Type": "application/json" },
+        signal: controller.signal,
         body: JSON.stringify({
           projectId,
           messages: history.map((m) => ({ role: m.role, content: m.content })),
@@ -303,8 +312,10 @@ const NewSearchPage = () => {
       setMessages(withAssistant);
       upsertActiveSession(withAssistant, chatId);
     } catch (error: unknown) {
+      if (error instanceof Error && error.name === "AbortError") return;
       toast.error(error instanceof Error ? error.message : "Failed to get response");
     } finally {
+      if (abortRef.current === controller) abortRef.current = null;
       setLoading(false);
     }
   };
@@ -412,7 +423,6 @@ const NewSearchPage = () => {
                       content={message.content}
                       documents={message.documents}
                       thinking={message.thinking}
-                      thinkingOpen={message.id === messages[messages.length - 1]?.id}
                       activeDocumentId={previewDoc?.id}
                       onOpenDocument={(doc) =>
                         setPreviewDoc({
@@ -551,11 +561,16 @@ const NewSearchPage = () => {
                   </span>
                   <button
                     type="button"
-                    onClick={() => sendMessage(query)}
-                    disabled={!isTyping || loading}
+                    onClick={() => (loading ? stopGeneration() : sendMessage(query))}
+                    disabled={!loading && !isTyping}
+                    aria-label={loading ? "Stop" : "Send"}
                     className="flex h-8 w-8 items-center justify-center rounded-lg bg-[#2563eb] text-white hover:bg-[#1d4ed8] disabled:opacity-40 disabled:cursor-not-allowed transition-colors shadow-sm"
                   >
-                    <ArrowUp className="w-4 h-4" />
+                    {loading ? (
+                      <Square className="h-3.5 w-3.5 fill-current" />
+                    ) : (
+                      <ArrowUp className="w-4 h-4" />
+                    )}
                   </button>
                 </div>
               </div>
