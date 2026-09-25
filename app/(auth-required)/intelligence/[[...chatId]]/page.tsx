@@ -627,7 +627,7 @@ const NewSearchPage = () => {
                 {messages.map((message) =>
                   message.role === "user" ? (
                     <UserMessage key={message.id} content={message.content} />
-                  ) : message.mode === "declined" && !message.content ? (
+                  ) : message.mode === "declined" ? (
                     <DeclineMessage
                       key={message.id}
                       message={message.content || "I can only answer questions using your organization's documents."}
