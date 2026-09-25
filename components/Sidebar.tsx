@@ -16,6 +16,7 @@ import { usePathname } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import { signOut } from "next-auth/react";
 import { navGroups } from "@/lib/navigation";
+import { purgeChatLocalStorage } from "@/lib/chat-history";
 
 export function Sidebar() {
   const pathname = usePathname();
@@ -38,10 +39,9 @@ export function Sidebar() {
 
   const handleLogout = async () => {
     try {
-      // 1. Sign out from NextAuth
+      purgeChatLocalStorage();
       await signOut({ redirect: false });
 
-      // 2. Clear the session_token cookie via our custom logout endpoint
       const response = await fetch('/api/auth/logout', {
         method: 'POST',
       });
@@ -50,6 +50,7 @@ export function Sidebar() {
         window.location.href = '/auth';
       }
     } catch (error) {
+      purgeChatLocalStorage();
       console.error('Logout failed:', error);
     }
   };

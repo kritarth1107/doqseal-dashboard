@@ -11,6 +11,7 @@ import {
   formatPaymentMethodLabel,
   type PaymentMethodSummary,
 } from "@/lib/payment-method";
+import { purgeChatLocalStorage } from "@/lib/chat-history";
 
 type SessionRow = {
   fingerprint: string;
@@ -111,12 +112,14 @@ export function AccountSettings() {
     }
     setLoggingOutAll(true);
     try {
+      purgeChatLocalStorage();
       const res = await fetch("/api/user/logout-all", { method: "POST" });
       const data = await res.json();
       if (!res.ok) throw new Error(data.error || "Logout failed");
       toast.success("Logged out everywhere");
       router.push("/login");
     } catch (err) {
+      purgeChatLocalStorage();
       toast.error(err instanceof Error ? err.message : "Logout failed");
     } finally {
       setLoggingOutAll(false);

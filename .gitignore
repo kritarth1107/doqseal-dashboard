@@ -43,4 +43,5 @@ next-env.d.ts
 # demo uploads and document store
 /uploads
 /data
-/test-trf
+/test-trftest-results/
+playwright-report/

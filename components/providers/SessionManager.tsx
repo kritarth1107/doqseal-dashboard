@@ -2,6 +2,7 @@
 
 import React, { useEffect, useState, useRef } from 'react'
 import { ShieldAlert, ArrowRight, Lock } from 'lucide-react'
+import { purgeChatLocalStorage } from '@/lib/chat-history'
 
 /**
  * SessionManager - Globally monitors for 401 responses.
@@ -104,10 +105,12 @@ export function SessionManager() {
 
   const handleLogout = async () => {
     try {
+      purgeChatLocalStorage();
       const currentPath = window.location.pathname + window.location.search;
       await fetch('/api/auth/logout', { method: 'POST' });
       window.location.href = `/auth?redirectURL=${encodeURIComponent(currentPath)}`;
     } catch (error) {
+      purgeChatLocalStorage();
       const currentPath = window.location.pathname + window.location.search;
       window.location.href = `/auth?redirectURL=${encodeURIComponent(currentPath)}`;
     }
