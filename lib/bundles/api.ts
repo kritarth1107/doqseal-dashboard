@@ -218,6 +218,26 @@ export function createBundleApi(orgId: string, fetchImpl: typeof fetch = fetch) 
     async template(templateId: string) {
       return (await call<TemplateDetail>(orgId, `/api/bundle-templates/${enc(templateId)}`, {}, fetchImpl)).data;
     },
+    async createTemplate(body: { name: string; description?: string; draft?: Record<string, unknown> }) {
+      return (
+        await call<TemplateDetail>(
+          orgId,
+          "/api/bundle-templates",
+          { method: "POST", body: json(body) },
+          fetchImpl
+        )
+      ).data;
+    },
+    async publishTemplate(templateId: string) {
+      return (
+        await call<{ templateId: string; version: number }>(
+          orgId,
+          `/api/bundle-templates/${enc(templateId)}/publish`,
+          { method: "POST", body: json({}) },
+          fetchImpl
+        )
+      ).data;
+    },
   };
 }
 

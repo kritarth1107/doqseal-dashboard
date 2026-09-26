@@ -61,6 +61,11 @@ describe("createBundleApi", () => {
     expect(lastCall(fetchImpl).url).toBe("/api/bundle-templates/starters/msme_loan");
     await api.templates();
     expect(lastCall(fetchImpl).url).toBe("/api/bundle-templates?status=published&limit=100");
+    await api.createTemplate({ name: "Custom", draft: { documentTypes: [] } });
+    expect(lastCall(fetchImpl).url).toBe("/api/bundle-templates");
+    expect(lastCall(fetchImpl).init.method).toBe("POST");
+    await api.publishTemplate("tpl/1");
+    expect(lastCall(fetchImpl).url).toBe("/api/bundle-templates/tpl%2F1/publish");
     await api.timeline("b1");
     expect(lastCall(fetchImpl).url).toBe("/api/bundles/b1/timeline?limit=100");
   });
