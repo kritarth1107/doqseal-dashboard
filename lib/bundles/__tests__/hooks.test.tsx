@@ -40,9 +40,13 @@ afterEach(() => {
 });
 
 describe("useBundlesEnabled", () => {
-  it("follows the active organisation's flag", () => {
+  it("is on by default and off only when the organisation switched it off", () => {
     expect(renderHook(() => useBundlesEnabled()).result.current).toEqual({ enabled: true, loading: false });
     auth.activeOrg = { organisationId: "org-1", name: "Org", role: "member" };
+    expect(renderHook(() => useBundlesEnabled()).result.current.enabled).toBe(true);
+    auth.activeOrg = { organisationId: "org-1", name: "Org", role: "member", features: { bundles: false } };
+    expect(renderHook(() => useBundlesEnabled()).result.current.enabled).toBe(false);
+    auth.activeOrg = null;
     expect(renderHook(() => useBundlesEnabled()).result.current.enabled).toBe(false);
     auth.activeOrg = null;
     auth.loading = true;

@@ -15,8 +15,9 @@
   Layers,
   type LucideIcon,
 } from "lucide-react";
+import { isOrgFeatureEnabled, type OrgFeature, type OrgFeatureFlags } from "./features";
 
-export type OrgFeature = "bundles";
+export type { OrgFeature };
 
 export type NavItem = {
   name: string;
@@ -68,14 +69,11 @@ export const navGroups: NavGroup[] = [
 ];
 
 /** Navigation for an organisation: drops items whose feature is off and empty groups. */
-export function visibleNavGroups(
-  groups: NavGroup[],
-  features: Partial<Record<OrgFeature, boolean>> | null | undefined
-): NavGroup[] {
+export function visibleNavGroups(groups: NavGroup[], features: OrgFeatureFlags): NavGroup[] {
   return groups
     .map((group) => ({
       ...group,
-      items: group.items.filter((item) => !item.requiresFeature || features?.[item.requiresFeature] === true),
+      items: group.items.filter((item) => !item.requiresFeature || isOrgFeatureEnabled(features, item.requiresFeature)),
     }))
     .filter((group) => group.items.length > 0);
 }

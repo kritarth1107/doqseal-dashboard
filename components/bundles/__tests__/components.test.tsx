@@ -216,8 +216,8 @@ describe("states", () => {
 });
 
 describe("BundlesFeatureGate", () => {
-  it("redirects when the organisation does not have case packs", () => {
-    auth.activeOrg = { features: {} };
+  it("redirects when case packs are switched off for the organisation", () => {
+    auth.activeOrg = { features: { bundles: false } };
     render(
       <BundlesFeatureGate>
         <p>secret</p>
@@ -227,7 +227,7 @@ describe("BundlesFeatureGate", () => {
     expect(replace).toHaveBeenCalledWith("/dashboard");
   });
 
-  it("waits for auth, then renders the page", () => {
+  it("waits for auth, then renders the page (on by default)", () => {
     auth.loading = true;
     auth.activeOrg = null;
     const { rerender } = render(
@@ -237,7 +237,7 @@ describe("BundlesFeatureGate", () => {
     );
     expect(replace).not.toHaveBeenCalled();
     auth.loading = false;
-    auth.activeOrg = { features: { bundles: true } };
+    auth.activeOrg = {};
     rerender(
       <BundlesFeatureGate>
         <p>secret</p>

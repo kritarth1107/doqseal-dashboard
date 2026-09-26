@@ -8,7 +8,7 @@ interface UserOrganisation {
   name: string;
   role: string;
   logoUrl?: string | null;
-  /** Per-organisation feature flags from the backend profile */
+  /** Per-organisation feature flags from the backend profile (see lib/features.ts) */
   features?: { bundles?: boolean };
 }
 

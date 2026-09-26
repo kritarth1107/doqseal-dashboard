@@ -2,6 +2,7 @@
 
 import { useCallback, useEffect, useMemo, useReducer, useRef, useState } from "react";
 import { useAuth } from "@/components/AuthProvider";
+import { isOrgFeatureEnabled } from "@/lib/features";
 import { createBundleApi, type BundleApi, type ListParams } from "./api";
 import { isBusy } from "./derive";
 import { createPoller, pollDelay, type Poller } from "./poller";
@@ -14,10 +15,10 @@ import {
 } from "./reducer";
 import type { BundleDetail, BundleListItem, TimelineEntry } from "./types";
 
-/** True when the active organisation has case packs switched on. */
+/** True when there is an active organisation and case packs are not switched off for it. */
 export function useBundlesEnabled(): { enabled: boolean; loading: boolean } {
   const { activeOrg, loading } = useAuth();
-  return { enabled: activeOrg?.features?.bundles === true, loading };
+  return { enabled: Boolean(activeOrg) && isOrgFeatureEnabled(activeOrg?.features, "bundles"), loading };
 }
 
 export function useBundleApi(): BundleApi | null {
