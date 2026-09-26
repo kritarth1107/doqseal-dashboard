@@ -133,14 +133,17 @@ export function ThinkingTrace({
   const [shown, setShown] = useState(live ? 1 : steps.length);
   const stepRef = useRef<HTMLLIElement>(null);
 
-  // eslint-disable-next-line react-hooks/set-state-in-effect -- Pre-existing: sync animation state with props
   useEffect(() => {
     if (!live) {
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Pre-existing: sync state with props
       setShown(steps.length);
+      // eslint-disable-next-line react-hooks/set-state-in-effect -- Pre-existing: sync state with props
       setOpen(defaultOpen);
       return;
     }
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Pre-existing: initialize animation
     setOpen(true);
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Pre-existing: initialize animation
     setShown(1);
     const timer = window.setInterval(() => {
       setShown((count) => (count >= steps.length ? count : count + 1));
