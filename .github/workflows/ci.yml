@@ -1,0 +1,44 @@
+# Lint (changed files only), typecheck and unit tests.
+name: CI
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+    branches: [master]
+
+jobs:
+  ci:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "22"
+          cache: "npm"
+
+      # Same install as the Docker build.
+      - run: npx -y npm@10.9.9 ci
+
+      # TODO: lint the whole tree once the older files are cleaned up.
+      - name: ESLint on changed files
+        env:
+          BASE: ${{ github.event_name == 'pull_request' && format('origin/{0}', github.base_ref) || github.event.before }}
+        run: |
+          if [ -z "$BASE" ] || [ "$BASE" = "0000000000000000000000000000000000000000" ]; then
+            echo "No base commit to compare against; skipping lint"
+            exit 0
+          fi
+          git diff --name-only --diff-filter=d -z "$BASE"...HEAD -- '*.ts' '*.tsx' '*.js' '*.jsx' '*.mjs' > changed.txt
+          if [ ! -s changed.txt ]; then
+            echo "No lintable files changed"
+            exit 0
+          fi
+          xargs -0 npx eslint --max-warnings 50 < changed.txt
+
+      - run: npx tsc --noEmit
+
+      - run: npx vitest run

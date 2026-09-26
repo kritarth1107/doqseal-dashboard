@@ -16,11 +16,7 @@ import {
 import { toast } from "sonner";
 import chatTitlesData from "@/utils/new_chat_titles.json";
 import { UploadModal } from "@/components/UploadModal";
-import {
-  AssistantMessage,
-  TypingIndicator,
-  UserMessage,
-} from "@/components/intelligence/ChatMessage";
+import { AssistantMessage, UserMessage } from "@/components/intelligence/ChatMessage";
 import { DocumentPreviewPanel, type PreviewDocument } from "@/components/intelligence/DocumentPreviewPanel";
 import {
   ChatHistorySidebar,
@@ -30,12 +26,13 @@ import { useAuth } from "@/components/AuthProvider";
 import { withOrgHeaders } from "@/lib/client-api";
 import { isPrescriptionProject } from "@/lib/project-config";
 import {
-  loadChatSessions,
-  saveChatSessions,
-  titleFromMessages,
-  type StoredChatSession,
+  deleteConversation,
+  fetchConversation,
+  fetchConversations,
+  type ConversationSummary,
   type StoredChatMessage,
 } from "@/lib/chat-history";
+import { sendChat, type ChatRunState } from "@/lib/chat-stream";
 
 type Highlight = {
   word: string;
@@ -134,10 +131,9 @@ const NewSearchPage = () => {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
-  const [sessions, setSessions] = useState<StoredChatSession[]>([]);
+  const [conversations, setConversations] = useState<ConversationSummary[]>([]);
   const [historyCollapsed, setHistoryCollapsed] = useState(false);
   const [previewDoc, setPreviewDoc] = useState<PreviewDocument | null>(null);
-  const [sessionsReady, setSessionsReady] = useState(false);
   const createdChatId = useRef<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
 
@@ -157,38 +153,50 @@ const NewSearchPage = () => {
     setIsMounted(true);
   }, []);
 
-  useEffect(() => {
-    if (!activeOrgId) {
-      setSessions([]);
-      return;
-    }
-    setSessions(loadChatSessions(activeOrgId));
-    setSessionsReady(true);
+  const refreshConversations = React.useCallback(async () => {
+    // Fails soft: an unavailable service just shows an empty list.
+    setConversations(await fetchConversations(activeOrgId));
   }, [activeOrgId]);
 
   useEffect(() => {
-    if (!sessionsReady) return;
-    if (!routeChatId) {
-      if (createdChatId.current) return;
-      setMessages([]);
+    void refreshConversations();
+  }, [refreshConversations]);
+
+  useEffect(() => {
+    let cancelled = false;
+    async function hydrate() {
+      if (!routeChatId) {
+        if (createdChatId.current) return;
+        setMessages([]);
+        setPreviewDoc(null);
+        return;
+      }
+      // A conversation that was just created by the running answer is already on screen.
+      if (createdChatId.current === routeChatId) {
+        createdChatId.current = null;
+        return;
+      }
+      const conversation = await fetchConversation(activeOrgId, routeChatId);
+      if (cancelled) return;
+      if (conversation === null) {
+        router.replace(chatHref(null));
+        return;
+      }
+      if (conversation === "error") {
+        toast.error("Could not load this conversation");
+        return;
+      }
+      setMessages(conversation.messages);
+      setQuery("");
       setPreviewDoc(null);
-      return;
     }
-    const session = sessions.find((item) => item.id === routeChatId);
-    const justCreated = createdChatId.current === routeChatId;
-    if (justCreated) createdChatId.current = null;
-    if (!session) {
-      if (justCreated) return;
-      router.replace(chatHref(null));
-      return;
-    }
-    if (justCreated) return;
-    setMessages(session.messages);
-    setQuery("");
-    setPreviewDoc(null);
-    // Hydrate from history when the URL chat changes, not on every save.
+    if (activeOrgId) void hydrate();
+    return () => {
+      cancelled = true;
+    };
+    // Hydrate when the URL chat or organisation changes.
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [routeChatId, sessionsReady, activeOrgId]);
+  }, [routeChatId, activeOrgId]);
 
   useEffect(() => {
     async function loadProject() {
@@ -215,49 +223,22 @@ const NewSearchPage = () => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, loading]);
 
-  const persistSessions = (next: StoredChatSession[]) => {
-    setSessions(next);
-    if (activeOrgId) saveChatSessions(activeOrgId, next);
-  };
-
-  const upsertActiveSession = (nextMessages: Message[], chatId: string) => {
-    if (!activeOrgId || nextMessages.length === 0) return;
-
-    const now = new Date().toISOString();
-    const title = titleFromMessages(nextMessages);
-    const preview =
-      nextMessages.filter((m) => m.role === "assistant").at(-1)?.content.slice(0, 60) ||
-      undefined;
-
-    setSessions((prev) => {
-      const existing = prev.find((s) => s.id === chatId);
-      const nextSession: StoredChatSession = {
-        id: chatId,
-        title,
-        preview,
-        updatedAt: now,
-        projectId: projectId || existing?.projectId,
-        messages: nextMessages,
-      };
-      const next = existing
-        ? prev.map((s) => (s.id === chatId ? nextSession : s))
-        : [nextSession, ...prev];
-
-      saveChatSessions(activeOrgId, next);
-      return next;
-    });
-  };
-
   const startNewChat = () => {
+    abortRef.current?.abort();
     setMessages([]);
     setQuery("");
     setPreviewDoc(null);
   };
 
-  const deleteChat = (id: string) => {
-    const next = sessions.filter((s) => s.id !== id);
-    persistSessions(next);
+  const deleteChat = async (id: string) => {
+    const ok = await deleteConversation(activeOrgId, id);
+    if (!ok) {
+      toast.error("Could not delete this conversation");
+      return;
+    }
+    setConversations((prev) => prev.filter((c) => c.conversationId !== id));
     if (routeChatId === id) {
+      setMessages([]);
       setQuery("");
       setPreviewDoc(null);
       router.push(chatHref(null));
@@ -268,52 +249,71 @@ const NewSearchPage = () => {
     abortRef.current?.abort();
   };
 
+  const updateMessage = (id: string, patch: Partial<Message>) => {
+    setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, ...patch } : m)));
+  };
+
+  const fromRun = (state: ChatRunState): Partial<Message> => ({
+    content: state.content,
+    steps: state.steps,
+    citations: state.citations,
+    mode: state.decline ? "declined" : state.error ? "error" : state.mode,
+  });
+
   const sendMessage = async (text: string) => {
     const trimmed = text.trim();
     if (!trimmed || loading) return;
 
-    const chatId = routeChatId || crypto.randomUUID();
     const userMsg: Message = { id: crypto.randomUUID(), role: "user", content: trimmed };
-    const history = [...messages, userMsg];
-    setMessages(history);
-    upsertActiveSession(history, chatId);
+    const assistantId = crypto.randomUUID();
+    const previous = messages;
+    setMessages([...previous, userMsg, { id: assistantId, role: "assistant", content: "", streaming: true }]);
     setQuery("");
-    if (!routeChatId) {
-      createdChatId.current = chatId;
-      router.replace(chatHref(chatId));
-    }
     const controller = new AbortController();
     abortRef.current = controller;
     setLoading(true);
+    let navigated = Boolean(routeChatId);
 
     try {
-      const res = await fetch("/api/intelligence/chat", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
+      const result = await sendChat({
+        message: trimmed,
+        conversationId: routeChatId || null,
+        projectId,
+        organisationId: activeOrgId,
+        history: previous
+          .filter((m) => m.content && m.mode !== "error" && m.mode !== "aborted")
+          .map((m) => ({ role: m.role, content: m.content })),
         signal: controller.signal,
-        body: JSON.stringify({
-          projectId,
-          messages: history.map((m) => ({ role: m.role, content: m.content })),
-        }),
-      });
-      const data = await res.json();
-      if (!res.ok) throw new Error(data.error);
-
-      const withAssistant: Message[] = [
-        ...history,
-        {
-          id: crypto.randomUUID(),
-          role: "assistant",
-          content: data.reply,
-          documents: data.documents,
-          thinking: data.thinking,
+        onUpdate: (state) => {
+          updateMessage(assistantId, fromRun(state));
+          if (state.conversationId && !navigated) {
+            navigated = true;
+            createdChatId.current = state.conversationId;
+            router.replace(chatHref(state.conversationId));
+          }
         },
-      ];
-      setMessages(withAssistant);
-      upsertActiveSession(withAssistant, chatId);
+      });
+
+      if (result.kind === "legacy") {
+        updateMessage(assistantId, {
+          content: result.result.reply,
+          documents: result.result.documents,
+          thinking: result.result.thinking,
+          mode: result.result.mode === "declined" ? "declined" : null,
+          streaming: false,
+        });
+      } else if (result.kind === "stream") {
+        updateMessage(assistantId, { ...fromRun(result.state), mode: result.aborted ? "aborted" : fromRun(result.state).mode, streaming: false });
+        void refreshConversations();
+      } else {
+        updateMessage(assistantId, { streaming: false, mode: "aborted" });
+      }
     } catch (error: unknown) {
-      if (error instanceof Error && error.name === "AbortError") return;
-      toast.error(error instanceof Error ? error.message : "Failed to get response");
+      updateMessage(assistantId, {
+        content: error instanceof Error && error.message ? error.message : "Failed to get response",
+        mode: "error",
+        streaming: false,
+      });
     } finally {
       if (abortRef.current === controller) abortRef.current = null;
       setLoading(false);
@@ -338,12 +338,11 @@ const NewSearchPage = () => {
     }
   };
 
-  const historyItems: ChatHistoryItem[] = sessions.map((s) => ({
-    id: s.id,
-    title: s.title,
-    updatedAt: s.updatedAt,
-    preview: s.preview,
-    projectId: s.projectId,
+  const historyItems: ChatHistoryItem[] = conversations.map((c) => ({
+    id: c.conversationId,
+    title: c.title,
+    updatedAt: c.lastMessageAt || c.updatedAt || "",
+    projectId: c.projectId || undefined,
   }));
 
   return (
@@ -355,11 +354,11 @@ const NewSearchPage = () => {
         onToggleCollapsed={() => setHistoryCollapsed((v) => !v)}
         newChatHref={chatHref(null)}
         chatHref={(id) => {
-          const session = sessions.find((item) => item.id === id);
-          return chatHref(id, session?.projectId || projectId);
+          const conversation = conversations.find((item) => item.conversationId === id);
+          return chatHref(id, conversation?.projectId || projectId);
         }}
         onNewChat={startNewChat}
-        onDelete={deleteChat}
+        onDelete={(id) => void deleteChat(id)}
       />
 
       <div className="flex-1 flex flex-col h-full min-w-0 relative">
@@ -423,7 +422,18 @@ const NewSearchPage = () => {
                       content={message.content}
                       documents={message.documents}
                       thinking={message.thinking}
+                      steps={message.steps}
+                      citations={message.citations}
+                      mode={message.mode}
+                      streaming={message.streaming}
                       activeDocumentId={previewDoc?.id}
+                      onOpenCitation={(citation) =>
+                        setPreviewDoc({
+                          id: citation.documentId,
+                          title: citation.title || "Document",
+                          href: `/view/${citation.documentId}`,
+                        })
+                      }
                       onOpenDocument={(doc) =>
                         setPreviewDoc({
                           id: doc.id,
@@ -434,7 +444,6 @@ const NewSearchPage = () => {
                     />
                   )
                 )}
-                {loading && <TypingIndicator />}
               </div>
             )}
 
