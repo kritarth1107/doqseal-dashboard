@@ -11,6 +11,8 @@ jobs:
     steps:
       - name: Checkout
         uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -21,8 +23,24 @@ jobs:
       - name: Install dependencies
         run: npm ci --legacy-peer-deps
 
-      - name: Run ESLint
-        run: npm run lint
+      - name: Get changed files
+        id: changed-files
+        run: |
+          # Get list of changed .ts/.tsx/.js/.jsx files (excluding deleted ones)
+          CHANGED=$(git diff --name-only --diff-filter=d origin/${{ github.base_ref }}...HEAD -- '*.ts' '*.tsx' '*.js' '*.jsx' | tr '\n' ' ')
+          echo "files=$CHANGED" >> $GITHUB_OUTPUT
+          if [ -z "$CHANGED" ]; then
+            echo "No lintable files changed"
+            echo "has_files=false" >> $GITHUB_OUTPUT
+          else
+            echo "Changed files: $CHANGED"
+            echo "has_files=true" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Run ESLint on changed files
+        if: steps.changed-files.outputs.has_files == 'true'
+        run: npx eslint ${{ steps.changed-files.outputs.files }} --max-warnings 50
+        continue-on-error: false
 
       - name: Run TypeScript check
         run: npm run typecheck

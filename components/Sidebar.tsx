@@ -32,6 +32,7 @@ export function Sidebar() {
   const { userData, activeOrg, activeOrgId, setActiveOrgId } = useAuth();
 
   useEffect(() => {
+    // eslint-disable-next-line react-hooks/set-state-in-effect -- Intentional: sync collapsed state with route changes
     setIsCollapsed(pathname?.startsWith("/intelligence") ?? false);
   }, [pathname]);
 
@@ -341,7 +342,7 @@ export function Sidebar() {
             </div>
             <div className="px-4 py-12 text-center flex flex-col items-center justify-center gap-2">
               <Search className="w-8 h-8 text-gray-300" />
-              <p className="text-sm text-gray-500">No results found for "{searchQuery}"</p>
+              <p className="text-sm text-gray-500">No results found for &quot;{searchQuery}&quot;</p>
             </div>
           </div>
         </div>
