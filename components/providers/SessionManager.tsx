@@ -1,7 +1,8 @@
 'use client'
 
-import React, { useEffect, useState, useRef } from 'react'
+import React, { useEffect, useState, useRef, useCallback } from 'react'
 import { ShieldAlert, ArrowRight, Lock } from 'lucide-react'
+import { purgeChatLocalStorage } from '@/lib/chat-history'
 
 /**
  * SessionManager - Globally monitors for 401 responses.
@@ -13,6 +14,19 @@ export function SessionManager() {
   const [countdown, setCountdown] = useState(3)
   const interceptorRef = useRef<boolean>(false)
   const refreshPromiseRef = useRef<Promise<boolean> | null>(null)
+
+  const handleLogout = useCallback(async () => {
+    try {
+      purgeChatLocalStorage();
+      const currentPath = window.location.pathname + window.location.search;
+      await fetch('/api/auth/logout', { method: 'POST' });
+      window.location.href = `/auth?redirectURL=${encodeURIComponent(currentPath)}`;
+    } catch {
+      purgeChatLocalStorage();
+      const currentPath = window.location.pathname + window.location.search;
+      window.location.href = `/auth?redirectURL=${encodeURIComponent(currentPath)}`;
+    }
+  }, []);
 
   useEffect(() => {
     if (interceptorRef.current) return
@@ -100,18 +114,7 @@ export function SessionManager() {
 
       return () => clearInterval(timer)
     }
-  }, [isExpired])
-
-  const handleLogout = async () => {
-    try {
-      const currentPath = window.location.pathname + window.location.search;
-      await fetch('/api/auth/logout', { method: 'POST' });
-      window.location.href = `/auth?redirectURL=${encodeURIComponent(currentPath)}`;
-    } catch (error) {
-      const currentPath = window.location.pathname + window.location.search;
-      window.location.href = `/auth?redirectURL=${encodeURIComponent(currentPath)}`;
-    }
-  };
+  }, [isExpired, handleLogout])
 
   if (!isExpired) return null
 
