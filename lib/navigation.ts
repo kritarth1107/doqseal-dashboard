@@ -12,14 +12,19 @@
   Key,
   Gauge,
   Settings,
+  Layers,
   type LucideIcon,
 } from "lucide-react";
+
+export type OrgFeature = "bundles";
 
 export type NavItem = {
   name: string;
   href: string;
   icon: LucideIcon;
   badge?: string;
+  /** Shown only when the active organisation has this feature switched on */
+  requiresFeature?: OrgFeature;
 };
 
 export type NavGroup = {
@@ -37,6 +42,7 @@ export const navGroups: NavGroup[] = [
     items: [
       { name: "Document Drive", icon: HardDrive, href: "/drive" },
       { name: "AI Intelligence", icon: Brain, href: "/intelligence" },
+      { name: "Case packs", icon: Layers, href: "/bundles", requiresFeature: "bundles" },
       { name: "Projects", icon: FolderKanban, href: "/projects" },
       { name: "Request Links", icon: Link2, href: "/request-links" },
     ],
@@ -60,3 +66,16 @@ export const navGroups: NavGroup[] = [
     ],
   },
 ];
+
+/** Navigation for an organisation: drops items whose feature is off and empty groups. */
+export function visibleNavGroups(
+  groups: NavGroup[],
+  features: Partial<Record<OrgFeature, boolean>> | null | undefined
+): NavGroup[] {
+  return groups
+    .map((group) => ({
+      ...group,
+      items: group.items.filter((item) => !item.requiresFeature || features?.[item.requiresFeature] === true),
+    }))
+    .filter((group) => group.items.length > 0);
+}

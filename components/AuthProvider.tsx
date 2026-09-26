@@ -8,6 +8,8 @@ interface UserOrganisation {
   name: string;
   role: string;
   logoUrl?: string | null;
+  /** Per-organisation feature flags from the backend profile */
+  features?: { bundles?: boolean };
 }
 
 interface UserData {

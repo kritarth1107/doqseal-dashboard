@@ -15,7 +15,7 @@ import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useAuth } from "@/components/AuthProvider";
 import { signOut } from "next-auth/react";
-import { navGroups } from "@/lib/navigation";
+import { navGroups, visibleNavGroups } from "@/lib/navigation";
 import { purgeChatLocalStorage } from "@/lib/chat-history";
 
 export function Sidebar() {
@@ -221,7 +221,7 @@ export function Sidebar() {
 
         {/* Navigation Content */}
         <div className="flex-1 overflow-y-auto px-3 py-2 space-y-6 [&::-webkit-scrollbar]:w-1 [&::-webkit-scrollbar-track]:bg-transparent [&::-webkit-scrollbar-thumb]:bg-gray-200 [&::-webkit-scrollbar-thumb]:rounded-full hover:[&::-webkit-scrollbar-thumb]:bg-gray-300">
-          {navGroups.map((group, groupIdx) => (
+          {visibleNavGroups(navGroups, activeOrg?.features).map((group, groupIdx) => (
             <div key={groupIdx} className={`space-y-0.5 ${isCollapsed ? 'items-center flex flex-col' : ''}`}>
               {group.label && !isCollapsed && (
                 <div className="text-[11px] font-semibold text-gray-400 mb-1.5 px-2.5 uppercase tracking-wider mt-2">
