@@ -133,6 +133,7 @@ export function ThinkingTrace({
   const [shown, setShown] = useState(live ? 1 : steps.length);
   const stepRef = useRef<HTMLLIElement>(null);
 
+  // eslint-disable-next-line react-hooks/set-state-in-effect -- Pre-existing: sync animation state with props
   useEffect(() => {
     if (!live) {
       setShown(steps.length);
