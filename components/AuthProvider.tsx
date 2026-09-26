@@ -33,21 +33,18 @@ interface AuthContextType {
 
 const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
+export function AuthProvider({
+  children,
+  initialOrgId = null,
+}: {
+  children: React.ReactNode;
+  initialOrgId?: string | null;
+}) {
   const [userData, setUserData] = useState<UserData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [activeOrgId, setActiveOrgIdState] = useState<string | null>(null);
+  const [activeOrgId, setActiveOrgIdState] = useState<string | null>(initialOrgId);
   const pathname = usePathname();
   const router = useRouter();
-
-  // Initialize activeOrgId from localStorage
-  useEffect(() => {
-    const savedOrgId = localStorage.getItem("active_organisation_id");
-    if (savedOrgId) {
-      setActiveOrgIdState(savedOrgId);
-      document.cookie = `active_organisation_id=${encodeURIComponent(savedOrgId)}; path=/; SameSite=Lax`;
-    }
-  }, []);
 
   const setActiveOrgId = (id: string) => {
     setActiveOrgIdState(id);
@@ -64,7 +61,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
         
         // If no active org is set, or if the current active org isn't in the new list,
         // default to the first one available.
-        const savedOrgId = localStorage.getItem("active_organisation_id");
+        const savedOrgId = localStorage.getItem("active_organisation_id") || initialOrgId;
         const userOrgs = data.data.organisations || [];
         
         if (userOrgs.length > 0) {
@@ -85,7 +82,15 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
   };
 
   useEffect(() => {
-    fetchUser();
+    const saved = localStorage.getItem("active_organisation_id");
+    if (initialOrgId && saved !== initialOrgId) {
+      localStorage.setItem("active_organisation_id", initialOrgId);
+    } else if (!initialOrgId && saved) {
+      setActiveOrgId(saved);
+    }
+    void fetchUser();
+    // Org id is seeded once so stats can start before /auth/me returns.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   // Gate dashboard until onboarding is complete
@@ -111,7 +116,7 @@ export function AuthProvider({ children }: { children: React.ReactNode }) {
     userData &&
     ((!onboardingDone && !onOnboardingPage) || (onboardingDone && onOnboardingPage));
 
-  if (loading || blockingForOnboarding) {
+  if (blockingForOnboarding) {
     return (
       <AuthContext.Provider value={{ 
         userData, 

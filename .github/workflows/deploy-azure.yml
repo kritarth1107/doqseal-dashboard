@@ -59,3 +59,11 @@ jobs:
           az webapp restart \
             --name "$WEBAPP_NAME" \
             --resource-group "$RESOURCE_GROUP"
+          az webapp config set \
+            --name "$WEBAPP_NAME" \
+            --resource-group "$RESOURCE_GROUP" \
+            --http20-enabled true
+          az webapp update \
+            --name "$WEBAPP_NAME" \
+            --resource-group "$RESOURCE_GROUP" \
+            --client-affinity-enabled false
