@@ -1,7 +1,7 @@
 export function getCollectBaseUrl(): string {
   const raw =
     process.env.NEXT_PUBLIC_COLLECT_URL?.trim() ||
-    "https://collect.doqseal.com";
+    "https://app.doqseal.com";
   return raw.replace(/\/$/, "");
 }
 

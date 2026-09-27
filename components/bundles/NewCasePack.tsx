@@ -182,7 +182,10 @@ export function NewCasePack() {
   const [showMissing, setShowMissing] = useState(false);
 
   useEffect(() => {
-    if (!api) return;
+    if (!api) {
+      setPhase("ready");
+      return;
+    }
     let cancelled = false;
     setPhase("loading");
     Promise.all([api.starters(), api.templates()])

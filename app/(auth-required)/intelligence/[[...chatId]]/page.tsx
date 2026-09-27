@@ -163,6 +163,11 @@ const NewSearchPage = () => {
   }, [refreshConversations]);
 
   useEffect(() => {
+    if (createdChatId.current && createdChatId.current === routeChatId) return;
+    abortRef.current?.abort();
+  }, [routeChatId]);
+
+  useEffect(() => {
     let cancelled = false;
     async function hydrate() {
       if (!routeChatId) {
@@ -253,12 +258,28 @@ const NewSearchPage = () => {
     setMessages((prev) => prev.map((m) => (m.id === id ? { ...m, ...patch } : m)));
   };
 
-  const fromRun = (state: ChatRunState): Partial<Message> => ({
-    content: state.content,
-    steps: state.steps,
-    citations: state.citations,
-    mode: state.decline ? "declined" : state.error ? "error" : state.mode,
-  });
+  const fromRun = (state: ChatRunState): Partial<Message> => {
+    const inventory = state.citations.filter((citation) => citation.kind || citation.filename);
+    return {
+      content: state.content,
+      steps: state.steps,
+      citations: state.citations,
+      documents: inventory.length
+        ? inventory.map((citation) => ({
+            id: citation.documentId,
+            patientName: citation.title || "Document",
+            filename: citation.kind || "Document",
+            kind: citation.kind || undefined,
+            fileName: citation.filename || undefined,
+            status: "ready",
+            href: citation.projectId
+              ? `/projects/${citation.projectId}/documents/${citation.documentId}`
+              : `/view/${citation.documentId}`,
+          }))
+        : undefined,
+      mode: state.decline ? "declined" : state.error ? "error" : state.mode,
+    };
+  };
 
   const sendMessage = async (text: string) => {
     const trimmed = text.trim();

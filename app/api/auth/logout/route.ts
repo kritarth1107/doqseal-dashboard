@@ -26,6 +26,13 @@ export async function POST(request: Request) {
       path: "/",
       maxAge: 0,
     });
+    cookieStore.set("active_organisation_id", "", {
+      httpOnly: false,
+      secure: process.env.NODE_ENV === "production",
+      sameSite: "lax",
+      path: "/",
+      maxAge: 0,
+    });
 
     return NextResponse.json({ success: true, message: "Logged out successfully" });
   } catch (error) {

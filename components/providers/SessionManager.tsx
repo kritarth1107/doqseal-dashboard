@@ -18,11 +18,13 @@ export function SessionManager() {
   const handleLogout = useCallback(async () => {
     try {
       purgeChatLocalStorage();
+      localStorage.removeItem("active_organisation_id");
       const currentPath = window.location.pathname + window.location.search;
       await fetch('/api/auth/logout', { method: 'POST' });
       window.location.href = `/auth?redirectURL=${encodeURIComponent(currentPath)}`;
     } catch {
       purgeChatLocalStorage();
+      localStorage.removeItem("active_organisation_id");
       const currentPath = window.location.pathname + window.location.search;
       window.location.href = `/auth?redirectURL=${encodeURIComponent(currentPath)}`;
     }

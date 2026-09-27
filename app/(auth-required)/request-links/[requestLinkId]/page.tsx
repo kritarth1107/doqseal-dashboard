@@ -18,6 +18,7 @@ import {
   RequestLinkForm,
   RequestLinkFormValues,
   toApiPayload,
+  toDatetimeLocalValue,
 } from "@/components/request-links/RequestLinkForm";
 
 type Submission = {
@@ -71,6 +72,7 @@ export default function RequestLinkDetailPage() {
       const subData = await subRes.json();
       const projData = await projRes.json();
       if (!linkRes.ok) throw new Error(linkData.error || "Not found");
+      if (!subRes.ok) throw new Error(subData.error || "Failed to load submissions");
       const link = linkData.data;
       setSlug(link.slug);
       setShareUrl(link.shareUrl || buildCollectShareUrl(link.slug));
@@ -100,9 +102,7 @@ export default function RequestLinkDetailPage() {
           verifyMobile: Boolean(link.settings?.verifyMobile),
         },
         projectId: link.projectId || "",
-        expiresAt: link.expiresAt
-          ? new Date(link.expiresAt).toISOString().slice(0, 16)
-          : "",
+        expiresAt: toDatetimeLocalValue(link.expiresAt),
         status: link.status,
       });
       setSubmissions(Array.isArray(subData.data) ? subData.data : []);

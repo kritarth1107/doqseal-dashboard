@@ -41,6 +41,7 @@ export function Sidebar() {
   const handleLogout = async () => {
     try {
       purgeChatLocalStorage();
+      localStorage.removeItem("active_organisation_id");
       // 1. Sign out from NextAuth
       await signOut({ redirect: false });
 

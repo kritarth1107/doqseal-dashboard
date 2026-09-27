@@ -67,10 +67,21 @@ export default function RequestLinksPage() {
     setTimeout(() => setCopiedId(null), 2000);
   };
 
+  const displayStatus = (link: RequestLink) => {
+    if (
+      link.status === "active" &&
+      link.expiresAt &&
+      new Date(link.expiresAt).getTime() < Date.now()
+    ) {
+      return "expired";
+    }
+    return link.status;
+  };
+
   const togglePause = async (link: RequestLink) => {
     if (!activeOrgId) return;
     const next = link.status === "active" ? "paused" : "active";
-    await fetch(
+    const res = await fetch(
       `/api/request-links/${link.requestLinkId}`,
       withOrgHeaders(activeOrgId, {
         method: "PATCH",
@@ -78,6 +89,11 @@ export default function RequestLinksPage() {
         body: JSON.stringify({ status: next }),
       })
     );
+    if (!res.ok) {
+      const data = await res.json().catch(() => ({}));
+      setError(data.error || "Could not update this link");
+      return;
+    }
     await load();
   };
 
@@ -92,7 +108,7 @@ export default function RequestLinksPage() {
       <div className="max-w-6xl mx-auto">
         <PageHeader
           title="Request Links"
-          description="Create branded upload links. Customers submit documents on collect.doqseal.com without WhatsApp file sharing."
+          description="Create branded upload links. Customers submit documents on app.doqseal.com without WhatsApp file sharing."
           actions={
             <div className="flex gap-2">
               <Link
@@ -163,12 +179,14 @@ export default function RequestLinksPage() {
                 <div className="lg:col-span-3">
                   <span
                     className={`inline-flex px-2.5 py-1 rounded-full text-xs font-medium ${
-                      link.status === "active"
+                      displayStatus(link) === "active"
                         ? "bg-emerald-50 text-emerald-700"
-                        : "bg-amber-50 text-amber-700"
+                        : displayStatus(link) === "expired"
+                          ? "bg-slate-100 text-slate-600"
+                          : "bg-amber-50 text-amber-700"
                     }`}
                   >
-                    {link.status}
+                    {displayStatus(link)}
                   </span>
                 </div>
                 <div className="lg:col-span-4 flex flex-wrap gap-2 justify-end">

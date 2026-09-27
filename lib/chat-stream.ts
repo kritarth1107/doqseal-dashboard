@@ -20,6 +20,9 @@ export type ChatCitation = {
   title?: string | null;
   page?: number | null;
   quote?: string | null;
+  filename?: string | null;
+  kind?: string | null;
+  projectId?: string | null;
 };
 
 export type ChatStreamEvent =
