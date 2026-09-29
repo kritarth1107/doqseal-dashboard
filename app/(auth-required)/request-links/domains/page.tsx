@@ -4,6 +4,7 @@ import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { ChevronLeft, Plus, ShieldCheck } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { StackedCardsSkeleton } from "@/components/ui/Shimmer";
 import { useAuth } from "@/components/AuthProvider";
 
 type DomainRow = {
@@ -125,7 +126,7 @@ export default function CollectDomainsPage() {
         )}
 
         {loading ? (
-          <p className="text-sm text-slate-500">Loading…</p>
+          <StackedCardsSkeleton count={3} />
         ) : items.length === 0 ? (
           <p className="text-sm text-slate-500">No custom domains yet.</p>
         ) : (

@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import { useParams } from "next/navigation";
 import Link from "next/link";
-import { ArrowLeft, Download, Mail, PenLine, CheckCircle2, Clock, Loader2 } from "lucide-react";
+import { ArrowLeft, Download, Mail, PenLine, CheckCircle2, Clock } from "lucide-react";
+import { DetailSkeleton } from "@/components/ui/Shimmer";
 import { useAuth } from "@/components/AuthProvider";
 import { withOrgHeaders } from "@/lib/client-api";
 import { formatEnvelopeDate } from "@/lib/envelope-api";
@@ -74,14 +75,7 @@ export default function EnvelopeDetailPage() {
   }, [activeOrgId, envelopeId]);
 
   if (loading) {
-    return (
-      <div className="flex-1 overflow-y-auto bg-[#f8fafc] p-4 sm:p-8 pt-16 sm:pt-20">
-        <div className="max-w-4xl mx-auto py-16 flex items-center justify-center text-gray-500">
-          <Loader2 className="w-6 h-6 animate-spin mr-2" />
-          Loading envelope…
-        </div>
-      </div>
-    );
+    return <DetailSkeleton />;
   }
 
   if (error || !envelope) {

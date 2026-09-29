@@ -4,6 +4,7 @@ import { FormEvent, useEffect, useMemo, useState } from "react";
 import { useParams, useSearchParams } from "next/navigation";
 import Link from "next/link";
 import { CheckCircle2, Loader2, Upload } from "lucide-react";
+import { FormSkeleton } from "@/components/ui/Shimmer";
 
 type Requirement = {
   requirementId: string;
@@ -202,8 +203,10 @@ export default function CollectForm() {
 
   if (loading) {
     return (
-      <div className="min-h-screen flex items-center justify-center text-slate-500 text-sm">
-        <Loader2 className="w-5 h-5 animate-spin mr-2" /> Loading…
+      <div className="min-h-screen bg-slate-50 px-4 py-16">
+        <div className="max-w-xl mx-auto">
+          <FormSkeleton fields={4} />
+        </div>
       </div>
     );
   }

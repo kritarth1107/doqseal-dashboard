@@ -16,7 +16,7 @@ export function Timeline({
   error: string | null;
   bundle: BundleDetail | null;
 }) {
-  if (phase === "loading") return <LoadingState label="Loading activity…" />;
+  if (phase === "loading") return <LoadingState label="Loading activity…" variant="inline" />;
   if (phase === "error") {
     return <p className="text-sm text-slate-500 py-6 text-center">{error || "Could not load activity."}</p>;
   }

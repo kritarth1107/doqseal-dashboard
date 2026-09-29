@@ -3,7 +3,8 @@
 import { useEffect, useState } from "react";
 import Link from "next/link";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { Gauge, Loader2 } from "lucide-react";
+import { Gauge } from "lucide-react";
+import { StackedCardsSkeleton } from "@/components/ui/Shimmer";
 import { useAuth } from "@/components/AuthProvider";
 import { withOrgHeaders } from "@/lib/client-api";
 
@@ -153,9 +154,7 @@ export default function LimitsPage() {
         />
 
         {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-6 h-6 animate-spin text-[#2563eb]" />
-          </div>
+          <StackedCardsSkeleton count={4} />
         ) : (
           <div className="space-y-4">
             <div className="bg-white border border-gray-200 rounded-2xl p-5 shadow-sm">

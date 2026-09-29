@@ -17,6 +17,7 @@ import {
   Check,
 } from "lucide-react";
 import { toast } from "sonner";
+import { TableRowsSkeleton } from "@/components/ui/Shimmer";
 import { useAuth } from "@/components/AuthProvider";
 import { withOrgHeaders } from "@/lib/client-api";
 
@@ -419,8 +420,8 @@ export default function MembersManagementPage() {
       </div>
 
       {loading ? (
-        <div className="flex items-center justify-center py-20">
-          <Loader2 className="w-6 h-6 animate-spin text-[#2563eb]" />
+        <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">
+          <TableRowsSkeleton rows={6} />
         </div>
       ) : (
         <div className="bg-white rounded-2xl border border-gray-200 overflow-hidden shadow-sm">

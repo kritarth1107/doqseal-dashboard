@@ -7,6 +7,7 @@ import { withOrgHeaders } from "@/lib/client-api";
 import type { UploadResult } from "@/lib/upload-document";
 import type { BundleDetail } from "@/lib/bundles/types";
 import { INPUT_CLASS, PRIMARY_BUTTON, SECONDARY_BUTTON } from "./ui";
+import { Shimmer } from "@/components/ui/Shimmer";
 
 type DriveDocument = {
   documentId: string;
@@ -171,8 +172,13 @@ export function AddDocumentsModal({
               {driveError ? (
                 <p className="text-sm text-red-600" role="alert">{driveError}</p>
               ) : docs === null ? (
-                <div className="flex items-center gap-2 text-sm text-slate-500 py-6 justify-center">
-                  <Loader2 className="w-4 h-4 animate-spin" /> Loading documents…
+                <div className="space-y-2 py-2" aria-busy="true" aria-label="Loading documents">
+                  {Array.from({ length: 5 }, (_, index) => (
+                    <div key={index} className="flex items-center gap-3 px-2 py-2">
+                      <Shimmer className="h-8 w-8 rounded-lg shrink-0" />
+                      <Shimmer className="h-3.5 flex-1 rounded" />
+                    </div>
+                  ))}
                 </div>
               ) : filtered.length === 0 ? (
                 <p className="text-sm text-slate-500 py-6 text-center">

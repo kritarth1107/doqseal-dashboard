@@ -1,6 +1,7 @@
 "use client";
 
 import React, { useState, useEffect, useCallback } from "react";
+import Link from "next/link";
 import { useSearchParams } from "next/navigation";
 import {
   Key,
@@ -20,6 +21,7 @@ import {
   Loader2,
 } from "lucide-react";
 import { useAuth } from "@/components/AuthProvider";
+import { Shimmer, StackedCardsSkeleton } from "@/components/ui/Shimmer";
 import { toast } from "sonner";
 import {
   WEBHOOK_EVENTS,
@@ -425,16 +427,16 @@ export default function ApiManagementPage() {
             </thead>
             <tbody className="divide-y divide-gray-100">
               {isLoadingKeys ? (
-                <tr>
-                  <td colSpan={6} className="px-6 py-12 text-center">
-                    <div className="flex flex-col items-center gap-3">
-                      <div className="w-8 h-8 border-2 border-[#2563eb] border-t-transparent rounded-full animate-spin" />
-                      <span className="text-xs text-gray-500 font-medium">
-                        Loading your keys...
-                      </span>
-                    </div>
-                  </td>
-                </tr>
+                Array.from({ length: 4 }, (_, index) => (
+                  <tr key={index}>
+                    <td className="px-6 py-4"><Shimmer className="h-3.5 w-28 rounded" /></td>
+                    <td className="px-6 py-4"><Shimmer className="h-3.5 w-36 rounded" /></td>
+                    <td className="px-6 py-4"><Shimmer className="h-3.5 w-24 rounded" /></td>
+                    <td className="px-6 py-4"><Shimmer className="h-5 w-16 rounded-full" /></td>
+                    <td className="px-6 py-4"><Shimmer className="h-3.5 w-20 rounded" /></td>
+                    <td className="px-6 py-4"><Shimmer className="h-3.5 w-8 rounded ml-auto" /></td>
+                  </tr>
+                ))
               ) : apiKeys.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center">
@@ -546,9 +548,7 @@ export default function ApiManagementPage() {
       </div>
 
       {isLoadingWebhooks ? (
-        <div className="flex items-center justify-center py-16">
-          <Loader2 className="w-6 h-6 animate-spin text-[#2563eb]" />
-        </div>
+        <StackedCardsSkeleton count={2} />
       ) : (
         <>
           <div className="bg-white rounded-xl border border-gray-200 p-6 space-y-5 shadow-sm">
@@ -671,6 +671,21 @@ export default function ApiManagementPage() {
             Create APP ID + secret pairs to authenticate with DoqSeal APIs.
           </p>
         </div>
+
+        <section className="mb-8 rounded-xl border border-amber-200 bg-amber-50 px-5 py-4 dark:border-amber-800/60">
+          <h2 className="text-sm font-semibold text-amber-950 dark:text-amber-50">
+            Working API keys require a paid plan
+          </h2>
+          <p className="mt-1 text-sm text-amber-900 dark:text-amber-100">
+            To get working API keys, you need a paid plan.
+          </p>
+          <Link
+            href="/settings/billing/upgrade"
+            className="mt-3 inline-flex text-sm font-medium text-[#2563eb] hover:text-[#1d4ed8] dark:text-blue-300 dark:hover:text-blue-200"
+          >
+            View paid plans
+          </Link>
+        </section>
 
         <div className="flex overflow-x-auto custom-scrollbar border-b border-gray-200 mb-8 pb-px">
           <div className="flex gap-6 min-w-max px-1">

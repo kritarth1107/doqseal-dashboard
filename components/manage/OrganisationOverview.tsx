@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { Building2, Loader2, Pencil } from "lucide-react";
+import { Building2, Pencil } from "lucide-react";
+import { ProfileCardSkeleton } from "@/components/ui/Shimmer";
 import { toast } from "sonner";
 import { useAuth } from "@/components/AuthProvider";
 import { withOrgHeaders } from "@/lib/client-api";
@@ -96,8 +97,8 @@ export function OrganisationOverview() {
 
   if (loading) {
     return (
-      <div className="flex justify-center py-12 mb-8">
-        <Loader2 className="w-6 h-6 animate-spin text-[#2563eb]" />
+      <div className="mb-8">
+        <ProfileCardSkeleton />
       </div>
     );
   }

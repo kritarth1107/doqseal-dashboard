@@ -13,6 +13,7 @@ import {
   Play,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { ListRowsSkeleton } from "@/components/ui/Shimmer";
 import { useAuth } from "@/components/AuthProvider";
 import { withOrgHeaders } from "@/lib/client-api";
 import { buildCollectShareUrl } from "@/lib/collect-url";
@@ -140,7 +141,7 @@ export default function RequestLinksPage() {
         </div>
 
         {loading ? (
-          <div className="text-sm text-slate-500">Loading…</div>
+          <ListRowsSkeleton rows={4} />
         ) : error ? (
           <div className="text-sm text-red-600">{error}</div>
         ) : filtered.length === 0 ? (

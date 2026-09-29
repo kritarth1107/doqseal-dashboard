@@ -3,6 +3,7 @@
 import { useEffect, useMemo, useState } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
+import { DetailSkeleton } from "@/components/ui/Shimmer";
 import {
   ArrowLeft,
   Braces,
@@ -468,11 +469,7 @@ export function DocumentDetailView({
   };
 
   if (loading) {
-    return (
-      <div className="flex-1 flex items-center justify-center bg-[#f8fafc]">
-        <Loader2 className="h-6 w-6 animate-spin text-[#2563eb]" />
-      </div>
-    );
+    return <DetailSkeleton />;
   }
 
   if (!doc) {

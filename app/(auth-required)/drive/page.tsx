@@ -11,11 +11,11 @@ import {
   Image as ImageIcon,
   Grid3x3,
   List,
-  Loader2,
   Trash2,
 } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { CardGridSkeleton, ListRowsSkeleton } from "@/components/ui/Shimmer";
 import { UploadModal, type UploadProjectOption } from "@/components/UploadModal";
 import { useAuth } from "@/components/AuthProvider";
 import { documentHref } from "@/components/documents/DocumentDetailView";
@@ -288,9 +288,14 @@ export default function DrivePage() {
         </div>
 
         {loading ? (
-          <div className="flex items-center justify-center py-20 bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/10 rounded-2xl">
-            <Loader2 className="w-6 h-6 animate-spin text-[#2563eb]" />
-          </div>
+          view === "grid" ? (
+            <CardGridSkeleton
+              count={8}
+              className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-4 gap-3"
+            />
+          ) : (
+            <ListRowsSkeleton rows={6} />
+          )
         ) : filtered.length === 0 ? (
           <div className="py-16 text-center text-sm text-gray-500 dark:text-slate-400 bg-white dark:bg-[#111827] border border-gray-200 dark:border-white/10 rounded-2xl">
             No documents found

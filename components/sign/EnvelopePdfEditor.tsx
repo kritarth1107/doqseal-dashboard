@@ -1,7 +1,8 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
-import { Upload, Loader2, ZoomIn, ZoomOut } from "lucide-react";
+import { Upload, ZoomIn, ZoomOut } from "lucide-react";
+import { Shimmer } from "@/components/ui/Shimmer";
 import type { FieldType, PlacedField, SignatureProfile } from "@/components/sign/types";
 import { FIELD_META, MIN_ZOOM, MAX_ZOOM, ZOOM_STEP, SELF_SIGNER_ID } from "@/lib/sign/constants";
 import { usePdfDocument } from "@/hooks/usePdfDocument";
@@ -233,9 +234,8 @@ export function EnvelopePdfEditor({
       )}
 
       {pdfFile && loading && (
-        <div className="flex-1 flex flex-col items-center justify-center gap-3">
-          <Loader2 className="w-8 h-8 animate-spin text-[#4C00FF]" />
-          <span className="text-sm text-slate-600 font-medium">Loading document…</span>
+        <div className="flex-1 flex items-start justify-center p-6" aria-busy="true" aria-label="Loading document">
+          <Shimmer className="w-full max-w-3xl h-[70vh] rounded-xl" />
         </div>
       )}
 

@@ -3,17 +3,13 @@
 import { Suspense } from "react";
 import dynamic from "next/dynamic";
 import { useSearchParams } from "next/navigation";
-import { Loader2 } from "lucide-react";
+import { StudioSkeleton } from "@/components/ui/Shimmer";
 
 const SigningStudio = dynamic(
   () => import("@/components/sign/SigningStudio").then((m) => ({ default: m.SigningStudio })),
   {
     ssr: false,
-    loading: () => (
-      <div className="flex h-full items-center justify-center bg-slate-100 text-sm text-slate-500">
-        Loading signing studio…
-      </div>
-    ),
+    loading: () => <StudioSkeleton />,
   }
 );
 
@@ -31,11 +27,7 @@ function CreateEnvelopeContent() {
 export default function CreateEnvelopePage() {
   return (
     <Suspense
-      fallback={
-        <div className="flex h-full items-center justify-center bg-slate-100">
-          <Loader2 className="w-6 h-6 animate-spin text-indigo-600" />
-        </div>
-      }
+      fallback={<StudioSkeleton />}
     >
       <CreateEnvelopeContent />
     </Suspense>

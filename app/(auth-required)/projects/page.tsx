@@ -5,6 +5,7 @@ import Link from "next/link";
 import { Plus, FolderKanban, FileText, Sparkles, Loader2, X } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { CardGridSkeleton } from "@/components/ui/Shimmer";
 import { useAuth } from "@/components/AuthProvider";
 import { withOrgHeaders } from "@/lib/client-api";
 
@@ -115,9 +116,7 @@ export default function ProjectsPage() {
         />
 
         {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-6 h-6 animate-spin text-[#2563eb]" />
-          </div>
+          <CardGridSkeleton />
         ) : projects.length === 0 ? (
           <div className="bg-white border border-gray-200 rounded-2xl p-10 text-center">
             <p className="text-sm text-gray-600">No projects yet for this organisation.</p>

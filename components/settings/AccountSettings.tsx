@@ -3,7 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import Link from "next/link";
-import { Copy, Check, Loader2, MoreVertical, CreditCard } from "lucide-react";
+import { Copy, Check, MoreVertical, CreditCard } from "lucide-react";
 import { toast } from "sonner";
 import { useAuth } from "@/components/AuthProvider";
 import { withOrgHeaders } from "@/lib/client-api";
@@ -12,6 +12,7 @@ import {
   type PaymentMethodSummary,
 } from "@/lib/payment-method";
 import { purgeChatLocalStorage } from "@/lib/chat-history";
+import { Shimmer } from "@/components/ui/Shimmer";
 
 type SessionRow = {
   fingerprint: string;
@@ -305,8 +306,9 @@ export function AccountSettings() {
         </div>
 
         {billingLoading ? (
-          <div className="flex justify-center py-8">
-            <Loader2 className="w-5 h-5 animate-spin text-[#2563eb]" />
+          <div className="space-y-3" aria-busy="true" aria-label="Loading payment methods">
+            <Shimmer className="h-16 w-full rounded-xl" />
+            <Shimmer className="h-16 w-full rounded-xl" />
           </div>
         ) : paymentMethods.length > 0 ? (
           <ul className="divide-y divide-gray-100 dark:divide-zinc-800 rounded-xl border border-gray-200 dark:border-zinc-800">
@@ -350,8 +352,10 @@ export function AccountSettings() {
         </h2>
 
         {loading ? (
-          <div className="flex justify-center py-12">
-            <Loader2 className="w-6 h-6 animate-spin text-[#2563eb]" />
+          <div className="space-y-3" aria-busy="true" aria-label="Loading sessions">
+            <Shimmer className="h-14 w-full rounded-xl" />
+            <Shimmer className="h-14 w-full rounded-xl" />
+            <Shimmer className="h-14 w-full rounded-xl" />
           </div>
         ) : sessions.length === 0 ? (
           <p className="text-sm text-gray-500 dark:text-slate-400 py-6">

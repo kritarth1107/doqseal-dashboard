@@ -15,10 +15,10 @@ import {
   AlertCircle,
   Zap,
   ArrowDownRight,
-  Loader2,
   Sparkles,
 } from "lucide-react";
 import Link from "next/link";
+import { ChartSkeleton, StatCardsSkeleton, TableRowsSkeleton } from "@/components/ui/Shimmer";
 
 type OrgStats = {
   documentCount?: number;
@@ -217,9 +217,7 @@ export default function Dashboard() {
         {/* Stats Grid */}
         <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6">
           {loading ? (
-            <div className="col-span-full flex items-center justify-center py-12">
-              <Loader2 className="w-6 h-6 animate-spin text-[#2563eb]" />
-            </div>
+            <StatCardsSkeleton />
           ) : (
             stats.map((stat, idx) => (
               <div key={idx} className="bg-white p-6 rounded-2xl border border-gray-100 shadow-sm hover:shadow-md transition-shadow group">
@@ -266,7 +264,9 @@ export default function Dashboard() {
               </div>
             </div>
             <div className="p-6 flex-1 flex items-end justify-between gap-2 h-64 mt-4">
-              {trends.map((t, idx) => (
+              {loading ? (
+                <ChartSkeleton />
+              ) : trends.map((t, idx) => (
                 <div key={idx} className="flex-1 flex flex-col items-center gap-3 group">
                   <div
                     className="w-full bg-[#2563eb]/20 rounded-t-lg relative overflow-hidden group-hover:bg-[#2563eb]/30 transition-all cursor-pointer"
@@ -319,7 +319,9 @@ export default function Dashboard() {
             <Link href="/documents" className="text-xs font-medium text-gray-500 hover:text-[#2563eb] transition-colors">View all</Link>
           </div>
           <div className="overflow-x-auto">
-            {recentDocuments.length === 0 ? (
+            {loading ? (
+              <TableRowsSkeleton rows={4} />
+            ) : recentDocuments.length === 0 ? (
               <div className="px-6 py-10 text-center text-sm text-gray-500">
                 No recent extractions yet.
               </div>

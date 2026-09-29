@@ -65,6 +65,19 @@ function orgHeaders(orgId: string | null | undefined, json = false): Record<stri
   return headers;
 }
 
+const conversationCache = new Map<string, ConversationSummary[]>();
+
+/** Last list for this organisation, so the sidebar can paint before the network returns. */
+export function cachedConversations(orgId: string | null | undefined): ConversationSummary[] {
+  if (!orgId) return [];
+  return conversationCache.get(orgId) ?? [];
+}
+
+export function rememberConversations(orgId: string | null | undefined, items: ConversationSummary[]) {
+  if (!orgId) return;
+  conversationCache.set(orgId, items);
+}
+
 /** Lists the caller's conversations; returns [] if the service is unavailable. */
 export async function fetchConversations(orgId: string | null | undefined, fetchImpl: typeof fetch = fetch): Promise<ConversationSummary[]> {
   if (!orgId) return [];
@@ -72,7 +85,9 @@ export async function fetchConversations(orgId: string | null | undefined, fetch
     const res = await fetchImpl("/api/intelligence/conversations", { headers: orgHeaders(orgId), cache: "no-store" });
     if (!res.ok) return [];
     const data = await res.json();
-    return Array.isArray(data?.conversations) ? data.conversations : [];
+    const list = Array.isArray(data?.conversations) ? data.conversations : [];
+    rememberConversations(orgId, list);
+    return list;
   } catch {
     return [];
   }

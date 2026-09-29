@@ -16,6 +16,7 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { DetailSkeleton } from "@/components/ui/Shimmer";
 import { UploadModal } from "@/components/UploadModal";
 import { useAuth } from "@/components/AuthProvider";
 import { withOrgHeaders } from "@/lib/client-api";
@@ -134,11 +135,7 @@ export default function ProjectDetailPage() {
   };
 
   if (loading) {
-    return (
-      <div className="flex-1 flex items-center justify-center bg-[#f8fafc]">
-        <Loader2 className="w-6 h-6 animate-spin text-[#2563eb]" />
-      </div>
-    );
+    return <DetailSkeleton />;
   }
 
   if (!project) {

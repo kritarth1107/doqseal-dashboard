@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/components/AuthProvider";
 import { withOrgHeaders } from "@/lib/client-api";
 import { resolveMediaUrl } from "@/lib/media-url";
+import { FormSkeleton } from "@/components/ui/Shimmer";
 
 type OrgAddress = {
   line1?: string | null;
@@ -144,11 +145,7 @@ export function OrganisationProfileForm() {
   };
 
   if (loading) {
-    return (
-      <div className="flex justify-center py-16">
-        <Loader2 className="w-6 h-6 animate-spin text-[#2563eb]" />
-      </div>
-    );
+    return <FormSkeleton fields={6} />;
   }
 
   if (!editable) {

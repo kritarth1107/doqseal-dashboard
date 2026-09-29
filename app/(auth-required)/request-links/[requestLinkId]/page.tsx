@@ -11,6 +11,7 @@ import {
   FileText,
 } from "lucide-react";
 import { PageHeader } from "@/components/ui/PageHeader";
+import { FormSkeleton } from "@/components/ui/Shimmer";
 import { useAuth } from "@/components/AuthProvider";
 import { withOrgHeaders } from "@/lib/client-api";
 import { buildCollectShareUrl } from "@/lib/collect-url";
@@ -142,9 +143,11 @@ export default function RequestLinkDetailPage() {
         </Link>
 
         {loading || !form ? (
-          <p className="text-sm text-slate-500">
-            {error || "Loading…"}
-          </p>
+          error ? (
+            <p className="text-sm text-red-600">{error}</p>
+          ) : (
+            <FormSkeleton fields={6} />
+          )
         ) : (
           <>
             <PageHeader

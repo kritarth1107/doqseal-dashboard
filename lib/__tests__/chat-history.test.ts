@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from "vitest";
-import { fetchConversation, fetchConversations, purgeChatLocalStorage } from "@/lib/chat-history";
+import { cachedConversations, fetchConversation, fetchConversations, purgeChatLocalStorage } from "@/lib/chat-history";
 
 class MemoryStorage implements Storage {
   private data = new Map<string, string>();
@@ -57,6 +57,7 @@ describe("conversation list and detail", () => {
     expect(list).toEqual([{ conversationId: "c1", title: "t" }]);
     const [, init] = fetchImpl.mock.calls[0] as unknown as [string, RequestInit];
     expect((init.headers as Record<string, string>)["x-organisation-id"]).toBe("org-a");
+    expect(cachedConversations("org-a")).toEqual([{ conversationId: "c1", title: "t" }]);
   });
 
   it("fails soft to an empty list", async () => {

@@ -18,18 +18,13 @@ import chatTitlesData from "@/utils/new_chat_titles.json";
 import { UploadModal } from "@/components/UploadModal";
 import { AssistantMessage, UserMessage } from "@/components/intelligence/ChatMessage";
 import { DocumentPreviewPanel, type PreviewDocument } from "@/components/intelligence/DocumentPreviewPanel";
-import {
-  ChatHistorySidebar,
-  type ChatHistoryItem,
-} from "@/components/intelligence/ChatHistorySidebar";
+import { useChatHistory } from "@/components/intelligence/ChatHistoryFrame";
+import { Shimmer } from "@/components/ui/Shimmer";
 import { useAuth } from "@/components/AuthProvider";
 import { withOrgHeaders } from "@/lib/client-api";
 import { isPrescriptionProject } from "@/lib/project-config";
 import {
-  deleteConversation,
   fetchConversation,
-  fetchConversations,
-  type ConversationSummary,
   type StoredChatMessage,
 } from "@/lib/chat-history";
 import { sendChat, type ChatRunState } from "@/lib/chat-stream";
@@ -117,7 +112,7 @@ const NewSearchPage = () => {
   const router = useRouter();
   const pathname = usePathname();
   const searchParams = useSearchParams();
-  const { activeOrgId } = useAuth();
+  const { activeOrgId, userData } = useAuth();
   const projectId = searchParams.get("project") ?? "";
   const routeChatId = pathname.startsWith("/intelligence/")
     ? decodeURIComponent(pathname.slice("/intelligence/".length).split("/")[0] || "")
@@ -131,11 +126,16 @@ const NewSearchPage = () => {
   const [isUploadModalOpen, setIsUploadModalOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [loading, setLoading] = useState(false);
-  const [conversations, setConversations] = useState<ConversationSummary[]>([]);
-  const [historyCollapsed, setHistoryCollapsed] = useState(false);
+  const history = useChatHistory();
   const [previewDoc, setPreviewDoc] = useState<PreviewDocument | null>(null);
   const createdChatId = useRef<string | null>(null);
   const abortRef = useRef<AbortController | null>(null);
+  const greetingIndex = useRef<number | null>(null);
+  const firstName = (() => {
+    const raw = userData?.name?.trim() || "";
+    if (!raw || /doqseal user/i.test(raw)) return "there";
+    return raw.split(/\s+/)[0];
+  })();
 
   const chatHref = (id?: string | null, project?: string) => {
     const base = id ? `/intelligence/${id}` : "/intelligence";
@@ -148,19 +148,29 @@ const NewSearchPage = () => {
 
   useEffect(() => {
     const greetingsList = chatTitlesData.greetings as Greeting[];
-    const randomGreeting = greetingsList[Math.floor(Math.random() * greetingsList.length)];
-    setGreeting(randomGreeting);
+    if (greetingIndex.current == null) {
+      greetingIndex.current = Math.floor(Math.random() * greetingsList.length);
+    }
+    const picked = greetingsList[greetingIndex.current];
+    setGreeting({
+      ...picked,
+      text: picked.text.replaceAll("{name}", firstName),
+    });
     setIsMounted(true);
-  }, []);
+  }, [firstName]);
 
-  const refreshConversations = React.useCallback(async () => {
-    // Fails soft: an unavailable service just shows an empty list.
-    setConversations(await fetchConversations(activeOrgId));
-  }, [activeOrgId]);
+  const startNewChat = () => {
+    abortRef.current?.abort();
+    setMessages([]);
+    setQuery("");
+    setPreviewDoc(null);
+  };
+  const startNewChatRef = useRef(startNewChat);
+  startNewChatRef.current = startNewChat;
 
   useEffect(() => {
-    void refreshConversations();
-  }, [refreshConversations]);
+    history.registerNewChat(() => startNewChatRef.current());
+  }, [history]);
 
   useEffect(() => {
     if (createdChatId.current && createdChatId.current === routeChatId) return;
@@ -173,6 +183,7 @@ const NewSearchPage = () => {
       if (!routeChatId) {
         if (createdChatId.current) return;
         setMessages([]);
+        setQuery("");
         setPreviewDoc(null);
         return;
       }
@@ -227,28 +238,6 @@ const NewSearchPage = () => {
   useEffect(() => {
     scrollRef.current?.scrollTo({ top: scrollRef.current.scrollHeight, behavior: "smooth" });
   }, [messages, loading]);
-
-  const startNewChat = () => {
-    abortRef.current?.abort();
-    setMessages([]);
-    setQuery("");
-    setPreviewDoc(null);
-  };
-
-  const deleteChat = async (id: string) => {
-    const ok = await deleteConversation(activeOrgId, id);
-    if (!ok) {
-      toast.error("Could not delete this conversation");
-      return;
-    }
-    setConversations((prev) => prev.filter((c) => c.conversationId !== id));
-    if (routeChatId === id) {
-      setMessages([]);
-      setQuery("");
-      setPreviewDoc(null);
-      router.push(chatHref(null));
-    }
-  };
 
   const stopGeneration = () => {
     abortRef.current?.abort();
@@ -325,7 +314,7 @@ const NewSearchPage = () => {
         });
       } else if (result.kind === "stream") {
         updateMessage(assistantId, { ...fromRun(result.state), mode: result.aborted ? "aborted" : fromRun(result.state).mode, streaming: false });
-        void refreshConversations();
+        history.refresh();
       } else {
         updateMessage(assistantId, { streaming: false, mode: "aborted" });
       }
@@ -359,29 +348,8 @@ const NewSearchPage = () => {
     }
   };
 
-  const historyItems: ChatHistoryItem[] = conversations.map((c) => ({
-    id: c.conversationId,
-    title: c.title,
-    updatedAt: c.lastMessageAt || c.updatedAt || "",
-    projectId: c.projectId || undefined,
-  }));
-
   return (
-    <div className="flex-1 flex h-full min-h-0 bg-[#f4f4f5] dark:bg-[#0b1220]">
-      <ChatHistorySidebar
-        items={historyItems}
-        activeId={routeChatId || null}
-        collapsed={historyCollapsed}
-        onToggleCollapsed={() => setHistoryCollapsed((v) => !v)}
-        newChatHref={chatHref(null)}
-        chatHref={(id) => {
-          const conversation = conversations.find((item) => item.conversationId === id);
-          return chatHref(id, conversation?.projectId || projectId);
-        }}
-        onNewChat={startNewChat}
-        onDelete={(id) => void deleteChat(id)}
-      />
-
+    <div className="flex flex-1 h-full min-h-0 min-w-0">
       <div className="flex-1 flex flex-col h-full min-w-0 relative">
         {project && (
           <div className="shrink-0 border-b border-gray-200 dark:border-white/10 bg-white dark:bg-[#111827] px-4 sm:px-6 py-3">
@@ -625,8 +593,12 @@ const NewSearchPage = () => {
 
 function IntelligenceFallback() {
   return (
-    <div className="flex-1 flex items-center justify-center bg-[#f9f9f9] dark:bg-[#0b1220]">
-      <Loader2 className="w-6 h-6 animate-spin text-[#2563eb]" />
+    <div className="flex-1 flex flex-col justify-end bg-[#f9f9f9] dark:bg-[#0b1220] px-4 sm:px-6 pb-8" aria-busy="true" aria-label="Loading chat">
+      <div className="max-w-3xl mx-auto w-full space-y-4">
+        <Shimmer className="h-6 w-48 rounded mx-auto" />
+        <Shimmer className="h-4 w-72 max-w-full rounded mx-auto" />
+        <Shimmer className="h-14 w-full rounded-2xl" />
+      </div>
     </div>
   );
 }

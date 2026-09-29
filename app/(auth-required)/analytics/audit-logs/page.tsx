@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { History, Loader2, Search } from "lucide-react";
+import { History, Search } from "lucide-react";
+import { TableRowsSkeleton } from "@/components/ui/Shimmer";
 import { useAuth } from "@/components/AuthProvider";
 import { withOrgHeaders } from "@/lib/client-api";
 
@@ -108,9 +109,7 @@ export default function AuditLogsPage() {
           </div>
 
           {loading ? (
-            <div className="flex items-center justify-center py-20">
-              <Loader2 className="w-6 h-6 animate-spin text-[#2563eb]" />
-            </div>
+            <TableRowsSkeleton rows={6} />
           ) : filtered.length === 0 ? (
             <div className="py-16 text-center text-sm text-gray-500">No audit events found</div>
           ) : (

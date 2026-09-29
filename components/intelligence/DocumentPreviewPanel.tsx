@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import Link from "next/link";
-import { ExternalLink, FileText, Loader2, X } from "lucide-react";
+import { ExternalLink, FileText, X } from "lucide-react";
+import { Shimmer } from "@/components/ui/Shimmer";
 
 export type PreviewDocument = {
   id: string;
@@ -86,8 +87,8 @@ export function DocumentPreviewPanel({
 
       <div className="flex-1 min-h-0 overflow-auto p-4">
         {!loaded && !error && (
-          <div className="flex h-full items-center justify-center">
-            <Loader2 className="h-5 w-5 animate-spin text-[#2563eb]" />
+          <div className="h-full min-h-[16rem]" aria-busy="true" aria-label="Loading document">
+            <Shimmer className="h-full min-h-[16rem] w-full rounded-xl" />
           </div>
         )}
         {error && (

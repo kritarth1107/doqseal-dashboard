@@ -2,7 +2,8 @@
 import React, { useState, Suspense } from 'react';
 import Link from 'next/link';
 import { useRouter, useParams } from 'next/navigation';
-import { Settings as SettingsIcon, Monitor, Sun, Moon, Loader2 } from 'lucide-react';
+import { Settings as SettingsIcon, Monitor, Sun, Moon } from 'lucide-react';
+import { StackedCardsSkeleton } from '@/components/ui/Shimmer';
 import { useTheme } from 'next-themes';
 import { useAuth } from '@/components/AuthProvider';
 import { BillingSettings } from '@/components/settings/BillingSettings';
@@ -192,13 +193,7 @@ export default function SettingsPage() {
                         {activeTabId === 'account' && <AccountSettings />}
 
                         {activeTabId === 'billing' && (
-                            <Suspense
-                                fallback={
-                                    <div className="flex items-center justify-center py-24">
-                                        <Loader2 className="w-6 h-6 animate-spin text-[#2563eb]" />
-                                    </div>
-                                }
-                            >
+                            <Suspense fallback={<StackedCardsSkeleton count={3} />}>
                                 <BillingSettings />
                             </Suspense>
                         )}

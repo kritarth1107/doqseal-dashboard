@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { Shimmer } from "@/components/ui/Shimmer";
 import { MessageSquarePlus, PanelLeftClose, PanelLeft, Trash2 } from "lucide-react";
 
 export type ChatHistoryItem = {
@@ -13,6 +14,7 @@ export type ChatHistoryItem = {
 
 export function ChatHistorySidebar({
   items,
+  loading = false,
   activeId,
   collapsed,
   onToggleCollapsed,
@@ -22,6 +24,7 @@ export function ChatHistorySidebar({
   onDelete,
 }: {
   items: ChatHistoryItem[];
+  loading?: boolean;
   activeId: string | null;
   collapsed: boolean;
   onToggleCollapsed: () => void;
@@ -75,7 +78,14 @@ export function ChatHistorySidebar({
       </div>
 
       <div className="flex-1 overflow-y-auto px-2 pb-3 space-y-0.5">
-        {items.length === 0 && !collapsed && (
+        {items.length === 0 && !collapsed && loading && (
+          <div className="space-y-2 px-1 py-2" aria-hidden>
+            {Array.from({ length: 4 }, (_, index) => (
+              <Shimmer key={index} className="h-8 rounded-lg" />
+            ))}
+          </div>
+        )}
+        {items.length === 0 && !collapsed && !loading && (
           <p className="px-2 py-6 text-xs text-center text-gray-400">
             No chats yet. Start a conversation to see it here.
           </p>

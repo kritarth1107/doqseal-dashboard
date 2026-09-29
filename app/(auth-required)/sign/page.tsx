@@ -2,7 +2,8 @@
 
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
-import { Plus, Search, FileSignature, Clock, Loader2 } from "lucide-react";
+import { Plus, Search, FileSignature, Clock } from "lucide-react";
+import { ListRowsSkeleton } from "@/components/ui/Shimmer";
 import { PageHeader } from "@/components/ui/PageHeader";
 import { useAuth } from "@/components/AuthProvider";
 import { withOrgHeaders } from "@/lib/client-api";
@@ -96,10 +97,7 @@ export default function SignEnvelopesPage() {
 
         <div className="bg-white border border-gray-200 rounded-2xl overflow-hidden shadow-sm">
           {loading ? (
-            <div className="py-16 flex items-center justify-center text-gray-500">
-              <Loader2 className="w-6 h-6 animate-spin mr-2" />
-              Loading envelopes…
-            </div>
+            <ListRowsSkeleton rows={5} framed={false} />
           ) : filtered.length === 0 ? (
             <div className="py-16 text-center text-sm text-gray-500">
               No envelopes yet. Create your first envelope to get started.

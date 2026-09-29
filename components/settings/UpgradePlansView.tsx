@@ -8,6 +8,7 @@ import { toast } from "sonner";
 import { useAuth } from "@/components/AuthProvider";
 import { withOrgHeaders } from "@/lib/client-api";
 import { openRazorpaySubscriptionCheckout } from "@/lib/razorpay-checkout";
+import { CardGridSkeleton, Shimmer } from "@/components/ui/Shimmer";
 import {
   formatPlanPrice,
   type BillingInterval,
@@ -263,8 +264,12 @@ export function UpgradePlansView() {
 
   if (loading) {
     return (
-      <div className="fixed inset-0 z-50 flex justify-center items-center bg-[#f9f9f9] dark:bg-[#0b1220]">
-        <Loader2 className="w-8 h-8 animate-spin text-[#2563eb]" />
+      <div className="fixed inset-0 z-50 overflow-y-auto bg-[#f9f9f9] dark:bg-[#0b1220] px-4 sm:px-8 py-16" aria-busy="true" aria-label="Loading plans">
+        <div className="max-w-6xl mx-auto">
+          <Shimmer className="h-8 w-56 rounded mb-3" />
+          <Shimmer className="h-4 w-80 max-w-full rounded mb-10" />
+          <CardGridSkeleton count={3} />
+        </div>
       </div>
     );
   }

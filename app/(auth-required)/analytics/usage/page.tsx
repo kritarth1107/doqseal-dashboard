@@ -2,7 +2,8 @@
 
 import { useEffect, useState } from "react";
 import { PageHeader } from "@/components/ui/PageHeader";
-import { BarChart3, Cpu, FileText, HardDrive, Loader2 } from "lucide-react";
+import { BarChart3, Cpu, FileText, HardDrive } from "lucide-react";
+import { ChartSkeleton, Shimmer, StatCardsSkeleton } from "@/components/ui/Shimmer";
 import { useAuth } from "@/components/AuthProvider";
 import { withOrgHeaders } from "@/lib/client-api";
 
@@ -128,9 +129,15 @@ export default function AnalyticsUsagePage() {
         />
 
         {loading ? (
-          <div className="flex items-center justify-center py-20">
-            <Loader2 className="w-6 h-6 animate-spin text-[#2563eb]" />
-          </div>
+          <>
+            <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
+              <StatCardsSkeleton />
+            </div>
+            <div className="bg-white border border-gray-200 rounded-2xl p-6 shadow-sm">
+              <Shimmer className="h-4 w-32 rounded mb-6" />
+              <ChartSkeleton />
+            </div>
+          </>
         ) : (
           <>
             <div className="grid sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">

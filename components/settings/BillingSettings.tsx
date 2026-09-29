@@ -6,9 +6,9 @@ import {
   CreditCard,
   ExternalLink,
   Info,
-  Loader2,
   Sparkles,
 } from "lucide-react";
+import { StackedCardsSkeleton } from "@/components/ui/Shimmer";
 import { useSearchParams } from "next/navigation";
 import { toast } from "sonner";
 import { useAuth } from "@/components/AuthProvider";
@@ -212,11 +212,7 @@ export function BillingSettings() {
   }, [activeOrgId, searchParams]);
 
   if (loading) {
-    return (
-      <div className="flex items-center justify-center py-24">
-        <Loader2 className="w-6 h-6 animate-spin text-[#2563eb]" />
-      </div>
-    );
+    return <StackedCardsSkeleton count={3} />;
   }
 
   const plan = billing?.plan;

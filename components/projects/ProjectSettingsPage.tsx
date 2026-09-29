@@ -3,6 +3,7 @@
 import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import { useParams, useRouter } from "next/navigation";
+import { FormSkeleton } from "@/components/ui/Shimmer";
 import {
   ArrowLeft,
   Check,
@@ -253,8 +254,8 @@ export default function ProjectSettingsPage() {
 
   if (loading) {
     return (
-      <div className="flex-1 flex items-center justify-center bg-[#f9f9f9] dark:bg-[#0b1220]">
-        <Loader2 className="w-6 h-6 animate-spin text-[#2563eb]" />
+      <div className="flex-1 overflow-y-auto bg-[#f9f9f9] dark:bg-[#0b1220] p-6 sm:p-10">
+        <FormSkeleton fields={6} />
       </div>
     );
   }

@@ -2,7 +2,7 @@
   "greetings": [
     {
       "id": "g_001",
-      "text": "Good Morning, Kritarth. You have 3 documents expiring this month.",
+      "text": "Good Morning, {name}. You have 3 documents expiring this month.",
       "alert": true,
       "variant": "warning",
       "highlights": [
@@ -11,7 +11,7 @@
     },
     {
       "id": "g_002",
-      "text": "Welcome back, Kritarth. Your ITR folder is ready for filing.",
+      "text": "Welcome back, {name}. Your ITR folder is ready for filing.",
       "alert": true,
       "variant": "success",
       "highlights": [
@@ -21,7 +21,7 @@
     },
     {
       "id": "g_003",
-      "text": "Good Evening, Kritarth. Your Passport expires in 90 days.",
+      "text": "Good Evening, {name}. Your Passport expires in 90 days.",
       "alert": true,
       "variant": "warning",
       "highlights": [
@@ -31,7 +31,7 @@
     },
     {
       "id": "g_004",
-      "text": "Hey Kritarth. 2 employees haven't submitted their documents yet.",
+      "text": "Hey {name}. 2 employees haven't submitted their documents yet.",
       "alert": true,
       "variant": "error",
       "highlights": [
@@ -41,7 +41,7 @@
     },
     {
       "id": "g_005",
-      "text": "Good Afternoon, Kritarth. Everything looks up to date.",
+      "text": "Good Afternoon, {name}. Everything looks up to date.",
       "alert": false,
       "variant": "success",
       "highlights": [
@@ -50,7 +50,7 @@
     },
     {
       "id": "g_006",
-      "text": "Morning, Kritarth. Tax season is here — want me to prepare your ITR folder?",
+      "text": "Morning, {name}. Tax season is here — want me to prepare your ITR folder?",
       "alert": false,
       "variant": "info",
       "highlights": [
@@ -60,7 +60,7 @@
     },
     {
       "id": "g_007",
-      "text": "Welcome back, Kritarth. Your health insurance renews in 12 days.",
+      "text": "Welcome back, {name}. Your health insurance renews in 12 days.",
       "alert": true,
       "variant": "warning",
       "highlights": [
@@ -70,7 +70,7 @@
     },
     {
       "id": "g_008",
-      "text": "Good Morning, Kritarth. 1 new document was added by your HR team.",
+      "text": "Good Morning, {name}. 1 new document was added by your HR team.",
       "alert": true,
       "variant": "info",
       "highlights": [
@@ -80,7 +80,7 @@
     },
     {
       "id": "g_009",
-      "text": "Hey Kritarth. Your HDFC bank statement for March is now available.",
+      "text": "Hey {name}. Your HDFC bank statement for March is now available.",
       "alert": false,
       "variant": "info",
       "highlights": [
@@ -90,7 +90,7 @@
     },
     {
       "id": "g_010",
-      "text": "Good Evening, Kritarth. You have 5 documents with your old Delhi address.",
+      "text": "Good Evening, {name}. You have 5 documents with your old Delhi address.",
       "alert": true,
       "variant": "warning",
       "highlights": [
@@ -100,7 +100,7 @@
     },
     {
       "id": "g_011",
-      "text": "Morning, Kritarth. Pratham has sent a document request — 3 files needed.",
+      "text": "Morning, {name}. Pratham has sent a document request — 3 files needed.",
       "alert": true,
       "variant": "error",
       "highlights": [
@@ -110,7 +110,7 @@
     },
     {
       "id": "g_012",
-      "text": "Welcome back, Kritarth. Your shared Aadhaar link was viewed 2 hours ago.",
+      "text": "Welcome back, {name}. Your shared Aadhaar link was viewed 2 hours ago.",
       "alert": true,
       "variant": "info",
       "highlights": [
@@ -120,7 +120,7 @@
     },
     {
       "id": "g_013",
-      "text": "Good Afternoon, Kritarth. No pending actions. You're all caught up.",
+      "text": "Good Afternoon, {name}. No pending actions. You're all caught up.",
       "alert": false,
       "variant": "success",
       "highlights": [
@@ -130,7 +130,7 @@
     },
     {
       "id": "g_014",
-      "text": "Hey Kritarth. Your Form 16 for FY 2024–25 hasn't been uploaded yet.",
+      "text": "Hey {name}. Your Form 16 for FY 2024–25 hasn't been uploaded yet.",
       "alert": true,
       "variant": "warning",
       "highlights": [
@@ -141,7 +141,7 @@
     },
     {
       "id": "g_015",
-      "text": "Good Morning, Kritarth. 3 vendor contracts are up for renewal this quarter.",
+      "text": "Good Morning, {name}. 3 vendor contracts are up for renewal this quarter.",
       "alert": true,
       "variant": "error",
       "highlights": [

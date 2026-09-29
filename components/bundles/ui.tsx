@@ -2,7 +2,8 @@
 
 import type { ReactNode } from "react";
 import Link from "next/link";
-import { AlertTriangle, Layers, Loader2, RefreshCw } from "lucide-react";
+import { AlertTriangle, Layers, RefreshCw } from "lucide-react";
+import { ListRowsSkeleton, Shimmer } from "@/components/ui/Shimmer";
 import { statusMeta, TONE_CLASSES } from "@/lib/bundles/status";
 
 export const PAGE_CLASS = "flex-1 overflow-y-auto bg-[#f8fafc] dark:bg-[#0b1220] p-4 sm:p-8 pt-16 sm:pt-20";
@@ -27,11 +28,28 @@ export function StatusChip({ status, reviewed = false }: { status: string; revie
   );
 }
 
-export function LoadingState({ label = "Loading…" }: { label?: string }) {
+export function LoadingState({
+  label = "Loading…",
+  variant = "rows",
+}: {
+  label?: string;
+  variant?: "rows" | "inline";
+}) {
+  if (variant === "inline") {
+    return (
+      <div className="py-4 space-y-3" role="status" aria-label={label}>
+        <Shimmer className="h-4 w-40 rounded" />
+        <Shimmer className="h-10 w-full rounded-xl" />
+        <Shimmer className="h-10 w-3/4 rounded-xl" />
+        <span className="sr-only">{label}</span>
+      </div>
+    );
+  }
+
   return (
-    <div className="flex items-center justify-center gap-2 py-16 text-sm text-slate-500" role="status">
-      <Loader2 className="w-4 h-4 animate-spin" />
-      {label}
+    <div role="status" aria-label={label}>
+      <span className="sr-only">{label}</span>
+      <ListRowsSkeleton rows={4} />
     </div>
   );
 }

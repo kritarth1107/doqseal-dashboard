@@ -387,7 +387,7 @@ export function NewCasePack() {
                   </Field>
                 </div>
 
-                {preparing && <LoadingState label="Applying template…" />}
+                {preparing && <LoadingState label="Applying template…" variant="inline" />}
                 {selected && !preparing && !template && stepError && (
                   <ErrorState
                     title="Could not prepare this template"
@@ -686,18 +686,18 @@ function CardSkeletons() {
     <div role="status" aria-label="Loading templates">
       <ul className="grid gap-4 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3" aria-hidden>
         {Array.from({ length: 6 }, (_, i) => (
-          <li key={i} className="rounded-2xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-[#111827] p-4 animate-pulse">
+          <li key={i} className="rounded-2xl border border-gray-200 dark:border-zinc-800 bg-white dark:bg-[#111827] p-4">
             <div className="flex gap-3">
-              <div className="h-10 w-10 rounded-xl bg-slate-100 dark:bg-zinc-800" />
+              <div className="shimmer h-10 w-10 rounded-xl" />
               <div className="flex-1 space-y-2 pt-1">
-                <div className="h-3.5 w-2/3 rounded bg-slate-100 dark:bg-zinc-800" />
-                <div className="h-2.5 w-1/3 rounded bg-slate-100 dark:bg-zinc-800" />
+                <div className="shimmer h-3.5 w-2/3 rounded" />
+                <div className="shimmer h-2.5 w-1/3 rounded" />
               </div>
             </div>
-            <div className="h-3 w-full rounded bg-slate-100 dark:bg-zinc-800 mt-4" />
+            <div className="shimmer h-3 w-full rounded mt-4" />
             <div className="flex gap-1.5 mt-4">
-              <div className="h-4 w-16 rounded bg-slate-100 dark:bg-zinc-800" />
-              <div className="h-4 w-20 rounded bg-slate-100 dark:bg-zinc-800" />
+              <div className="shimmer h-4 w-16 rounded" />
+              <div className="shimmer h-4 w-20 rounded" />
             </div>
           </li>
         ))}

@@ -153,6 +153,12 @@ html.dark {
     background-color: rgb(120 53 15 / 0.4) !important;
   }
 
+  .text-amber-950,
+  .text-amber-900,
+  .text-amber-800 {
+    color: #fef3c7 !important;
+  }
+
   .bg-red-50 {
     background-color: rgb(127 29 29 / 0.35) !important;
   }
@@ -246,4 +252,52 @@ html.dark {
 
 .pdf-page-shell canvas {
   image-rendering: auto;
+}
+
+@keyframes doq-shimmer {
+  0% {
+    transform: translateX(-100%);
+  }
+  100% {
+    transform: translateX(100%);
+  }
+}
+
+.shimmer {
+  position: relative;
+  overflow: hidden;
+  background-color: #d4d4d8 !important;
+}
+
+.shimmer::after {
+  content: "";
+  position: absolute;
+  inset: 0;
+  transform: translateX(-100%);
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.9) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+  animation: doq-shimmer 1.15s ease-in-out infinite;
+}
+
+html.dark .shimmer {
+  background-color: #334155 !important;
+}
+
+html.dark .shimmer::after {
+  background: linear-gradient(
+    90deg,
+    rgba(255, 255, 255, 0) 0%,
+    rgba(255, 255, 255, 0.55) 50%,
+    rgba(255, 255, 255, 0) 100%
+  );
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .shimmer::after {
+    animation: none;
+  }
 }
